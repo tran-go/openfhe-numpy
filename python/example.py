@@ -14,7 +14,6 @@ def main():
     parameters = CCParamsCKKSRNS()
     parameters.SetMultiplicativeDepth(mult_depth)
     parameters.SetScalingModSize(firstModSize)
-    parameters.SetBatchSize(batch_size)
 
     cc = GenCryptoContext(parameters)
     cc.Enable(PKESchemeFeature.PKE)
@@ -27,8 +26,9 @@ def main():
     print("The CKKS scheme is using ring dimension: " + str(cc.GetRingDimension()))
 
     keys = cc.KeyGen()
-    cc.EvalSumRowsKeyGen(keys.secretKey)
-    cc.EvalSumColsKeyGen(keys.secretKey)
+    cc.EvalSumKeyGen(keys.secretKey)
+    sum_row_keys = cc.EvalSumRowsKeyGen(keys.secretKey, None, block_size)
+
 
 
     matrix = [[1,2,3], [4,5,6]]
@@ -37,7 +37,7 @@ def main():
     e_mat = EMat(cc, keys.publicKey, matrix, num_slots, block_size, Pack_Type.RW)
     e_vec = EMat(cc, keys.publicKey, vector, num_slots, block_size, Pack_Type.CW)
 
-    ct_mul = mul_mat(cc, key_sum, e_mat, e_vec, num_slots, block_size)
+    ct_mul = mul_mat(cc, sum_row_keys, e_mat, e_vec, num_slots, block_size)
 
 
 
