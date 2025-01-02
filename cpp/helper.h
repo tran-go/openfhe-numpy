@@ -6,8 +6,8 @@
 /*
 Displaying the 2D vector
 */
-
-inline void PrintMatrix(const std::vector<std::vector<double>>& mat) {
+template <typename Element>
+inline void PrintMatrix(const std::vector<std::vector<Element>>& mat) {
   for (uint32_t i = 0; i < mat.size(); i++) {
     for (uint32_t j = 0; j < mat[i].size(); j++) std::cout << mat[i][j] << " ";
     std::cout << std::endl;
@@ -18,11 +18,13 @@ inline void PrintMatrix(const std::vector<std::vector<double>>& mat) {
 Displaying the 1D vector
 */
 
-inline void PrintVector(const std::vector<double> vec) {
+template <typename Element>
+inline void PrintVector(const std::vector<Element> vec) {
+  std::cout.precision(2);
   for (uint32_t i = 0; i < vec.size(); i++) {
     std::cout << vec[i] << " ";
   }
-  std::cout << std::endl;
+  std::cout << std::endl << std::endl;
 };
 
 /*

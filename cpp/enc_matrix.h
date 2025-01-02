@@ -7,16 +7,18 @@
 #include "helper.h"
 
 void test();
-CT EvalMultMatVec(CC& cc, KeyPair keys, MatKeys eval_keys, int type, uint32_t row_size, const CT& ct_vec, const CT& ct_mat);
+CT EvalMultMatVec(CC& cc, KeyPair keys, MatKeys eval_keys, int type, int row_size, const CT& ct_vec, const CT& ct_mat);
 
-CT EvalLinTransShift(CC cc, KeyPair keys, const CT c_vec, const int opt, const uint32_t row_size);
+CT EvalLinTransSigma(CC cc, KeyPair keys, const CT c_vec, const int row_size);
 
-CT EvalLinTransPhi(CC cc, KeyPair keys, const CT c_vec, const uint32_t row_size, const uint32_t k);
+CT EvalLinTransTau(CC cc, KeyPair keys, const CT c_vec, const int row_size);
 
-CT EvalLinTransPsi(CC cc, KeyPair keys, const CT c_vec, const uint32_t row_size, const uint32_t k);
+CT EvalLinTransPhi(CC cc, KeyPair keys, const CT c_vec, const int row_size, const int32_t k);
 
-CT EvalMatMulSquare(CC cc, KeyPair keys, const CT cmat_A, const CT cmat_B, const uint32_t row_size);
+CT EvalLinTransPsi(CC cc, KeyPair keys, const CT c_vec, const int row_size, const int32_t k);
 
-CT EvalLinTrans(CC& cc, KeyPair keys, MatKeys eval_keys, int type, uint32_t row_size, const CT& ct_vec, const CT& ct_mat);
+CT EvalMatMulSquare(CC cc, KeyPair keys, const CT cmat_A, const CT cmat_B, const int32_t row_size);
+
+
 
 #endif // ENC_MATRIX_H
