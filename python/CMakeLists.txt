@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.5.1)
 
-project (OpenFHE-Python-Matrix)
+project (OpenFHE-Pymat)
 set(OPENFHE_PYMAT_VERSION_MAJOR 0)
 set(OPENFHE_PYMAT_VERSION_MINOR 0)
 set(OPENFHE_PYMAT_VERSION_PATCH 1)
@@ -13,14 +13,14 @@ if(APPLE)
     set(CMAKE_CXX_VISIBILITY_PRESET default)
 endif()
 
-find_package(OpenFHE 1.2.0 REQUIRED)
+find_package(OpenFHE 1.1.2 REQUIRED)
 find_package(pybind11 REQUIRED)
+# Find a package
+# find_package(OpenFHE-MATRIX REQUIRED)
 
 set( CMAKE_CXX_FLAGS ${OpenFHE_CXX_FLAGS} )
-# set( OpenFHE_Py_SOURCES src/lib)
-# set( OpenFHE_Py_INCLUDES src/include)
 
-set( OpenFHE_Matrix_INCLUDES /home/tango/Software/xlib/include)
+set( OpenFHE_Matrix_INCLUDES  ${CMAKE_INSTALL_PREFIX}/include/openfhe_matrix)
 
 
 include_directories( ${OPENMP_INCLUDES} )
@@ -30,11 +30,7 @@ include_directories( ${OpenFHE_INCLUDE}/core )
 include_directories( ${OpenFHE_INCLUDE}/pke )
 include_directories( ${OpenFHE_INCLUDE}/binfhe )
 include_directories( ${OpenFHE_Matrix_INCLUDES} )
-# # include_directories( ${OpenFHE_Py_SOURCES} )
-# include_directories( ${OpenFHE_Py_INCLUDES}/pke )
-# include_directories( ${OpenFHE_Py_INCLUDES}/binfhe )
-# include_directories( ${OpenFHE_Py_INCLUDES}/docstrings )
-# include_directories( ${OpenFHE_Py_INCLUDES} )
+
 
 ### add directories for other OpenFHE modules as needed for your project
 
@@ -81,6 +77,12 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
  )    
 endif()
+
+# add_executable(simple_demo tests/simple_demo.py)
+# target_link_libraries(simple_demo PRIVATE OpenFHE-Pymat)
+
+# Add the library source files
+message("***** CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
 
 message(STATUS "Python site packages directory: ${PYTHON_SITE_PACKAGES}")
 install(TARGETS openfhe_matrix LIBRARY DESTINATION ${PYTHON_SITE_PACKAGES})

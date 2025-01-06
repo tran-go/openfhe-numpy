@@ -25,7 +25,6 @@ set(OPENFHE_MATRIX_VERSION ${OPENFHE_MATRIX_VERSION_MAJOR}.${OPENFHE_MATRIX_VERS
 
 set(CMAKE_CXX_STANDARD 17)
 # option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
-option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
 find_package(OpenFHE CONFIG REQUIRED)
 if (OpenFHE_FOUND)
@@ -60,7 +59,7 @@ else()
 endif()
 
 # Set the installation prefix to a custom directory
-set(CMAKE_INSTALL_PREFIX "/home/tango/Software/xlib")
+# set(CMAKE_INSTALL_PREFIX "/home/tango/Software/xlib")
 
 
 # Print the value of PROJECT_SOURCE_DIR
@@ -71,7 +70,7 @@ message("***** PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
 
 
 # Add the library
-add_library(OpenFHE-Matrix STATIC)
+add_library(OpenFHE-Matrix SHARED)
 target_sources(OpenFHE-Matrix
     PRIVATE 
     ${PROJECT_SOURCE_DIR}/src/enc_matrix.cpp
@@ -80,10 +79,6 @@ target_sources(OpenFHE-Matrix
     ${PROJECT_SOURCE_DIR}/include/enc_matrix.h
     ${PROJECT_SOURCE_DIR}/include/utils.h
 )
-
-install(TARGETS OpenFHE-Matrix DESTINATION lib)
-install(DIRECTORY include/ DESTINATION include)
-
 
 # Specify the output directory for the library
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -97,13 +92,23 @@ target_include_directories(OpenFHE-Matrix
 # Add the executable to test the library
 add_executable(example test/example.cpp)
 
-# # Include the library's headers
-# target_include_directories(example
-#     PRIVATE
-#         ${CMAKE_CURRENT_SOURCE_DIR}/include
-# )
 
 # Link the library to the executable
 target_link_libraries(example PRIVATE OpenFHE-Matrix)
+
+
+### set up for install
+install(TARGETS OpenFHE-Matrix DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include/openfhe_matrix)
+
+# set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
+# set(INSTALL_INCLUDE_DIR include/openfhe_matrix CACHE PATH "Installation directory for headers")
+message("***** INSTALL IS AT ${CMAKE_INSTALL_PREFIX}; to change, run cmake with -DCMAKE_INSTALL_PREFIX=/your/path")
+# install(TARGETS  OpenFHE-Matrix
+#         LIBRARY DESTINATION lib
+#         ARCHIVE DESTINATION lib
+#         RUNTIME DESTINATION bin
+#         INCLUDES DESTINATION include
+# )
 
 
