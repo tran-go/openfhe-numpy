@@ -16,8 +16,15 @@ cmake_minimum_required (VERSION 3.5.1)
 ### After you run "make install" in your build directory, you can build your custom application.
 ### If you need your application to be linked statically, then run "cmake .. -DBUILD_STATIC=ON"
 
-project(demo CXX)
+
+project(OpenFHE-Matrix CXX)
+set(OPENFHE_MATRIX_VERSION_MAJOR 0)
+set(OPENFHE_MATRIX_VERSION_MINOR 0)
+set(OPENFHE_MATRIX_VERSION_PATCH 1)
+set(OPENFHE_MATRIX_VERSION ${OPENFHE_MATRIX_VERSION_MAJOR}.${OPENFHE_MATRIX_VERSION_MINOR}.${OPENFHE_MATRIX_VERSION_PATCH})
+
 set(CMAKE_CXX_STANDARD 17)
+# option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
 find_package(OpenFHE CONFIG REQUIRED)
@@ -52,17 +59,51 @@ else()
     link_libraries( ${OpenFHE_SHARED_LIBRARIES} )
 endif()
 
+# Set the installation prefix to a custom directory
+set(CMAKE_INSTALL_PREFIX "/home/tango/Software/xlib")
+
 
 # Print the value of PROJECT_SOURCE_DIR
-message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
+message("***** INSTALL IS AT ${CMAKE_INSTALL_PREFIX}; to change, run cmake with -DCMAKE_INSTALL_PREFIX=/your/path")
+message("***** CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
+message("***** PROJECT_BINARY_DIR = ${PROJECT_BINARY_DIR}")
+message("***** PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
+
 
 # Add the library
-add_library(emat enc_matrix.cpp utils.cpp)
-# Add the executable
-add_executable(my_program example.cpp)
-# add_executable(my_program simple_demo.cpp)
+add_library(OpenFHE-Matrix STATIC)
+target_sources(OpenFHE-Matrix
+    PRIVATE 
+    ${PROJECT_SOURCE_DIR}/src/enc_matrix.cpp
+    ${PROJECT_SOURCE_DIR}/src/utils.cpp
+    PUBLIC
+    ${PROJECT_SOURCE_DIR}/include/enc_matrix.h
+    ${PROJECT_SOURCE_DIR}/include/utils.h
+)
+
+install(TARGETS OpenFHE-Matrix DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)
+
+
+# Specify the output directory for the library
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+
+target_include_directories(OpenFHE-Matrix
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Add the executable to test the library
+add_executable(example test/example.cpp)
+
+# # Include the library's headers
+# target_include_directories(example
+#     PRIVATE
+#         ${CMAKE_CURRENT_SOURCE_DIR}/include
+# )
 
 # Link the library to the executable
-target_link_libraries(my_program emat)
-# Include the directory with header files
-# target_link_libraries(my_program ${PROJECT_SOURCE_DIR}/cpp)
+target_link_libraries(example PRIVATE OpenFHE-Matrix)
+
+
