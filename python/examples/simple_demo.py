@@ -3,9 +3,9 @@ import numpy as np
 from openfhe import *
 from openfhe_matrix import *
 
-# import fhepy library
-import fhepy as fp
-from fhepy.utils import *
+# import openfhe_numpy library
+import openfhe_numpy as fp
+from openfhe_numpy.utils import *
 
 
 def gen_crypto_context(ringDimension, mult_depth):
