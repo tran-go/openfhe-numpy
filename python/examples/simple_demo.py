@@ -37,7 +37,7 @@ def gen_crypto_context(ringDimension, mult_depth):
 
 def demo():
     # TODO check with different ringDimension, write test cases
-    ringDimension = 2**6
+    ringDimension = 2**7
     total_slots = ringDimension // 2
     block_size = 4
     mult_depth = 9
@@ -110,20 +110,61 @@ def demo():
     print(f"Obtained: {result}")
     print(f"Matching = [{np.array_equal(result[0], dot_prod)}]")
 
-    print("\n4.Hadamard Product: a.b:")
-    print(np.multiply(a, b))
-    print("*" * 10, "SUM", "*" * 10)
+    # print("\n4.Hadamard Product: a.b:")
+    # print(np.multiply(a, b))
+
     # print()
     # print("*" * 10, "TRANSPOSE", "*" * 10)
     # print("\n4.Matrix Transpose: A^T:")
     # a1 = np.array([[1, 2], [3, 4]])
-    # aa = np.array([1, 2, 3, 4])
-    # ctm_a1 = fp.array(cc, a, total_slots, pub_key=keys.publicKey)
-    # matI = np.array(gen_comm_mat(len(aa), len(aa), 0))
+    # aa = np.array([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
 
-    # print(matI, aa)
+    # # aa = np.array([1, 2, 3, 4])
+    # # ctm_a1 = fp.array(cc, a, total_slots, pub_key=keys.publicKey)
+    # matI = np.array(gen_comm_mat(2, 2, 0))
+
+    # print(a)
     # print("commutation matrix = ", matI)
     # expected = np.matmul(matI, aa)
+    # print(f"Expected: {expected}")
+
+    # def gen_transpose_diag(total_slots, row_size, i):
+    #     n = row_size * row_size
+    #     diag = np.zeros(n)
+
+    #     if i >= 0:
+    #         for l in range(n):
+    #             for j in range(row_size):
+    #                 if (l - i == (row_size + 1) * j) and (j < row_size - i):
+    #                     diag[i] = 1
+    #     else:
+    #         for l in range(n):
+    #             for j in range(row_size):
+    #                 if l - i == (row_size + 1) * j and -i <= j and j < row_size:
+    #                     diag[i] = 1
+    #     return diag
+
+    # def gen_transpose_diag(d, i):
+    #     """Compute the non-zero diagonal vector t_{(d-1)*i}."""
+    #     t_vec = np.zeros(d * d, dtype=int)
+    #     if i >= 0:
+    #         for j in range(0, d):
+    #             if j < d - i:
+    #                 l = (d + 1) * j + i
+    #                 if l < d * d:
+    #                     t_vec[l] = 1
+    #     else:
+    #         for j in range(-i, d):
+    #             l = (d + 1) * j + i
+    #             if l >= 0 and l < d * d:
+    #                 t_vec[l] = 1
+    #     return t_vec
+
+    # # u = gen_transpose_diag(total_slots, 2, 0)
+    # print("u = ", gen_transpose_diag(2, 0))
+    # print("u = ", gen_transpose_diag(2, 1))
+    # print("u = ", gen_transpose_diag(2, 2))
+    # print("u = ", gen_transpose_diag(2, 3))
 
     # pt_matI = fp.array(cc, data=matI, size=total_slots, block_size=len(a) * len(a))
 

@@ -1,44 +1,22 @@
 cmake_minimum_required (VERSION 3.5.1)
 
-### To use gcc/g++ on a Macintosh, you must set the Compilers
-### here, not inside the project
-##if(APPLE)
-##       set(CMAKE_C_COMPILER "/usr/local/bin/gcc-7")
-##       set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-7")
-##endif()
-### TODO: for now, we use CLang for Mac
-###
-### In order to create OpenFHE's static libraries you should enable
-### the BUILD_STATIC option. For that, you run "cmake .. -DBUILD_STATIC=ON".
-### After having your link completed you will find static libs
-### with the suffix "_static" in ./build/libs/.
-### Examples: OPENFHEpke_static.a, OPENFHEcore_static.a, etc.
-### After you run "make install" in your build directory, you can build your custom application.
-### If you need your application to be linked statically, then run "cmake .. -DBUILD_STATIC=ON"
-
-
-project(OpenFHE-Matrix CXX)
+project(openfhe_matrix)
 set(OPENFHE_MATRIX_VERSION_MAJOR 0)
 set(OPENFHE_MATRIX_VERSION_MINOR 0)
 set(OPENFHE_MATRIX_VERSION_PATCH 1)
 set(OPENFHE_MATRIX_VERSION ${OPENFHE_MATRIX_VERSION_MAJOR}.${OPENFHE_MATRIX_VERSION_MINOR}.${OPENFHE_MATRIX_VERSION_PATCH})
 
 set(CMAKE_CXX_STANDARD 17)
-# option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
+option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
-find_package(OpenFHE CONFIG REQUIRED)
-if (OpenFHE_FOUND)
-    message(STATUS "FOUND PACKAGE OpenFHE")
-    message(STATUS "OpenFHE Version: ${BASE_OPENFHE_VERSION}")
-    message(STATUS "OpenFHE installed as shared libraries: ${OpenFHE_SHARED}")
-    message(STATUS "OpenFHE include files location: ${OpenFHE_INCLUDE}")
-    message(STATUS "OpenFHE lib files location: ${OpenFHE_LIBDIR}")
-    message(STATUS "OpenFHE Native Backend size: ${OpenFHE_NATIVE_SIZE}")
-else()
-    message(FATAL_ERROR "PACKAGE OpenFHE NOT FOUND")
-endif ()
+find_package(OpenFHE 1.2.3 CONFIG REQUIRED)
 
-set( CMAKE_CXX_FLAGS ${OpenFHE_CXX_FLAGS} )
+# "CMAKE_INTERPROCEDURAL_OPTIMIZATION ON" (ON is the default value) causes link failure. see
+# https://github.com/openfheorg/openfhe-python/actions/runs/11492843373/job/31987579944
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+
+set( OpenFHE_Matrix_SOURCES cpp/src)
+set( OpenFHE_Matrix_INCLUDES cpp/include)
 
 include_directories( ${OPENMP_INCLUDES} )
 include_directories( ${OpenFHE_INCLUDE} )
@@ -46,7 +24,8 @@ include_directories( ${OpenFHE_INCLUDE}/third-party/include )
 include_directories( ${OpenFHE_INCLUDE}/core )
 include_directories( ${OpenFHE_INCLUDE}/pke )
 include_directories( ${OpenFHE_INCLUDE}/binfhe )
-### add directories for other OpenFHE modules as needed for your project
+# include_directories( ${OpenFHE_Py_SOURCES} )
+include_directories( ${OpenFHE_Matrix_INCLUDES} )
 
 link_directories( ${OpenFHE_LIBDIR} )
 link_directories( ${OPENMP_LIBRARIES} )
@@ -58,57 +37,61 @@ else()
     link_libraries( ${OpenFHE_SHARED_LIBRARIES} )
 endif()
 
-# Set the installation prefix to a custom directory
-# set(CMAKE_INSTALL_PREFIX "/home/tango/Software/xlib")
+file (GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${OpenFHE_Matrix_SOURCES}/*.cpp)
 
-
-# Print the value of PROJECT_SOURCE_DIR
-message("***** INSTALL IS AT ${CMAKE_INSTALL_PREFIX}; to change, run cmake with -DCMAKE_INSTALL_PREFIX=/your/path")
-message("***** CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
-message("***** PROJECT_BINARY_DIR = ${PROJECT_BINARY_DIR}")
-message("***** PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
-
-
-# Add the library
-add_library(OpenFHE-Matrix SHARED)
-target_sources(OpenFHE-Matrix
-    PRIVATE 
-    ${PROJECT_SOURCE_DIR}/src/enc_matrix.cpp
-    ${PROJECT_SOURCE_DIR}/src/utils.cpp
-    PUBLIC
-    ${PROJECT_SOURCE_DIR}/include/enc_matrix.h
-    ${PROJECT_SOURCE_DIR}/include/utils.h
+### Pybind Modules
+# finding pybind11 is a bit tricky
+# capture the output of the following python command
+execute_process(
+    COMMAND python${APSI_PYTHON_VERSION} -m pybind11 --includes
+    OUTPUT_VARIABLE PYBIND11_INCLUDES
+    OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# Specify the output directory for the library
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+# remove the "-I" prefixes
+string(REPLACE "-I" "" PYBIND11_PATHS "${PYBIND11_INCLUDES}")
+# get the path including "pybind11/include"
+string(REGEX MATCH "[^ ]+/pybind11/include" PYBIND11_INCLUDE_PATH "${PYBIND11_PATHS}")
 
-target_include_directories(OpenFHE-Matrix
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+include_directories(${PYBIND11_INCLUDE_PATH})
+message(STATUS "PYBIND11 include path: ${PYBIND11_INCLUDE_PATH}")
 
-# Add the executable to test the library
-add_executable(example test/example.cpp)
+find_package(pybind11 REQUIRED)
+pybind11_add_module(openfhe_matrix ${SOURCES})
 
+### Python installation 
+# Allow the user to specify the path to Python executable (if not provided, find it)
+option(PYTHON_EXECUTABLE_PATH "Path to Python executable" "")
 
-# Link the library to the executable
-target_link_libraries(example PRIVATE OpenFHE-Matrix)
+if(NOT PYTHON_EXECUTABLE_PATH)
+    # Find Python and its development components
+    find_package (Python3 3.12 EXACT COMPONENTS Interpreter Development REQUIRED)
+    # find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+else()
+    # Set Python_EXECUTABLE to the specified path
+    set(Python_EXECUTABLE "${PYTHON_EXECUTABLE_PATH}")
+endif()
 
+# Check Python version
+if(${PYTHON_VERSION_MAJOR} EQUAL 3 AND ${PYTHON_VERSION_MINOR} GREATER_EQUAL 10)
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -c "from sys import exec_prefix; print(exec_prefix)"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+else()
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
 
-### set up for install
-install(TARGETS OpenFHE-Matrix DESTINATION lib)
-install(DIRECTORY include/ DESTINATION include/openfhe_matrix)
-
-# set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
-# set(INSTALL_INCLUDE_DIR include/openfhe_matrix CACHE PATH "Installation directory for headers")
-message("***** INSTALL IS AT ${CMAKE_INSTALL_PREFIX}; to change, run cmake with -DCMAKE_INSTALL_PREFIX=/your/path")
-# install(TARGETS  OpenFHE-Matrix
-#         LIBRARY DESTINATION lib
-#         ARCHIVE DESTINATION lib
-#         RUNTIME DESTINATION bin
-#         INCLUDES DESTINATION include
-# )
-
-
+message(STATUS "Python site packages directory: ${PYTHON_SITE_PACKAGES}")
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(Python_Install_Location "${PYTHON_SITE_PACKAGES}")
+else()
+    set(Python_Install_Location "${CMAKE_INSTALL_PREFIX}")
+endif()
+message("***** INSTALL IS AT ${Python_Install_Location}; to change, run cmake with -DCMAKE_INSTALL_PREFIX=/your/path")
+install(TARGETS openfhe_matrix LIBRARY DESTINATION ${Python_Install_Location})

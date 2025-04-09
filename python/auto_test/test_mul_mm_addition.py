@@ -1,19 +1,18 @@
 import csv
+import os
 import random
 import unittest
 import ast
 import numpy as np
+from datetime import datetime
 
-# import pytest
 from openfhe import *
 from openfhe_matrix import *
-
 import openfhe_numpy as fp
 from openfhe_numpy.utils import *
 
 
 def gen_crypto_context(ringDimension, mult_depth):
-    # Setup CryptoContext for CKKS
     parameters = CCParamsCKKSRNS()
     parameters.SetSecurityLevel(HEStd_NotSet)
     parameters.SetRingDim(ringDimension)
@@ -25,13 +24,11 @@ def gen_crypto_context(ringDimension, mult_depth):
     parameters.SetFirstModSize(60)
     parameters.SetSecretKeyDist(UNIFORM_TERNARY)
 
-    # Enable the features that you wish to use
     cc = GenCryptoContext(parameters)
     cc.Enable(PKESchemeFeature.PKE)
     cc.Enable(PKESchemeFeature.LEVELEDSHE)
     cc.Enable(PKESchemeFeature.ADVANCEDSHE)
 
-    # Generate encryption keys
     keys = cc.KeyGen()
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
@@ -39,12 +36,7 @@ def gen_crypto_context(ringDimension, mult_depth):
     return cc, keys
 
 
-# Function to multiply two matrices A and B in FHE
-
-
 def fhe_matrix_addition(ringDimension, mult_depth, a, b, precision=2):
-    print("Simple Test for Matrix Addition")
-
     total_slots = ringDimension // 2
 
     cc, keys = gen_crypto_context(ringDimension, mult_depth)
@@ -56,68 +48,82 @@ def fhe_matrix_addition(ringDimension, mult_depth, a, b, precision=2):
 
     ct_sum = fp.add(cc, ctm_a, ctm_b)
     result = ct_sum.decrypt(cc, keys.secretKey)
-    result = np.round(result, decimals=1)
 
-    return result
-
-
-# Generate 40 test cases and write them to a CSV file
-def generate_test_cases_csv(filename, num_tests=1):
-    with open(filename, mode="w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["A", "B", "expected"])  # Header row
-
-        for _ in range(num_tests):
-            n = random.randint(4, 4)  # Randomly choose matrix size (2x2 or 3x3)
-            A = generate_random_matrix(n)
-            B = generate_random_matrix(n)
-            expected = np.array(A) + np.array(B)
-            print(expected)
-            writer.writerow([str(A), str(B), str(expected)])
+    return np.round(result, decimals=precision)
 
 
-# Test case class
-class TestMatrixMultiplication(unittest.TestCase):
-    # Dynamically load test cases from a CSV file
+def generate_random_matrix(n):
+    return [[random.randint(0, 10) for _ in range(n)] for _ in range(n)]
+
+
+def log_failure_to_file(test_name, A, B, expected, result, error):
+    os.makedirs("debug_logs", exist_ok=True)
+    log_path = f"debug_logs/{test_name}.log"
+    with open(log_path, "w") as f:
+        f.write(f"Test Name: {test_name}\n\n")
+        f.write("Matrix A:\n")
+        f.write(np.array2string(np.array(A), separator=", ") + "\n\n")
+        f.write("Matrix B:\n")
+        f.write(np.array2string(np.array(B), separator=", ") + "\n\n")
+        f.write("Expected Result:\n")
+        f.write(np.array2string(np.array(expected), separator=", ") + "\n\n")
+        f.write("Actual Result:\n")
+        f.write(np.array2string(np.array(result), separator=", ") + "\n\n")
+        f.write("Error:\n")
+        f.write(str(error) + "\n")
+
+
+def log_test_result(test_name, A, B, expected, result, passed):
+    os.makedirs("logs", exist_ok=True)
+    log_file = "logs/TestMatrixAddition.log"
+    with open(log_file, "a") as f:
+        status = "PASS" if passed else "FAIL"
+        f.write(f"--- {datetime.now().isoformat()} ---\n")
+        f.write(f"Test: {test_name}\n")
+        f.write(f"Status: {status}\n")
+        f.write("Matrix A:\n")
+        f.write(np.array2string(np.array(A), separator=", ") + "\n")
+        f.write("Matrix B:\n")
+        f.write(np.array2string(np.array(B), separator=", ") + "\n")
+        f.write("Expected Result:\n")
+        f.write(np.array2string(np.array(expected), separator=", ") + "\n")
+        f.write("Actual Result:\n")
+        f.write(np.array2string(np.array(result), separator=", ") + "\n")
+        f.write("\n")
+
+
+class TestMatrixAddition(unittest.TestCase):
     @classmethod
-    def load_test_cases_from_csv(cls, filename):
-        test_cases = []
-        with open(filename, mode="r") as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip header row
-            for row in reader:
-                # Parse matrices and expected result using ast.literal_eval
-                A = ast.literal_eval(row[0])
-                B = ast.literal_eval(row[1])
-
-                expected = ast.literal_eval(row[2])
-
-                test_cases.append((A, B, expected))
-        return test_cases
-
-    # Function to dynamically generate test methods
-    @classmethod
-    def generate_test_case(cls, A, B, expected):
+    def generate_test_case(cls, test_name, ring_dim, A, B, expected):
         def test(self):
-            result = fhe_matrix_addition(2**5, 9, A, B, precision=4)
-            self.assertEqual(result, expected)
+            result = fhe_matrix_addition(ring_dim, 3, A, B, precision=1)
+            try:
+                np.testing.assert_array_almost_equal(result, expected, decimal=1)
+                log_test_result(test_name, A, B, expected, result, passed=True)
+            except AssertionError as e:
+                log_test_result(test_name, A, B, expected, result, passed=False)
+                log_failure_to_file(test_name, A, B, expected, result, e)
+                raise
 
         return test
 
 
-# Main function to generate CSV and run tests
 if __name__ == "__main__":
-    # Generate the test cases and write them to the CSV file
-    generate_test_cases_csv("tests/mulmat_tests.csv", 1)
+    ring_dims = [2**10, 2**12, 2**14]
+    matrix_sizes = [2, 3, 4]  # Add more sizes if needed
+    test_counter = 1
 
-    # Load the test cases from the CSV file
-    test_cases = TestMatrixMultiplication.load_test_cases_from_csv("tests/mulmat_tests.csv")
+    for ring_dim in ring_dims:
+        for size in matrix_sizes:
+            for _ in range(2):  # Two random tests per configuration
+                A = generate_random_matrix(size)
+                B = generate_random_matrix(size)
+                expected = (np.array(A) + np.array(B)).tolist()
+                test_name = f"test_case_{test_counter}_ring_{ring_dim}_size_{size}"
+                test_method = TestMatrixAddition.generate_test_case(
+                    test_name, ring_dim, A, B, expected
+                )
+                setattr(TestMatrixAddition, test_name, test_method)
+                test_counter += 1
 
-    # Dynamically add test methods to the TestMatrixMultiplication class
-    for i, (A, B, expected) in enumerate(test_cases):
-        test_name = f"test_case_{i + 1}"
-        test_method = TestMatrixMultiplication.generate_test_case(A, B, expected)
-        setattr(TestMatrixMultiplication, test_name, test_method)
-
-    # Run the unittest framework
-    unittest.main()
+    unittest.main(argv=[""], exit=False)
