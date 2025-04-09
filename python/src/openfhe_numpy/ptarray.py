@@ -58,13 +58,14 @@ def ravel_mat(
     num_slots: int,
     row_size: int = 1,
     order: int = MatrixEncoding.ROW_MAJOR,
+    reps: int = 1,
 ) -> PT:
     """Encode a matrix or data without padding or replicate"""
     print(order)
     if order == MatrixEncoding.ROW_MAJOR:
-        packed_data = utils.pack_mat_row_wise(data, row_size, num_slots)
+        packed_data = utils.pack_mat_row_wise(data, row_size, num_slots, reps)
     elif order == MatrixEncoding.COL_MAJOR:
-        packed_data = utils.pack_mat_col_wise(data, row_size, num_slots)
+        packed_data = utils.pack_mat_col_wise(data, row_size, num_slots, reps)
     else:
         # TODO Encoded Diagonal Matrix
         packed_data = [0]

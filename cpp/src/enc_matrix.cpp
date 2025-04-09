@@ -104,7 +104,7 @@ CT EvalLinTransTau(CC cc, KeyPair keys, const CT c_vec, const int row_size)
     auto diag = GenTauDiag(row_size, k);
     auto p_diag = cc->MakeCKKSPackedPlaintext(diag);
 
-    cc->EvalRotateKeyGen(keys.secretKey, {k});
+    cc->EvalRotateKeyGen(keys.secretKey, {row_size*k});
     auto c_rotated = cc->EvalRotate(c_vec, row_size * k);
     cc->EvalAddInPlace(c_result, cc->EvalMult(c_rotated, p_diag));
   }

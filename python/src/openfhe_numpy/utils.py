@@ -168,49 +168,67 @@ def print_matrix(matrix, rows):
         # print('\n')
 
 
-def pack_mat_row_wise(matrix, block_size, num_slots, debug=1):
+def pack_mat_row_wise(matrix, row_size, total_slots, reps=0, debug=0):
     """
     Packing Matric M using row-wise
     [[1 2 3] -> [1 2 3 0 4 5 6 0 7 8 9 0]
     [4 5 6]
     [7 8 9]]
     """
-    assert is_power2(block_size)
-    assert is_power2(num_slots)
-    assert num_slots % block_size == 0
-    n = len(matrix)
-    m = len(matrix[0])
-    total_blocks = num_slots // block_size
+    assert is_power2(row_size)
+    assert is_power2(total_slots)
+    assert total_slots % row_size == 0
+    n, m = len(matrix), len(matrix[0])
+    col_size = len(matrix)
+    if reps > 0:
+        col_size = next_power2(col_size)
+    size = col_size * row_size
+
     # freeslots w.r.t block_size (not all free slots)
-    free_slots = num_slots - n * block_size
+    # free_slots = num_slots - n * block_size
 
-    if debug:
-        print(
-            "#\t [enc. matrix] n = %d, m = %d, #slots = %d, bs = %d, blks = %d, #freeslots = %d, used <= %.3f"
-            % (
-                n,
-                m,
-                num_slots,
-                block_size,
-                total_blocks,
-                free_slots,
-                (num_slots - free_slots) / num_slots,
-            )
-        )
+    # if debug:
+    #     print(
+    #         "#\t [enc. matrix] n = %d, m = %d, #slots = %d, bs = %d, blks = %d, #freeslots = %d, used <= %.3f"
+    #         % (
+    #             n,
+    #             m,
+    #             num_slots,
+    #             block_size,
+    #             total_blocks,
+    #             free_slots,
+    #             (num_slots - free_slots) / num_slots,
+    #         )
+    #     )
 
-    if num_slots < n * m:
+    if total_slots < size:
         Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
 
-    packed = np.zeros(num_slots)
-    k = 0  # index into vector to write
-    for i in range(n):
-        for j in range(m):
-            packed[k] = matrix[i][j]
+    # flat = np.zeros(row_size * col_size)
+    flat = np.zeros(total_slots)
+    # k = 0
+    # for i in range(n):
+    #     for j in range(m):
+    #         flat[k] = matrix[i][j]
+    #         k += 1
+    #     for j in range(m, row_size):
+    #         flat[k] = 0
+    #         k += 1
+    # else:
+
+    k = 0
+    for t in range(total_slots // size):
+        for i in range(n):
+            for j in range(m):
+                flat[k] = matrix[i][j]
+                k += 1
+            for j in range(m, row_size):
+                k += 1
+
+        for i in range(n, col_size):
             k += 1
-        for j in range(m, block_size):
-            packed[k] = 0
-            k += 1
-    return packed
+
+    return flat
 
 
 def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):

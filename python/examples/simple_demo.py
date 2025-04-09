@@ -37,7 +37,7 @@ def gen_crypto_context(ringDimension, mult_depth):
 
 def demo():
     # TODO check with different ringDimension, write test cases
-    ringDimension = 2**5
+    ringDimension = 2**6
     total_slots = ringDimension // 2
     block_size = 4
     mult_depth = 9
@@ -112,7 +112,7 @@ def demo():
 
     print("\n4.Hadamard Product: a.b:")
     print(np.multiply(a, b))
-
+    print("*" * 10, "SUM", "*" * 10)
     # print()
     # print("*" * 10, "TRANSPOSE", "*" * 10)
     # print("\n4.Matrix Transpose: A^T:")
@@ -139,14 +139,14 @@ def demo():
 
     # # %%
     # print()
-    # print("*" * 10, "SUM", "*" * 10)
-    # print("\n1. Matrix addition:")
-    # ct_sum = fp.add(cc, ctm_a, ctm_b)
-    # result = ct_sum.decrypt(cc, keys.secretKey)
-    # result = np.round(result, decimals=1)
-    # print(f"Expected: {a + b}")
-    # print(f"Obtained: {result}")
-    # print(f"Matching = [{np.array_equal(result, a + b)}]")
+    print("*" * 10, "SUM", "*" * 10)
+    print("\n1. Matrix addition:")
+    ct_sum = fp.add(cc, ctm_a, ctm_b)
+    result = ct_sum.decrypt(cc, keys.secretKey)
+    result = np.round(result, decimals=1)
+    print(f"Expected: {a + b}")
+    print(f"Obtained: {result}")
+    print(f"Matching = [{np.array_equal(result, a + b)}]")
 
     # # %%
     # print("\nMean of array elements: mean(a)")

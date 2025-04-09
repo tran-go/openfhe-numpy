@@ -280,7 +280,7 @@ def matvec(cc, keys, sum_col_keys, ctm_mat, ctv_v, block_size):
             ctm_mat.data,
         )
         rows, cols = ctm_mat.original_shape
-        info = [ct_prod, (rows, 1), False, ctm_mat.size, cols, "C"]
+        info = [ct_prod, (rows, 1), False, ctm_mat.batch_size, cols, "C"]
         return ctarray(*info)
 
     elif ctm_mat.encoding_order == "C" and ctv_v.encoding_order == "R":
