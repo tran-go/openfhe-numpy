@@ -111,7 +111,7 @@ class TestMatrixVectorProduct(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    ring_dims = [2**10, 2**12, 2**14]
+    ring_dims = [2**12, 2**13, 2**14]
     matrix_sizes = [2, 4, 8]
     test_counter = 1
 
