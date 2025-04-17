@@ -1,37 +1,56 @@
 import sys
 import numpy as np
 from openfhe_numpy.matlib import *
+from openfhe_numpy.config import *
 
 
 def format(array, ndim, original_shape, new_shape):
-    """reshape matrix to its original shape"""
+    """Reshape a flattened array to its original matrix shape.
 
-    matrix = np.reshape(array, new_shape)
-    if ndim == 2:
-        return matrix[: original_shape[0], : original_shape[1]]
-    return matrix[0]
-
-
-def get_shape(data):
-    """
-    Get dimension of a matrix
-
-    Parameters:
+    Parameters
     ----------
-    data : list or np.ndarray
+    array : array_like
+        The flattened array to reshape.
+    ndim : int
+        Number of dimensions of the original matrix.
+    original_shape : tuple
+        Original shape of the matrix before flattening.
+    new_shape : tuple
+        Intermediate reshaping dimensions.
 
     Returns
     -------
-    rows, cols, ndim
+    ndarray
+        Reshaped matrix with original dimensions.
     """
-    # print("data: ", data)
-    if isinstance(data, list) or isinstance(data, tuple):
+    reshaped_matrix = np.reshape(array, new_shape)
+    if ndim == 2:
+        return reshaped_matrix[: original_shape[0], : original_shape[1]]
+    return reshaped_matrix[0]
+
+
+def get_shape(data):
+    """Determine the shape and dimension of a given matrix-like structure.
+
+    Parameters
+    ----------
+    data : list, tuple, or ndarray
+        The input matrix or array.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the number of rows, number of columns, and dimensionality.
+
+    Raises
+    ------
+    ValueError
+        If input is neither list, tuple, nor ndarray.
+    """
+    if isinstance(data, (list, tuple)):
         rows = len(data)
-        if isinstance(data[0], list) or isinstance(data[0], tuple):
-            cols = len(data[0])
-        else:
-            cols = 1
-        ndim = 2 if cols > 1 else 0
+        cols = len(data[0]) if isinstance(data[0], (list, tuple)) else 1
+        ndim = 2 if cols > 1 else 1
         return rows, cols, ndim
 
     if isinstance(data, np.ndarray):
@@ -39,16 +58,26 @@ def get_shape(data):
             return data.shape[0], 0, 1
         return data.shape[0], data.shape[1], 2
 
-    print("ERRORS: Wrong parameters!!!")
-    return None
+    raise ValueError("Invalid data type provided. Must be list, tuple, or ndarray.")
 
 
-def rotate(vec, k):
+def rotate_vector(vec, k):
+    """Rotate a vector by k positions.
+
+    Parameters
+    ----------
+    vec : list or ndarray
+        The input vector to rotate.
+    k : int
+        Number of positions to rotate the vector.
+
+    Returns
+    -------
+    list
+        Rotated vector.
+    """
     n = len(vec)
-    rot = [0] * n
-    for i in range(n):
-        rot[i] = vec[(i + k) % n]
-    return rot
+    return [vec[(i + k) % n] for i in range(n)]
 
 
 def pack_vec_row_wise(v, block_size, num_slots):
@@ -59,8 +88,8 @@ def pack_vec_row_wise(v, block_size, num_slots):
     3
     """
     n = len(v)
-    assert is_power2(block_size)
-    assert is_power2(num_slots)
+    assert is_power_of_two(block_size)
+    assert is_power_of_two(num_slots)
     if num_slots < n:
         sys.exit("ERROR ::: [row_wise_vector] vector is longer than total   slots")
     if num_slots == n:
@@ -91,8 +120,8 @@ def pack_vec_col_wise(v, block_size, num_slots):
     3
     """
     n = len(v)
-    assert is_power2(block_size)
-    assert is_power2(num_slots)
+    assert is_power_of_two(block_size)
+    assert is_power_of_two(num_slots)
     if block_size < n:
         sys.exit(
             f"ERROR ::: [col_wise_vector] vector of size ({n}) is longer than size of a slot ({block_size})"
@@ -163,72 +192,108 @@ def convert_rw_cw(v, block_size, num_slots):
 
 
 def print_matrix(matrix, rows):
+    """
+    Print a matrix in a nicely formatted way.
+
+    Parameters
+    ----------
+    matrix : array_like
+        A 2D matrix (list of lists or ndarray) to print.
+    rows : int
+        Number of rows to print from the matrix.
+    """
     for i in range(rows):
-        print(matrix[i])
-        # print('\n')
+        row_str = "\t".join(f"{val:.2f}" for val in matrix[i])
+        print(f"[{row_str}]")
 
 
-def pack_mat_row_wise(matrix, row_size, total_slots, reps=0, debug=0):
+def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
+    """Pack a matrix into a flat array row-wise with zero padding.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input 2D matrix to be packed.
+    row_size : int
+        Target row size after padding; must be a power of two.
+    total_slots : int
+        Total number of slots available in the output array; must be a power of two and divisible by row_size.
+    pad_rows : bool, optional
+        If True, pad the number of rows to the next power of two. Default is False.
+
+    Returns
+    -------
+    flat_array : ndarray
+        Flat array containing the packed and padded elements of the input matrix.
+
+    Raises
+    ------
+    ValueError
+        If row_size or total_slots are not powers of two, or total_slots is insufficient.
     """
-    Packing Matric M using row-wise
-    [[1 2 3] -> [1 2 3 0 4 5 6 0 7 8 9 0]
-    [4 5 6]
-    [7 8 9]]
-    """
-    assert is_power2(row_size)
-    assert is_power2(total_slots)
-    assert total_slots % row_size == 0
-    n, m = len(matrix), len(matrix[0])
-    col_size = len(matrix)
-    if reps > 0:
-        col_size = next_power2(col_size)
-    size = col_size * row_size
+    if not is_power_of_two(row_size):
+        raise ValueError("row_size must be a power of two")
+    if not is_power_of_two(total_slots):
+        raise ValueError("total_slots must be a power of two")
+    if total_slots % row_size != 0:
+        raise ValueError("total_slots must be divisible by row_size")
 
-    # freeslots w.r.t block_size (not all free slots)
-    # free_slots = num_slots - n * block_size
+    rows, cols = len(matrix), len(matrix[0])
+    padded_cols = next_power_of_two(rows) if pad_cols else rows
+    required_size = padded_cols * row_size
 
-    # if debug:
-    #     print(
-    #         "#\t [enc. matrix] n = %d, m = %d, #slots = %d, bs = %d, blks = %d, #freeslots = %d, used <= %.3f"
-    #         % (
-    #             n,
-    #             m,
-    #             num_slots,
-    #             block_size,
-    #             total_blocks,
-    #             free_slots,
-    #             (num_slots - free_slots) / num_slots,
-    #         )
-    #     )
+    if total_slots < required_size:
+        raise ValueError("Total slots insufficient for the given matrix and padding.")
 
-    if total_slots < size:
-        Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
+    flat_array = np.zeros(total_slots)
 
-    # flat = np.zeros(row_size * col_size)
-    flat = np.zeros(total_slots)
-    # k = 0
-    # for i in range(n):
-    #     for j in range(m):
-    #         flat[k] = matrix[i][j]
-    #         k += 1
-    #     for j in range(m, row_size):
-    #         flat[k] = 0
-    #         k += 1
-    # else:
+    index = 0
+    repeats = total_slots // required_size
 
-    k = 0
-    for t in range(total_slots // size):
-        for i in range(n):
-            for j in range(m):
-                flat[k] = matrix[i][j]
-                k += 1
-            for j in range(m, row_size):
-                k += 1
+    for _ in range(repeats):
+        for i in range(rows):
+            flat_array[index : index + cols] = matrix[i]
+            index += row_size
 
-        for i in range(n, col_size):
-            k += 1
+        index += (padded_cols - rows) * row_size
 
-    return flat
+    return flat_array
+
+
+# def pack_mat_row_wise(matrix, row_size, total_slots, reps=0, debug=0):
+#     """
+#     Packing Matrix M using row-wise
+#     [[1 2 3] -> [1 2 3 0 4 5 6 0 7 8 9 0]
+#     [4 5 6]
+#     [7 8 9]]
+#     """
+#     assert is_power_of_two(row_size)
+#     assert is_power_of_two(total_slots)
+#     assert total_slots % row_size == 0
+#     n, m = len(matrix), len(matrix[0])
+#     col_size = len(matrix)
+#     if reps > 0:
+#         col_size = next_power_of_two(col_size)
+#     size = col_size * row_size
+
+#     if total_slots < size:
+#         Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
+
+#     flat = np.zeros(total_slots)
+
+#     k = 0
+#     for t in range(total_slots // size):
+#         for i in range(n):
+#             for j in range(m):
+#                 flat[k] = matrix[i][j]
+#                 k += 1
+#             for j in range(m, row_size):
+#                 k += 1
+
+#         for i in range(n, col_size):
+#             k += 1
+
+#     return flat
 
 
 def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):
@@ -238,8 +303,8 @@ def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):
      [4 5 6]
      [7 8 9]]
     """
-    assert is_power2(block_size)
-    assert is_power2(num_slots)
+    assert is_power_of_two(block_size)
+    assert is_power_of_two(num_slots)
     assert num_slots % block_size == 0
     cols = len(matrix)
     rows = len(matrix[0])
@@ -299,11 +364,78 @@ def generate_random_matrix(n):
 
 # Function to multiply two matrices A and B in Plain
 def matrix_multiply(A, B, precision=2):
+    """
+    Multiply two square matrices A and B.
+
+    Parameters
+    ----------
+    A : list of list of float
+        The left-hand matrix.
+    B : list of list of float
+        The right-hand matrix.
+    precision : int, optional
+        Number of decimal places to round the result to. Default is 2.
+
+    Returns
+    -------
+    result : list of list of float
+        The resulting matrix after multiplication.
+    """
     n = len(A)
-    result = [[0] * n for _ in range(n)]
+    result = [[0.0] * n for _ in range(n)]
     for i in range(n):
         for j in range(n):
             for k in range(n):
                 result[i][j] += A[i][k] * B[k][j]
-    # return result
     return [[round(result[i][j], precision) for j in range(n)] for i in range(n)]
+
+
+# Encoding functions
+
+
+def ravel_mat(
+    cc: CC,
+    data: list,
+    num_slots: int,
+    row_size: int = 1,
+    order: int = MatrixEncoding.ROW_MAJOR,
+    reps: int = 1,
+) -> PT:
+    """Encode a matrix into plaintext without padding or replication."""
+    if order == MatrixEncoding.ROW_MAJOR:
+        packed_data = utils.pack_mat_row_wise(data, row_size, num_slots, reps)
+    elif order == MatrixEncoding.COL_MAJOR:
+        packed_data = utils.pack_mat_col_wise(data, row_size, num_slots, reps)
+    else:
+        packed_data = [0]  # Placeholder for other encoding types
+
+    return cc.MakeCKKSPackedPlaintext(packed_data)
+
+
+def ravel_vec(
+    cc: CC,
+    data: list,
+    num_slots: int,
+    row_size: int = 1,
+    order: int = MatrixEncoding.ROW_MAJOR,
+) -> PT:
+    """Encode a vector with optional repetition for batching."""
+    if row_size < 1:
+        raise ValueError("ERROR: Number of repetitions should be larger than 0")
+
+    if row_size == 1 and order == MatrixEncoding.ROW_MAJOR:
+        raise ValueError("ERROR: Can't encode a vector row-wise with 0 repetitions")
+
+    if not is_power_of_two(row_size):
+        raise ValueError(
+            "ERROR: The number of repetitions in vector packing should be a power of two"
+        )
+
+    if order == MatrixEncoding.ROW_MAJOR:
+        packed_data = utils.pack_vec_row_wise(data, row_size, num_slots)
+    elif order == MatrixEncoding.COL_MAJOR:
+        packed_data = utils.pack_vec_col_wise(data, row_size, num_slots)
+    else:
+        packed_data = [0]  # Placeholder for other encoding types
+
+    return cc.MakeCKKSPackedPlaintext(packed_data)
