@@ -27,6 +27,8 @@ CT EvalMatMulSquare(CC cc, KeyPair keys, const CT cmat_A, const CT cmat_B,
 
 CT EvalTranspose(CC cc, KeyPair keys, const CT ct_mat, const int32_t row_size);
 
+void MulMatRotateKeyGen(CC& context, KeyPair keyPair, int32_t rowSize);
+
 lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalMatrixTranspose(
     const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
     const lbcrypto::KeyPair<lbcrypto::DCRTPoly>& keyPair,
