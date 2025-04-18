@@ -16,9 +16,9 @@ def matmul_square(cc, keys, ctm_A: ctarray, ctm_B: ctarray) -> ctarray:
     >>> np.matmul([[1, 2], [3, 4]], [[5, 6], [7, 8]])
     array([[19, 22], [43, 50]])
     """
-    ct_prod = openfhe_matrix.EvalMatMulSquare(cc, keys, ctm_A.data, ctm_B.data, ctm_A.ncols)
+    ct_product = openfhe_matrix.EvalMatMulSquare(cc, keys, ctm_A.data, ctm_B.data, ctm_A.ncols)
     info = ctm_A.info()
-    info[0] = ct_prod
+    info[0] = ct_product
     return ctarray(*info)
 
 
@@ -40,7 +40,7 @@ def multiply(cc, a: ctarray, b: ctarray) -> ctarray:
     return ctarray(*info)
 
 
-def add(cc, a: ctarray, b: ctarray) -> ctarray:
+def add(cc, a, b):
     """Element-wise addition: np.add(a, b)
 
     Performs encrypted addition over the packed slots of A and B.
@@ -54,10 +54,10 @@ def add(cc, a: ctarray, b: ctarray) -> ctarray:
         raise ValueError("Shapes do not match for element-wise addition")
     info = a.info()
     info[0] = cc.EvalAdd(a.data, b.data)
-    return ctarray(*info)
+    return a.__class__(*info)
 
 
-def sub(cc, a: ctarray, b: ctarray) -> ctarray:
+def sub(cc, a, b):
     """Element-wise subtraction: np.subtract(a, b)
 
     Homomorphically subtracts B from A, slot-by-slot.
@@ -71,7 +71,7 @@ def sub(cc, a: ctarray, b: ctarray) -> ctarray:
         raise ValueError("Shapes do not match for element-wise subtraction")
     info = a.info()
     info[0] = cc.EvalSub(a.data, b.data)
-    return ctarray(*info)
+    return a.__class__(*info)
 
 
 def dot(cc, sum_col_keys, a: ctarray, b: ctarray) -> ctarray:
@@ -112,24 +112,34 @@ def matvec(cc, keys, sum_col_keys, ctm_mat: ctarray, ctv_v: ctarray, block_size:
         ctm_mat.encoding_order == MatrixEncoding.ROW_MAJOR
         and ctv_v.encoding_order == MatrixEncoding.COL_MAJOR
     ):
-        ct_prod = openfhe_matrix.EvalMultMatVec(
+        ct_product = openfhe_matrix.EvalMultMatVec(
             cc, keys, sum_col_keys, PackStyles.MM_CRC, block_size, ctv_v.data, ctm_mat.data
         )
         rows, _ = ctm_mat.original_shape
         return ctarray(
-            ct_prod, (rows, 1), False, ctm_mat.batch_size, ctm_mat.ncols, MatrixEncoding.COL_MAJOR
+            ct_product,
+            (rows, 1),
+            False,
+            ctm_mat.batch_size,
+            ctm_mat.ncols,
+            MatrixEncoding.COL_MAJOR,
         )
 
     elif (
         ctm_mat.encoding_order == MatrixEncoding.COL_MAJOR
         and ctv_v.encoding_order == MatrixEncoding.ROW_MAJOR
     ):
-        ct_prod = openfhe_matrix.EvalMultMatVec(
+        ct_product = openfhe_matrix.EvalMultMatVec(
             cc, keys, sum_col_keys, PackStyles.MM_RCR, block_size, ctv_v.data, ctm_mat.data
         )
         rows, _ = ctm_mat.original_shape
         return ctarray(
-            ct_prod, (rows, 1), False, ctm_mat.batch_size, ctm_mat.ncols, MatrixEncoding.ROW_MAJOR
+            ct_product,
+            (rows, 1),
+            False,
+            ctm_mat.batch_size,
+            ctm_mat.ncols,
+            MatrixEncoding.ROW_MAJOR,
         )
 
     else:
@@ -206,4 +216,22 @@ def sub_accumulate(cc, keys, cta: ctarray, axis=None):
     >>> np.subtract.accumulate([10, 1, 2])
     array([10, 9, 7])
     """
+    pass
+
+
+def transpose(ct: ctarray) -> ctarray:
+    """Transpose metadata (logical view only).
+
+    Equivalent to: np.transpose()
+    """
+    # info = ct.info()
+    # info[1] = (ct.original_shape[1], ct.original_shape[0])
+    # info[4] = ct.nrows  # update ncols to previous nrows
+    # info[3] = ct.batch_size
+    # info[5] = (
+    #     MatrixEncoding.COL_MAJOR
+    #     if ct.encoding_order == MatrixEncoding.ROW_MAJOR
+    #     else MatrixEncoding.ROW_MAJOR
+    # )
+    # return ctarray(ct.data, *info[1:])
     pass

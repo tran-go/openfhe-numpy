@@ -2,42 +2,45 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* load necessary library */
+// -----------------------------------------------------------------------------
+// Required Libraries
+// -----------------------------------------------------------------------------
 #include <vector>
 #include <string>
 #include "openfhe.h"
 
+// -----------------------------------------------------------------------------
+// Debugging
+// -----------------------------------------------------------------------------
+// #define DEBUG  // Enable debug output (disable/comment this line in production)
 
-/*  define flags  */
-#define DEBUG
-
-/* define constants */
-// define encoding style
-enum encode_style
-{
-  // pack matrix row-wise and vector column-wise, result is column-wise
-  MM_CRC = 0,
-  // pack matrix column-wise and vector row-wise, result i row-wise
-  MM_RCR = 1,
-  // pack matrix diagonal
-  MM_DIAG = 2
+// -----------------------------------------------------------------------------
+// Encoding Style Enum
+// -----------------------------------------------------------------------------
+enum EncodeStyle {
+    MM_CRC = 0,  // Matrix: row-wise, Vector: column-wise → Result: column-wise
+    MM_RCR = 1,  // Matrix: column-wise, Vector: row-wise → Result: row-wise
+    MM_DIAG = 2  // Diagonal-style encoding
 };
 
-// define the type of permutation  
-enum perm_style
-{
-  SIGMA = 0,
-  TAU = 1,
-  PHI = 2,
-  PSI = 3
+// -----------------------------------------------------------------------------
+// Permutation Type Enum
+// -----------------------------------------------------------------------------
+enum PermStyle {
+    SIGMA = 0,
+    TAU   = 1,
+    PHI   = 2,
+    PSI   = 3
 };
 
-/* rename common types */
-using CC = lbcrypto::CryptoContext<lbcrypto::DCRTPoly>; // crypto contexts
-using CT = lbcrypto::Ciphertext<lbcrypto::DCRTPoly>;    // ciphertext
-using PT = lbcrypto::Plaintext;                         // plaintext
-using CryptoParams = lbcrypto::CCParams<lbcrypto::CryptoContextCKKSRNS>;
-using KeyPair = lbcrypto::KeyPair<lbcrypto::DCRTPoly>;
-using MatKeys = std::shared_ptr<std::map<usint, lbcrypto::EvalKey<lbcrypto::DCRTPoly>>>;
+// -----------------------------------------------------------------------------
+// Type Aliases for OpenFHE
+// -----------------------------------------------------------------------------
+using CC         = lbcrypto::CryptoContext<lbcrypto::DCRTPoly>;                     // Crypto context
+using CT         = lbcrypto::Ciphertext<lbcrypto::DCRTPoly>;                        // Ciphertext
+using PT         = lbcrypto::Plaintext;                                             // Plaintext
+using CryptoParams = lbcrypto::CCParams<lbcrypto::CryptoContextCKKSRNS>;           // CKKS context parameters
+using KeyPair    = lbcrypto::KeyPair<lbcrypto::DCRTPoly>;                           // Keypair
+using MatKeys    = std::shared_ptr<std::map<usint, lbcrypto::EvalKey<lbcrypto::DCRTPoly>>>; // Rotation keys
 
-#endif
+#endif  // CONFIG_H

@@ -77,7 +77,8 @@ def rotate_vector(vec, k):
         Rotated vector.
     """
     n = len(vec)
-    return [vec[(i + k) % n] for i in range(n)]
+    new_vec = vec[:]
+    return [new_vec[(i + k) % n] for i in range(n)]
 
 
 def pack_vec_row_wise(v, block_size, num_slots):
@@ -231,14 +232,15 @@ def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
     ValueError
         If row_size or total_slots are not powers of two, or total_slots is insufficient.
     """
-    if not is_power_of_two(row_size):
-        raise ValueError("row_size must be a power of two")
+
+    rows, cols = len(matrix), len(matrix[0])
+    row_size = next_power_of_two(row_size)
+
     if not is_power_of_two(total_slots):
         raise ValueError("total_slots must be a power of two")
     if total_slots % row_size != 0:
         raise ValueError("total_slots must be divisible by row_size")
 
-    rows, cols = len(matrix), len(matrix[0])
     padded_cols = next_power_of_two(rows) if pad_cols else rows
     required_size = padded_cols * row_size
 
@@ -388,54 +390,3 @@ def matrix_multiply(A, B, precision=2):
             for k in range(n):
                 result[i][j] += A[i][k] * B[k][j]
     return [[round(result[i][j], precision) for j in range(n)] for i in range(n)]
-
-
-# Encoding functions
-
-
-def ravel_mat(
-    cc: CC,
-    data: list,
-    num_slots: int,
-    row_size: int = 1,
-    order: int = MatrixEncoding.ROW_MAJOR,
-    reps: int = 1,
-) -> PT:
-    """Encode a matrix into plaintext without padding or replication."""
-    if order == MatrixEncoding.ROW_MAJOR:
-        packed_data = utils.pack_mat_row_wise(data, row_size, num_slots, reps)
-    elif order == MatrixEncoding.COL_MAJOR:
-        packed_data = utils.pack_mat_col_wise(data, row_size, num_slots, reps)
-    else:
-        packed_data = [0]  # Placeholder for other encoding types
-
-    return cc.MakeCKKSPackedPlaintext(packed_data)
-
-
-def ravel_vec(
-    cc: CC,
-    data: list,
-    num_slots: int,
-    row_size: int = 1,
-    order: int = MatrixEncoding.ROW_MAJOR,
-) -> PT:
-    """Encode a vector with optional repetition for batching."""
-    if row_size < 1:
-        raise ValueError("ERROR: Number of repetitions should be larger than 0")
-
-    if row_size == 1 and order == MatrixEncoding.ROW_MAJOR:
-        raise ValueError("ERROR: Can't encode a vector row-wise with 0 repetitions")
-
-    if not is_power_of_two(row_size):
-        raise ValueError(
-            "ERROR: The number of repetitions in vector packing should be a power of two"
-        )
-
-    if order == MatrixEncoding.ROW_MAJOR:
-        packed_data = utils.pack_vec_row_wise(data, row_size, num_slots)
-    elif order == MatrixEncoding.COL_MAJOR:
-        packed_data = utils.pack_vec_col_wise(data, row_size, num_slots)
-    else:
-        packed_data = [0]  # Placeholder for other encoding types
-
-    return cc.MakeCKKSPackedPlaintext(packed_data)

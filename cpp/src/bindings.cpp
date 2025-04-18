@@ -4,10 +4,12 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(openfhe_matrix, m) {
-  m.def("EvalMultMatVec", EvalMultMatVec, "Product of a matrix and a vector");
-  m.def("EvalLinTransSigma", EvalLinTransSigma, "Compute Linear Transformation Sigma");
-  m.def("EvalLinTransTau", EvalLinTransTau, "Compute Linear Transformation Tau");
-  m.def("EvalLinTransPhi", EvalLinTransPhi, "Compute Linear Transformation Phi");
-  m.def("EvalLinTransPsi", EvalLinTransPsi, "Compute Linear Transformation Psi");
-  m.def("EvalMatMulSquare", EvalMatMulSquare, "Product of two square matrices");
+    m.doc() = "Python bindings for OpenFHE-Matrix homomorphic operations";
+
+    m.def("EvalMultMatVec",     &EvalMultMatVec,     "Product of a matrix and a vector");
+    m.def("EvalLinTransSigma", &EvalLinTransSigma, "Compute linear transformation Sigma");
+    m.def("EvalLinTransTau",   &EvalLinTransTau,   "Compute linear transformation Tau");
+    m.def("EvalLinTransPhi",   &EvalLinTransPhi,   "Compute linear transformation Phi");
+    m.def("EvalLinTransPsi",   &EvalLinTransPsi,   "Compute linear transformation Psi");
+    m.def("EvalMatMulSquare",  &EvalMatMulSquare,  "Product of two square matrices");
 }

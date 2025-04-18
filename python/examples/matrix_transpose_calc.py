@@ -109,5 +109,104 @@ def demo():
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 
+def gen_transpose_diag(total_slots: int, row_size: int, i: int) -> list:
+    """
+    Generate a diagonal vector for simulating matrix transpose via diagonal encoding.
+
+    Parameters
+    ----------
+    total_slots : int
+        Number of available slots in the ciphertext.
+    row_size : int
+        Dimension of the square matrix.
+    i : int
+        Diagonal index (can be negative).
+
+    Returns
+    -------
+    list of int
+        A diagonal vector with 1s on the `i`-th diagonal and 0s elsewhere.
+
+    Example
+    -------
+    >>> gen_transpose_diag(32, 4, 1)
+    [0, 1, 0, 0, 0, 0, 1, 0, ...]
+    """
+    n = row_size * row_size
+    diag = [0] * total_slots
+
+    for t in range(total_slots // n):
+        offset = t * n
+        if i >= 0:
+            for j in range(row_size - i):
+                idx = offset + (row_size + 1) * j + i
+                print(f"idx = {idx}")
+                if idx < total_slots:
+                    diag[idx] = 1
+        else:
+            for j in range(abs(i), row_size):
+                idx = offset + ((row_size + 1) * j + i)
+                print(f"idx = {idx}")
+                if idx < total_slots:
+                    diag[idx] = 1
+
+    return diag
+
+
+def transpose(v, total_slots, row_size):
+    import numpy as np
+    from openfhe_numpy.utils import rotate_vector
+
+    final = [0] * total_slots
+
+    for i in range(-row_size + 1, row_size):
+        idx = (row_size - 1) * i
+        diag = gen_transpose_diag(total_slots, row_size, i)
+        print(idx, diag)
+        print(idx, rotate_vector(v, idx))
+        tmp = np.array(diag) * np.array(rotate_vector(v, idx))
+        print(idx, tmp, "\n")
+        final += np.array(diag) * np.array(rotate_vector(v, idx))
+    print("====================")
+    print(final)
+
+
+def demo1():
+    from openfhe_numpy.constructors import ravel_mat
+
+    A = np.array(
+        [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+        ]
+    )
+    A = np.array(
+        [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+        ]
+    )
+    A = np.array(
+        [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+        ]
+    )
+    # A = np.array([[1, 2], [4, 5]])
+    row_size = 4
+    total_slots = 2**5
+    print("Matrix A:\n", A)
+    print("row_size: ", row_size)
+
+    # Encrypt both matrices
+    packed = ravel_mat(A, total_slots, row_size)
+    print(packed)
+    transpose(packed, total_slots, row_size)
+
+
 if __name__ == "__main__":
-    demo()
+    demo1()

@@ -153,4 +153,27 @@ std::vector<Element> Flatten(std::vector<std::vector<Element>> mat) {
   return v;
 };
 
+
+template <class Element>
+std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const long total_slots) {
+    uint32_t n = mat.size();
+    uint32_t m = mat[0].size();
+    
+    uint32_t size = n * m;
+    uint32_t blocks = total_slots / size;
+
+    std::vector<Element> vec(total_slots, 0);
+    long k = 0;
+    for (uint32_t t = 0; t < blocks; ++t) {
+        for (uint32_t i = 0; i < n; ++i) {
+            for (uint32_t j = 0; j < m; ++j) {
+                vec[k] = mat[i][j];
+                k += 1;
+            }
+        }
+    }
+    return vec;
+}
+
+
 #endif  // HELPER_H

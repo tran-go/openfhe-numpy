@@ -10,8 +10,8 @@ from openfhe_numpy.utils import *
 
 #  TODO: add separate examples
 #  TODO: transpose
-#  TODO: tests 
-#  TODO: clean code + comments 
+#  TODO: tests
+#  TODO: clean code + comments
 
 
 def gen_crypto_context(ringDimension, mult_depth):
@@ -89,8 +89,8 @@ def demo():
     print("*" * 10, "MULTIPLICATION", "*" * 10)
 
     print("\n1.Matrix multiplication:")
-    ct_prod = fp.matmul_square(cc, keys, ctm_a, ctm_b)
-    result = ct_prod.decrypt(cc, keys.secretKey)
+    ct_product = fp.matmul_square(cc, keys, ctm_a, ctm_b)
+    result = ct_product.decrypt(cc, keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a @ b}")
     print(f"Obtained: {result}")
@@ -99,8 +99,8 @@ def demo():
     print("\n2.Matrix Vector multiplication: A@c")
     vec_ac = pack_vec_row_wise((a @ c), block_size, total_slots)
     sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_prod = fp.matvec(cc, keys, sum_col_keys, ctm_a, ctv_c, block_size)
-    result = ct_prod.decrypt(cc, keys.secretKey, format=0)
+    ct_product = fp.matvec(cc, keys, sum_col_keys, ctm_a, ctv_c, block_size)
+    result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {vec_ac}")
     print(f"Obtained: {result}")
@@ -109,8 +109,8 @@ def demo():
     print("\n3.Dot product c.d = <c,d>:")
     dot_prod = np.dot(c, d)
     sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_prod = fp.dot(cc, keys, sum_col_keys, ctv_c, ctv_d)
-    result = ct_prod.decrypt(cc, keys.secretKey, format=0)
+    ct_product = fp.dot(cc, keys, sum_col_keys, ctv_c, ctv_d)
+    result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {dot_prod}")
     print(f"Obtained: {result}")
@@ -177,8 +177,8 @@ def demo():
     # size = block_size * block_size
 
     # sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, size)
-    # ct_prod = fp.matvec(cc, keys, sum_col_keys, pt_matI, ctm_a, size)
-    # result = ct_prod.decrypt(cc, keys.secretKey, format=0)
+    # ct_product = fp.matvec(cc, keys, sum_col_keys, pt_matI, ctm_a, size)
+    # result = ct_product.decrypt(cc, keys.secretKey, format=0)
     # result = np.round(result, decimals=1)
     # print(f"Expected: {expected}")
     # print(f"Obtained: {result}")
