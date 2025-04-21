@@ -8,31 +8,31 @@
 
 #define ENC_MATRIX_API
 
-void test();
-CT EvalMultMatVec(CC& cc, KeyPair keys, MatKeys eval_keys, int type,
-                  int row_size, const CT& ct_vec, const CT& ct_mat);
+void EvalLinTransKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize, LinTransType type,
+                        int32_t offset);
+void MulMatRotateKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize);
+Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVecEncoding encodeType, int32_t rowSize,
+                          const Ciphertext& ctVector, const Ciphertext& ctMatrix);
 
-CT EvalLinTransSigma(CC cc, KeyPair keys, const CT c_vec, const int row_size);
+Ciphertext EvalLinTransSigma(CryptoContext cryptoContext, const PublicKey& publicKey, const Ciphertext& ctVector,
+                             int32_t rowSize);
+Ciphertext EvalLinTransSigma(CryptoContext cryptoContext, const KeyPair& keyPair, const Ciphertext& ctVector,
+                             int32_t rowSize);
+Ciphertext EvalLinTransTau(CryptoContext cryptoContext, const KeyPair& keyPair, const Ciphertext& ctVector,
+                           int32_t rowSize);
+Ciphertext EvalLinTransPhi(CryptoContext cryptoContext, const PublicKey& publicKey, const Ciphertext& ctVector,
+                           int32_t rowSize, int32_t nRepeats);
 
-CT EvalLinTransTau(CC cc, KeyPair keys, const CT c_vec, const int row_size);
+Ciphertext EvalLinTransPhi(CryptoContext cryptoContext, const KeyPair& keyPair, const Ciphertext& ctVector,
+                           int32_t rowSize, int32_t nRepeats);
+Ciphertext EvalLinTransPsi(CryptoContext cryptoContext, const Ciphertext& ctVector, int32_t rowSize, int32_t nRepeats);
+Ciphertext EvalLinTransPsi(CryptoContext cryptoContext, const KeyPair& keyPair, const Ciphertext& ctVector,
+                           int32_t rowSize, int32_t nRepeats);
 
-CT EvalLinTransPhi(CC cc, KeyPair keys, const CT c_vec, const int row_size,
-                   const int32_t k);
-
-CT EvalLinTransPsi(CC cc, KeyPair keys, const CT c_vec, const int row_size,
-                   const int32_t k);
-
-CT EvalMatMulSquare(CC cc, KeyPair keys, const CT cmat_A, const CT cmat_B,
-                    const int32_t row_size);
-
-CT EvalTranspose(CC cc, KeyPair keys, const CT ct_mat, const int32_t row_size);
-
-void MulMatRotateKeyGen(CC& context, KeyPair keyPair, int32_t rowSize);
-
-lbcrypto::Ciphertext<lbcrypto::DCRTPoly> EvalMatrixTranspose(
-    const lbcrypto::CryptoContext<lbcrypto::DCRTPoly>& cc,
-    const lbcrypto::KeyPair<lbcrypto::DCRTPoly>& keyPair,
-    const lbcrypto::Ciphertext<lbcrypto::DCRTPoly>& inputCiphertext,
-    int32_t matrixSize);
-
+Ciphertext EvalMatMulSquare(const CryptoContext cryptoContext, const PublicKey& publicKey, const Ciphertext& matrixA,
+                            const Ciphertext& matrixB, int32_t rowSize);
+Ciphertext EvalMatrixTranspose(const CryptoContext cryptoContext, const KeyPair keyPair, const Ciphertext& ctMatrix,
+                               int32_t rowSize);
+Ciphertext EvalMatrixTranspose(const CryptoContext cryptoContext, const PublicKey publicKey, const Ciphertext& ctMatrix,
+                               int32_t rowSize);
 #endif  // ENC_MATRIX_H

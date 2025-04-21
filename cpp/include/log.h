@@ -1,12 +1,17 @@
 #pragma once
 #include <iostream>
 
-#define OPENFHE_INFO(msg) std::cout << "[OPENFHE_INFO] " << msg << std::endl
-#define OPENFHE_WARN(msg) std::cout << "[OPENFHE_WARNING] " << msg << std::endl
-#define OPENFHE_ERROR(msg) std::cerr << "[OPENFHE_ERROR] " << msg << std::endl
+#define INFO(msg) std::cout << "[INFO] " << msg << std::endl
+#define WARN(msg) std::cout << "[WARNING] " << msg << std::endl
+#define ERROR(msg) std::cerr << "[ERROR] " << msg << std::endl
+
 
 #ifdef DEBUG
-#define OPENFHE_DEBUG(msg) std::cout << "[OPENFHE_DEBUG] " << msg << std::endl
+#ifndef DEBUG
+#define DEBUG(msg) std::cout << "[DEBUG] " << msg << std::endl
+#endif
 #else
-#define OPENFHE_DEBUG(msg)
+#ifndef DEBUG
+#define DEBUG(msg)
+#endif
 #endif
