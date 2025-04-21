@@ -9,21 +9,19 @@ from main_unittest import generate_random_array
 from main_unittest import gen_crypto_context_from_params
 
 
-def fhe_matrix_vector_product(params, input):
+def fhe_square_matrix_product(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
     pub_key = keys.publicKey
-    matrix = np.array(input[0])
-    vector = np.array(input[1])
+    matrixA = np.array(input[0])
+    matrixB = np.array(input[1])
 
-    block_size = len(matrix[0])
-    sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-
-    ct_matrix = fp.array(cc, matrix, total_slots, pub_key=pub_key)
-    ct_vector = fp.array(cc, vector, total_slots, block_size, "C", pub_key=keys.publicKey)
-    ct_result = fp.matvec(cc, keys, sum_col_keys, ct_matrix, ct_vector, block_size)
-    result = ct_result.decrypt(cc, keys.secretKey)
-    return result
+    ct_matrixA = fp.array(cc, matrixA, total_slots, pub_key=pub_key)
+    ct_matrixB = fp.array(cc, matrixB, total_slots, pub_key=pub_key)
+    block_size = ct_matrixA.ncols
+    fp.gen_square_matrix_product(cc, keys, block_size)
+    ct_result = fp.matmul_square(cc, pub_key, ct_matrixA, ct_matrixB)
+    return ct_result.decrypt(cc, keys.secretKey)
 
 
 if __name__ == "__main__":
@@ -33,13 +31,13 @@ if __name__ == "__main__":
 
     for param in ckks_param_list:
         for size in matrix_sizes:
-            A = generate_random_array(size)
-            b = generate_random_array(size, 1)
-            expected = np.matmul(np.array(A), np.array(b)).tolist()
-            name = "TestMatrixVecProduct"
+            matrixA = generate_random_array(size)
+            matrixB = generate_random_array(size)
+            expected = np.array(matrixA) @ np.array(matrixB)
+            name = "TestSquareMatrixProduct"
             test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
             test_method = MainUnittest.generate_test_case(
-                fhe_matrix_vector_product, name, test_name, param, [A, b], expected
+                fhe_square_matrix_product, name, test_name, param, [matrixA, matrixB], expected
             )
             setattr(MainUnittest, test_name, test_method)
             test_counter += 1
