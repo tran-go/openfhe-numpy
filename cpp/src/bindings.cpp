@@ -7,6 +7,28 @@ namespace py = pybind11;
 PYBIND11_MODULE(openfhe_matrix, m) {
     m.doc() = "Python bindings for OpenFHE-Matrix homomorphic operations";
 
+    py::enum_<LinTransType>(m, "LinTransType")
+        .value("SIGMA", LinTransType::SIGMA)
+        .value("TAU", LinTransType::TAU)
+        .value("PHI", LinTransType::PHI)
+        .value("PSI", LinTransType::PSI)
+        .value("TRANSPOSE", LinTransType::TRANSPOSE)
+        .export_values();
+
+    py::enum_<MatVecEncoding>(m, "MatVecEncoding")
+        .value("MM_CRC", MatVecEncoding::MM_CRC)
+        .value("MM_RCR", MatVecEncoding::MM_RCR)
+        .value("MM_DIAG", MatVecEncoding::MM_DIAG)
+        .export_values();
+
+    // EvalLinTransKeyGen
+    //     m.def("EvalLinTransKeyGen",
+    //           static_cast<void (*)(CryptoContext&, const KeyPair&, int32_t, LinTransType,
+    //           int32_t)>(&EvalLinTransKeyGen), "EvalLinTransKeyGen with KeyPair");
+    m.def("EvalLinTransKeyGen", &EvalLinTransKeyGenFromInt, py::arg("cryptoContext"), py::arg("keyPair"),
+          py::arg("rowSize"), py::arg("type"), py::arg("nRepeats") = 0,
+          "Generate rotation keys using an integer type (0=SIGMA, 4=TRANSPOSE)");
+
     // EvalLinTransSigma
     m.def("EvalLinTransSigma",
           static_cast<Ciphertext (*)(CryptoContext&, const PublicKey&, const Ciphertext&, int32_t)>(&EvalLinTransSigma),
@@ -56,4 +78,10 @@ PYBIND11_MODULE(openfhe_matrix, m) {
         "EvalMatrixTranspose",
         static_cast<Ciphertext (*)(CryptoContext&, const PublicKey&, const Ciphertext&, int32_t)>(&EvalMatrixTranspose),
         "EvalMatrixTranspose with KeyPair");
+
+    // EvalMultMatVec
+    m.def("EvalMultMatVec",
+          static_cast<Ciphertext (*)(CryptoContext&, MatKeys, MatVecEncoding, int32_t, const Ciphertext&,
+                                     const Ciphertext&)>(&EvalMultMatVec),
+          "EvalMultMatVec with MatKeys");
 }

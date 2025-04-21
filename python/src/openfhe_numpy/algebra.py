@@ -1,9 +1,10 @@
 from openfhe_numpy.tensor import ctarray
 import openfhe_matrix
 from openfhe_numpy.config import PackStyles, MatrixEncoding
+from openfhe_matrix import MatVecEncoding
 
 
-def matmul_square(cc, keys, ctm_A: ctarray, ctm_B: ctarray) -> ctarray:
+def matmul_square(cc, keys, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctarray:
     """Encrypted matrix multiplication for square matrices.
 
     Equivalent to: np.matmul(A, B) or A @ B
@@ -16,8 +17,10 @@ def matmul_square(cc, keys, ctm_A: ctarray, ctm_B: ctarray) -> ctarray:
     >>> np.matmul([[1, 2], [3, 4]], [[5, 6], [7, 8]])
     array([[19, 22], [43, 50]])
     """
-    ct_product = openfhe_matrix.EvalMatMulSquare(cc, keys, ctm_A.data, ctm_B.data, ctm_A.ncols)
-    info = ctm_A.info()
+    ct_product = openfhe_matrix.EvalMatMulSquare(
+        cc, keys, ct_matrixA.data, ct_matrixB.data, ct_matrixA.ncols
+    )
+    info = ct_matrixA.info()
     info[0] = ct_product
     return ctarray(*info)
 
@@ -95,7 +98,9 @@ def dot(cc, sum_col_keys, a: ctarray, b: ctarray) -> ctarray:
     return ctarray(*info)
 
 
-def matvec(cc, keys, sum_col_keys, ctm_mat: ctarray, ctv_v: ctarray, block_size: int) -> ctarray:
+def matvec(
+    cc, keys, sum_col_keys, ct_matrix: ctarray, ct_vector: ctarray, block_size: int
+) -> ctarray:
     """Matrix-vector multiplication over encrypted data.
 
     Equivalent to: np.dot(A, v)
@@ -109,36 +114,36 @@ def matvec(cc, keys, sum_col_keys, ctm_mat: ctarray, ctv_v: ctarray, block_size:
     array([17, 39])
     """
     if (
-        ctm_mat.encoding_order == MatrixEncoding.ROW_MAJOR
-        and ctv_v.encoding_order == MatrixEncoding.COL_MAJOR
+        ct_matrix.encoding_order == MatrixEncoding.ROW_MAJOR
+        and ct_vector.encoding_order == MatrixEncoding.COL_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            cc, keys, sum_col_keys, PackStyles.MM_CRC, block_size, ctv_v.data, ctm_mat.data
+            cc, sum_col_keys, MatVecEncoding.MM_CRC, block_size, ct_vector.data, ct_matrix.data
         )
-        rows, _ = ctm_mat.original_shape
+        rows, _ = ct_matrix.original_shape
         return ctarray(
             ct_product,
             (rows, 1),
             False,
-            ctm_mat.batch_size,
-            ctm_mat.ncols,
+            ct_matrix.batch_size,
+            ct_matrix.ncols,
             MatrixEncoding.COL_MAJOR,
         )
 
     elif (
-        ctm_mat.encoding_order == MatrixEncoding.COL_MAJOR
-        and ctv_v.encoding_order == MatrixEncoding.ROW_MAJOR
+        ct_matrix.encoding_order == MatrixEncoding.COL_MAJOR
+        and ct_vector.encoding_order == MatrixEncoding.ROW_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            cc, keys, sum_col_keys, PackStyles.MM_RCR, block_size, ctv_v.data, ctm_mat.data
+            cc, sum_col_keys, MatVecEncoding.MM_RCR, block_size, ct_vector.data, ct_matrix.data
         )
-        rows, _ = ctm_mat.original_shape
+        rows, _ = ct_matrix.original_shape
         return ctarray(
             ct_product,
             (rows, 1),
             False,
-            ctm_mat.batch_size,
-            ctm_mat.ncols,
+            ct_matrix.batch_size,
+            ct_matrix.ncols,
             MatrixEncoding.ROW_MAJOR,
         )
 
@@ -148,7 +153,7 @@ def matvec(cc, keys, sum_col_keys, ctm_mat: ctarray, ctv_v: ctarray, block_size:
         )
 
 
-def matrix_power(cc, keys, k: int, ctm_A: ctarray) -> ctarray:
+def matrix_power(cc, keys, k: int, ct_matrixA: ctarray) -> ctarray:
     """Exponentiate a matrix to power k using homomorphic multiplication.
 
     Equivalent to: np.linalg.matrix_power(A, k)
@@ -160,9 +165,9 @@ def matrix_power(cc, keys, k: int, ctm_A: ctarray) -> ctarray:
     >>> np.linalg.matrix_power([[2, 0], [0, 2]], 3)
     array([[8, 0], [0, 8]])
     """
-    result = ctm_A
+    result = ct_matrixA
     for _ in range(k):
-        result = matmul_square(cc, keys, result, ctm_A)
+        result = matmul_square(cc, keys, result, ct_matrixA)
     return result
 
 
@@ -219,19 +224,11 @@ def sub_accumulate(cc, keys, cta: ctarray, axis=None):
     pass
 
 
-def transpose(ct: ctarray) -> ctarray:
-    """Transpose metadata (logical view only).
-
+def transpose(cc, public_key, ct_matrix) -> ctarray:
+    """Transpose a matrix
     Equivalent to: np.transpose()
     """
-    # info = ct.info()
-    # info[1] = (ct.original_shape[1], ct.original_shape[0])
-    # info[4] = ct.nrows  # update ncols to previous nrows
-    # info[3] = ct.batch_size
-    # info[5] = (
-    #     MatrixEncoding.COL_MAJOR
-    #     if ct.encoding_order == MatrixEncoding.ROW_MAJOR
-    #     else MatrixEncoding.ROW_MAJOR
-    # )
-    # return ctarray(ct.data, *info[1:])
-    pass
+    ct_data = openfhe_matrix.EvalMatrixTranspose(cc, public_key, ct_matrix.data, ct_matrix.ncols)
+    info = ct_matrix.info()
+    info[0] = ct_data
+    return ctarray(*info)

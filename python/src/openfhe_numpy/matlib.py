@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 # Tolerances for numerical comparison
 EPSILON = 1e-8
@@ -113,7 +114,12 @@ def check_equality_matrix(a, b, eps=EPSILON):
     tuple
         (is_equal: bool, total_error: float)
     """
-    rows, cols = len(a), len(a[0])
+    a = np.array(a)
+    b = np.array(b)
+    if a.ndim == 1:
+        rows, cols = len(a), 0
+    else:
+        rows, cols = len(a), len(a[0])
     error = 0
     is_equal = True
     for i in range(rows):

@@ -71,8 +71,17 @@ std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int3
  * @param type           The type of linear transformation.
  * @param nRepeats       Optional nRepeats used by PHI and PSI transformations.
  */
+void EvalLinTransKeyGenFromInt(CryptoContext& cc, const KeyPair& keyPair, int32_t rowSize, int typeInt,
+                               int32_t repeats) {
+    if (typeInt < 0 || typeInt > 4) {
+        throw std::invalid_argument("Invalid LinTransType enum value.");
+    }
+    auto type = static_cast<LinTransType>(typeInt);
+    EvalLinTransKeyGen(cc, keyPair, rowSize, type, repeats);
+}
+
 void EvalLinTransKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize, LinTransType type,
-                        int32_t nRepeats = 0) {
+                        int32_t nRepeats) {
     auto rotationIndices = GenLinTransIndices(rowSize, type, nRepeats);
 
     cryptoContext->EvalRotateKeyGen(keyPair.secretKey, rotationIndices);
@@ -119,6 +128,15 @@ void MulMatRotateKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, in
  *
  * @throws OPENFHE_ERROR if the encoding style is unsupported.
  */
+Ciphertext EvalMultMatVecFromInt(CryptoContext& cryptoContext, MatKeys evalKeys, int typeInt, int32_t rowSize,
+                                 const Ciphertext& ctVector, const Ciphertext& ctMatrix) {
+    if (typeInt < 0 || typeInt > 3) {
+        throw std::invalid_argument("Invalid MatVecEncoding enum value.");
+    }
+    auto type = static_cast<MatVecEncoding>(typeInt);
+    return EvalMultMatVec(cryptoContext, evalKeys, type, rowSize, ctVector, ctMatrix);
+}
+
 Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVecEncoding encodeType, int32_t rowSize,
                           const Ciphertext& ctVector, const Ciphertext& ctMatrix) {
     Ciphertext ctProduct;

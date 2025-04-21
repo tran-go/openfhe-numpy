@@ -8,8 +8,11 @@
 
 #define ENC_MATRIX_API
 
+void EvalLinTransKeyGenFromInt(CryptoContext& cc, const KeyPair& keyPair, int32_t rowSize, int typeInt,
+    int32_t repeats = 0);
+
 void EvalLinTransKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize, LinTransType type,
-                        int32_t offset);
+                        int32_t nRepeats = 0);
 void MulMatRotateKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize);
 Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVecEncoding encodeType, int32_t rowSize,
                           const Ciphertext& ctVector, const Ciphertext& ctMatrix);
