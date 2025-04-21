@@ -125,7 +125,7 @@ def generate_random_matrix(n):
     return [[random.randint(0, 10) for _ in range(n)] for _ in range(n)]
 
 
-def log_failure_to_file(test_name, A, B, expected, result, error):
+def OPENFHE_failure_to_file(test_name, A, B, expected, result, error):
     """Log details of a failed test case to a debug log.
 
     Parameters
@@ -144,7 +144,7 @@ def log_failure_to_file(test_name, A, B, expected, result, error):
         f.write("Error:\n" + str(error) + "\n")
 
 
-def log_test_result(test_name, A, B, expected, result, error_size, passed):
+def OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed):
     """Log the outcome of a test case.
 
     Parameters
@@ -165,7 +165,7 @@ def log_test_result(test_name, A, B, expected, result, error_size, passed):
         f.write("Actual Result:\n" + np.array2string(np.array(result), separator=", ") + "\n\n")
 
 
-def log_ckks_parameters(params, filename):
+def OPENFHE_ckks_parameters(params, filename):
     """Log CKKS parameter dictionary to a file in JSON format.
 
     Parameters
@@ -217,7 +217,7 @@ def rerun_failed_tests():
                 flag, error_size = check_equality_matrix(result, expected)
                 if flag:
                     rerun_passed += 1
-                log_test_result(test_name, A, B, expected, result, error_size, passed=flag)
+                OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed=flag)
                 break
 
     print(f"\nRerun result: {rerun_passed}/{rerun_total} tests passed.")
@@ -241,10 +241,12 @@ class TestSquareMatrixProduct(unittest.TestCase):
             total_tests += 1
             result = fhe_square_matrix_product(params, A, B)
             flag, error_size = check_equality_matrix(result, expected, eps)
-            log_test_result(test_name, A, B, expected, result, error_size, passed=flag)
+            OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed=flag)
             if not flag:
-                log_failure_to_file(test_name, A, B, expected, result, ErrorCodes.ERROR_MATCHING)
-                log_ckks_parameters(param, f"debug_logs/{test_name}_params.json")
+                OPENFHE_failure_to_file(
+                    test_name, A, B, expected, result, ErrorCodes.ERROR_MATCHING
+                )
+                OPENFHE_ckks_parameters(param, f"debug_logs/{test_name}_params.json")
             else:
                 passed_tests += 1
             self.assertTrue(flag, f"Test {test_name} failed with error size: {error_size}")

@@ -4,7 +4,7 @@ import random
 import unittest
 import numpy as np
 from datetime import datetime
-import unittest_helper
+
 
 from openfhe import *
 from openfhe_matrix import *
@@ -87,10 +87,10 @@ def generate_random_matrix(n):
     return [[random.randint(0, 10) for _ in range(n)] for _ in range(n)]
 
 
-def log_failure_to_file(test_name, A, B, expected, result, error):
+def OPENFHE_failure_to_file(test_name, A, B, expected, result, error):
     os.makedirs("debug_logs", exist_ok=True)
-    log_path = f"debug_logs/{test_name}.log"
-    with open(log_path, "w") as f:
+    OPENFHE_path = f"debug_logs/{test_name}.log"
+    with open(OPENFHE_path, "w") as f:
         f.write(f"Test Name: {test_name}\n\n")
         f.write("Matrix A:\n")
         f.write(np.array2string(np.array(A), separator=", ") + "\n\n")
@@ -104,10 +104,10 @@ def log_failure_to_file(test_name, A, B, expected, result, error):
         f.write(str(error) + "\n")
 
 
-def log_test_result(test_name, A, B, expected, result, error_size, passed):
+def OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed):
     os.makedirs("logs", exist_ok=True)
-    log_file = "logs/TestMatrixAddition.log"
-    with open(log_file, "a") as f:
+    OPENFHE_file = "logs/TestMatrixAddition.log"
+    with open(OPENFHE_file, "a") as f:
         status = "PASS" if passed else "FAIL"
         f.write(f"--- {datetime.now().isoformat()} ---\n")
         f.write(f"Test: {test_name}\n")
@@ -124,16 +124,16 @@ def log_test_result(test_name, A, B, expected, result, error_size, passed):
 
 class TestMatrixAddition(unittest.TestCase):
     @classmethod
-    def generate_test_case(cls, test_name, params, A, B, expected, eps=unittest_helper.EPSILON):
+    def generate_test_case(cls, test_name, params, A, B, expected, eps=EPSILON):
         def test(self):
             result = fhe_matrix_addition(params, A, B, precision=1)
-            flag, error_size = unittest_helper.check_equality_matrix(result, expected, eps)
+            flag, error_size = check_equality_matrix(result, expected, eps)
             if flag:
-                log_test_result(test_name, A, B, expected, result, error_size, passed=True)
+                OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed=True)
             else:
-                log_test_result(test_name, A, B, expected, result, error_size, passed=False)
-                log_failure_to_file(
-                    test_name, A, B, expected, result, unittest_helper.FHEErrorCodes.ERROR_MATCHING
+                OPENFHE_test_result(test_name, A, B, expected, result, error_size, passed=False)
+                OPENFHE_failure_to_file(
+                    test_name, A, B, expected, result, FHEErrorCodes.ERROR_MATCHING
                 )
                 raise
 

@@ -38,17 +38,21 @@ def fhe_vector_add(ringDimension, mult_depth, a, b, precision=2):
     return np.round(result, decimals=precision)
 
 
-def log_failure(test_name, a, b, expected, result, error):
+def OPENFHE_failure(test_name, a, b, expected, result, error):
     os.makedirs("debug_logs", exist_ok=True)
     with open(f"debug_logs/{test_name}.log", "w") as f:
-        f.write(f"Test: {test_name}\nVector A: {a}\nVector B: {b}\nExpected: {expected}\nResult: {result}\nError: {error}\n")
+        f.write(
+            f"Test: {test_name}\nVector A: {a}\nVector B: {b}\nExpected: {expected}\nResult: {result}\nError: {error}\n"
+        )
 
 
-def log_result(test_name, a, b, expected, result, passed):
+def OPENFHE_result(test_name, a, b, expected, result, passed):
     os.makedirs("logs", exist_ok=True)
     with open("logs/TestVectorAddition.log", "a") as f:
         f.write(f"--- {datetime.now().isoformat()} ---\n")
-        f.write(f"{test_name} | {'PASS' if passed else 'FAIL'}\nA: {a}\nB: {b}\nExpected: {expected}\nResult: {result}\n\n")
+        f.write(
+            f"{test_name} | {'PASS' if passed else 'FAIL'}\nA: {a}\nB: {b}\nExpected: {expected}\nResult: {result}\n\n"
+        )
 
 
 class TestMatrixTranspose(unittest.TestCase):
@@ -58,11 +62,12 @@ class TestMatrixTranspose(unittest.TestCase):
             result = fhe_vector_add(ring_dim, 2, a, b)
             try:
                 np.testing.assert_array_almost_equal(result, expected, decimal=1)
-                log_result(test_name, a, b, expected, result, True)
+                OPENFHE_result(test_name, a, b, expected, result, True)
             except AssertionError as e:
-                log_result(test_name, a, b, expected, result, False)
-                log_failure(test_name, a, b, expected, result, e)
+                OPENFHE_result(test_name, a, b, expected, result, False)
+                OPENFHE_failure(test_name, a, b, expected, result, e)
                 raise
+
         return test
 
 
@@ -83,4 +88,3 @@ if __name__ == "__main__":
                 test_counter += 1
 
     unittest.main(argv=[""], exit=False)
-

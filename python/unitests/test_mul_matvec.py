@@ -58,10 +58,10 @@ def generate_random_matrix_vector(n):
     return matrix, vector
 
 
-def log_failure_to_file(test_name, A, v, expected, result, error):
+def OPENFHE_failure_to_file(test_name, A, v, expected, result, error):
     os.makedirs("debug_logs", exist_ok=True)
-    log_path = f"debug_logs/{test_name}.log"
-    with open(log_path, "w") as f:
+    OPENFHE_path = f"debug_logs/{test_name}.log"
+    with open(OPENFHE_path, "w") as f:
         f.write(f"Test Name: {test_name}\n\n")
         f.write("Matrix A:\n")
         f.write(np.array2string(np.array(A), separator=", ") + "\n\n")
@@ -75,10 +75,10 @@ def log_failure_to_file(test_name, A, v, expected, result, error):
         f.write(str(error) + "\n")
 
 
-def log_test_result(test_name, A, v, expected, result, passed):
+def OPENFHE_test_result(test_name, A, v, expected, result, passed):
     os.makedirs("logs", exist_ok=True)
-    log_file = "logs/TestMatrixVectorProduct.log"
-    with open(log_file, "a") as f:
+    OPENFHE_file = "logs/TestMatrixVectorProduct.log"
+    with open(OPENFHE_file, "a") as f:
         status = "PASS" if passed else "FAIL"
         f.write(f"--- {datetime.now().isoformat()} ---\n")
         f.write(f"Test: {test_name}\n")
@@ -101,10 +101,10 @@ class TestMatrixVectorProduct(unittest.TestCase):
             result = fhe_matrix_vector_product(ring_dim, 3, matrix, vector, precision=1)
             try:
                 np.testing.assert_array_almost_equal(result, expected, decimal=1)
-                log_test_result(test_name, matrix, vector, expected, result, passed=True)
+                OPENFHE_test_result(test_name, matrix, vector, expected, result, passed=True)
             except AssertionError as e:
-                log_test_result(test_name, matrix, vector, expected, result, passed=False)
-                log_failure_to_file(test_name, matrix, vector, expected, result, e)
+                OPENFHE_test_result(test_name, matrix, vector, expected, result, passed=False)
+                OPENFHE_failure_to_file(test_name, matrix, vector, expected, result, e)
                 raise
 
         return test
