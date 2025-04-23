@@ -54,7 +54,7 @@ inline std::vector<std::vector<double>> MulMats(std::vector<std::vector<double>>
             throw("Error:: size problems!!!");
         }
     } catch (...) {
-        std::cout << "ERROR ::: Normal Matrix Multiplication ::: size is different";
+        OPENFHE_THROW("ERROR ::: Normal Matrix Multiplication ::: size is different");
     }
     return result;
 };
@@ -81,7 +81,7 @@ inline std::vector<double> MulMatVec(std::vector<std::vector<double>> mat, std::
             throw("Error:: size problems!!!");
         }
     } catch (...) {
-        std::cout << "ERROR ::: Normal Matrix Multiplication :::size is different";
+        OPENFHE_THROW("ERROR ::: Normal Matrix Multiplication ::: size is different");
     }
     return result;
 };

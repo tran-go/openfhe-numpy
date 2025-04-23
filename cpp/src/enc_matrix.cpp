@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "log.h"
+
 
 /**
  * @brief Generate rotation indices required for linear transformation based on transformation type.
@@ -126,12 +126,11 @@ void MulMatRotateKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, in
  *
  * @return The ciphertext resulting from the matrix-vector product.
  *
- * @throws OPENFHE_ERROR if the encoding style is unsupported.
  */
 Ciphertext EvalMultMatVecFromInt(CryptoContext& cryptoContext, MatKeys evalKeys, int typeInt, int32_t rowSize,
                                  const Ciphertext& ctVector, const Ciphertext& ctMatrix) {
     if (typeInt < 0 || typeInt > 3) {
-        throw std::invalid_argument("Invalid MatVecEncoding enum value.");
+        OPENFHE_THROW("Invalid MatVecEncoding enum value.");
     }
     auto type = static_cast<MatVecEncoding>(typeInt);
     return EvalMultMatVec(cryptoContext, evalKeys, type, rowSize, ctVector, ctMatrix);
@@ -146,7 +145,7 @@ Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVec
     } else if (encodeType == MatVecEncoding::MM_RCR) {
         ctProduct = cryptoContext->EvalSumRows(multiplied, rowSize, *evalKeys);
     } else {
-        ERROR("EvalMultMatVec: Unsupported encoding style selected.");
+        OPENFHE_THROW("EvalMultMatVec: Unsupported encoding style selected.");
     }
 
     return ctProduct;
@@ -311,10 +310,8 @@ Ciphertext EvalMatrixTranspose(CryptoContext& cryptoContext, const PublicKey& pu
         Plaintext plaintext = cryptoContext->MakeCKKSPackedPlaintext(zeroVector);
         Ciphertext ctResult = cryptoContext->Encrypt(publicKey, plaintext);
 
-        DEBUG("EvalMatrixTranspose: Using " << slotCount << " available slots for encoding.");
-
         for (int32_t index = -rowSize + 1; index < rowSize; ++index) {
-            DEBUG("EvalMatrixTranspose: Generated diagonal vector for index " << index);
+    
             int32_t rotationIndex = (rowSize - 1) * index;
             auto diagonalVector = GenTransposeDiag(slotCount, rowSize, index);
             auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diagonalVector);
@@ -325,7 +322,6 @@ Ciphertext EvalMatrixTranspose(CryptoContext& cryptoContext, const PublicKey& pu
 
         return ctResult;
     } catch (const std::exception& e) {
-        ERROR("EvalMatrixTranspose: Exception encountered - " << e.what());
-        throw std::runtime_error("EvalMatrixTranspose: Homomorphic operation failed.");
+        OPENFHE_THROW("EvalMatrixTranspose: Homomorphic operation failed.");
     }
 }

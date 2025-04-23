@@ -20,11 +20,7 @@ PYBIND11_MODULE(openfhe_matrix, m) {
         .value("MM_RCR", MatVecEncoding::MM_RCR)
         .value("MM_DIAG", MatVecEncoding::MM_DIAG)
         .export_values();
-
     // EvalLinTransKeyGen
-    //     m.def("EvalLinTransKeyGen",
-    //           static_cast<void (*)(CryptoContext&, const KeyPair&, int32_t, LinTransType,
-    //           int32_t)>(&EvalLinTransKeyGen), "EvalLinTransKeyGen with KeyPair");
     m.def("EvalLinTransKeyGen", &EvalLinTransKeyGenFromInt, py::arg("cryptoContext"), py::arg("keyPair"),
           py::arg("rowSize"), py::arg("type"), py::arg("nRepeats") = 0,
           "Generate rotation keys using an integer type (0=SIGMA, 4=TRANSPOSE)");
@@ -80,6 +76,10 @@ PYBIND11_MODULE(openfhe_matrix, m) {
         "EvalMatrixTranspose with KeyPair");
 
     // EvalMultMatVec
+
+    m.def("MulMatRotateKeyGen", static_cast<void (*)(CryptoContext&, const KeyPair&, int32_t)>(&MulMatRotateKeyGen),
+          "MulMatRotateKeyGen with KeyPair");
+
     m.def("EvalMultMatVec",
           static_cast<Ciphertext (*)(CryptoContext&, MatKeys, MatVecEncoding, int32_t, const Ciphertext&,
                                      const Ciphertext&)>(&EvalMultMatVec),

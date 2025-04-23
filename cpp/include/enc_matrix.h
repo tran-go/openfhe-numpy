@@ -13,6 +13,8 @@ void EvalLinTransKeyGenFromInt(CryptoContext& cc, const KeyPair& keyPair, int32_
 
 void EvalLinTransKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize, LinTransType type,
                         int32_t nRepeats = 0);
+
+                        
 void MulMatRotateKeyGen(CryptoContext& cryptoContext, const KeyPair& keyPair, int32_t rowSize);
 Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVecEncoding encodeType, int32_t rowSize,
                           const Ciphertext& ctVector, const Ciphertext& ctMatrix);
