@@ -3,8 +3,6 @@
 #include <iostream>
 #include <stdexcept>
 
-
-
 /**
  * @brief Generate rotation indices required for linear transformation based on transformation type.
  *
@@ -165,7 +163,6 @@ Ciphertext EvalMultMatVec(CryptoContext& cryptoContext, MatKeys evalKeys, MatVec
 Ciphertext EvalLinTransSigma(CryptoContext& cryptoContext, const PublicKey& publicKey, const Ciphertext& ctVector,
                              int32_t rowSize) {
     int32_t permMatrixSize = rowSize * rowSize;
-
     Plaintext ptZeros = cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0));
     Ciphertext ctResult = cryptoContext->Encrypt(publicKey, ptZeros);
 
@@ -189,9 +186,9 @@ Ciphertext EvalLinTransSigma(CryptoContext& cryptoContext, const KeyPair& keyPai
  * @brief Linear Transformation (Tau) as described in the paper: https://eprint.iacr.org/2018/1041
  *
  * The Tau transformation corresponds to the permutation:
- *   tau(A)_{i,j} = A_{i + j, j}
+ * tau(A)_{i,j} = A_{i + j, j}
  * Its matrix representation is given by:
- *   U_{d·i + j, l} = 1 if l = d.(i + j) mod d + j, and 0 otherwise.
+ * U_{d·i + j, l} = 1 if l = d.(i + j) mod d + j, and 0 otherwise.
  *
  * @param rowSize   The number of padded cols in the encoded matrix
  */
@@ -214,8 +211,6 @@ Ciphertext EvalLinTransTau(CryptoContext& cryptoContext, const PublicKey& public
 
 Ciphertext EvalLinTransTau(CryptoContext& cryptoContext, const KeyPair& keyPair, const Ciphertext& ctVector,
                            int32_t rowSize) {
-    // auto rotations = GenLinTransIndices(rowSize, TAU);
-    // cryptoContext->EvalRotateKeyGen(keyPair.secretKey, rotations);
     EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, TAU);
     return EvalLinTransTau(cryptoContext, keyPair.publicKey, ctVector, rowSize);
 }
@@ -224,17 +219,17 @@ Ciphertext EvalLinTransTau(CryptoContext& cryptoContext, const KeyPair& keyPair,
  * @brief Linear Transformation (Phi) as described in the paper: https://eprint.iacr.org/2018/1041
  *
  * The Phi transformation corresponds to the permutation:
- *   phi(A)_{i,j} = A_{i, j+1}
+ * phi(A)_{i,j} = A_{i, j+1}
  * Its k-th matrix representation is given by:
- *   U_{d·i + j, l}^k = 1 if l = d.i + (j + k) mod d, and 0 otherwise.
+ * U_{d·i + j, l}^k = 1 if l = d.i + (j + k) mod d, and 0 otherwise.
  *
  * @param rowSize   The number of padded cols in the encoded matrix
  */
 Ciphertext EvalLinTransPhi(CryptoContext& cryptoContext, const PublicKey& publicKey, const Ciphertext& ctVector,
                            int32_t rowSize, int32_t nRepeats) {
     auto permMatrixSize = rowSize * rowSize;
-    Ciphertext ctResult = cryptoContext->Encrypt(
-        publicKey, cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0)));
+    auto ptZeros = cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0));
+    Ciphertext ctResult = cryptoContext->Encrypt(publicKey, ptZeros);
 
     for (auto i = 0; i < 2; ++i) {
         auto rotateIdx = nRepeats - i * rowSize;
@@ -311,7 +306,6 @@ Ciphertext EvalMatrixTranspose(CryptoContext& cryptoContext, const PublicKey& pu
         Ciphertext ctResult = cryptoContext->Encrypt(publicKey, plaintext);
 
         for (int32_t index = -rowSize + 1; index < rowSize; ++index) {
-    
             int32_t rotationIndex = (rowSize - 1) * index;
             auto diagonalVector = GenTransposeDiag(slotCount, rowSize, index);
             auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diagonalVector);
