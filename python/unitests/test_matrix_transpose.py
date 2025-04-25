@@ -30,7 +30,7 @@ if __name__ == "__main__":
     for param in ckks_param_list:
         for size in matrix_sizes:
             A = generate_random_array(size)
-            expected = (np.matmul(np.array(A), np.array(v).reshape(-1, 1))).tolist()
+            expected = A.T.tolist()
             print("expected = \n", expected)
             name = "TestMatrixTranspose"
             test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
