@@ -89,13 +89,13 @@ class ctarray(BaseTensor):
         super().__init__(original_shape, ndim, size, ncols, encoding_order)
         self.data = data
 
-    def decrypt(self, cc, sk, pretty=True, precision=None):
+    def decrypt(self, cc, sk, isFormat=True, precision=None):
         result = cc.Decrypt(self.data, sk)
         result.SetLength(self.batch_size)
-        if precision is not None:
-            result.GetFormattedValues(precision)
+        # if precision is not None:
+        #     result.GetFormattedValues(precision)
         result = result.GetRealPackedValue()
-        if pretty:
+        if isFormat:
             result = utils.format(result, self.ndim, self.original_shape, self.shape)
         return result
 

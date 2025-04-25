@@ -18,8 +18,10 @@ def gen_lintrans_keys(cc, keys, block_size, type, repetitions=0):
     fp.EvalLinTransKeyGen(cc, keys, block_size, type, repetitions)
 
 
+def gen_square_matrix_product(cc, keys, block_size):
+    fp.MulMatRotateKeyGen(cc, keys, block_size)
+
+
 def gen_transpose_keys(cc, keys, ct_matrix):
     block_size = ct_matrix.ncols
-    # print(repr(LinTransType.TRANSPOSE))
-    # print(type(LinTransType.TRANSPOSE))
     fp.EvalLinTransKeyGen(cc, keys, block_size, 4)

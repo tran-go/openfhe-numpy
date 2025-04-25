@@ -1,10 +1,10 @@
 from openfhe_numpy.tensor import ctarray
 import openfhe_matrix
-from openfhe_numpy.config import PackStyles, MatrixEncoding
+from openfhe_numpy.config import MatrixEncoding
 from openfhe_matrix import MatVecEncoding
 
 
-def matmul_square(cc, keys, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctarray:
+def matmul_square(cc, pub_key, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctarray:
     """Encrypted matrix multiplication for square matrices.
 
     Equivalent to: np.matmul(A, B) or A @ B
@@ -18,7 +18,7 @@ def matmul_square(cc, keys, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctarray
     array([[19, 22], [43, 50]])
     """
     ct_product = openfhe_matrix.EvalMatMulSquare(
-        cc, keys, ct_matrixA.data, ct_matrixB.data, ct_matrixA.ncols
+        cc, pub_key, ct_matrixA.data, ct_matrixB.data, ct_matrixA.ncols
     )
     info = ct_matrixA.info()
     info[0] = ct_product
@@ -174,33 +174,42 @@ def matrix_power(cc, keys, k: int, ct_matrixA: ctarray) -> ctarray:
 # Reduction/accumulation prototypes (placeholders for now)
 
 
-def add_reduce(cc, sum_keys, cta: ctarray, axis=None):
-    """Homomorphic sum: equivalent to np.add.reduce(cta, axis=axis).
-
-    Placeholder for column/row reduction by homomorphic summation.
-
+def add_reduce(cc, matkey, ct_array: ctarray, axis=None):
+    """
+    - axis=0, the function sums over rows — meaning it adds up values column-wise.
+    - axis=1, the function sums over columns — meaning it adds up values row-wise.
+    this function is equivalently with np.sum(a, axis)
     Example
     -------
     >>> np.add.reduce([[1, 2], [3, 4]], axis=0)
     array([4, 6])
+    >>> np.add.reduce([[1, 2], [3, 4]], axis=1)
+    array([3, 7])
     """
-    pass
+    if axis == 0:
+        ct_result = cc.EvalSumRows(ct_array, ct_array.ncols, matkey)
+    elif axis == 1:
+        ct_result = cc.EvalSumCols(ct_array, ct_array.ncols, matkey)
+
+    info = ct_array.info()
+    info[0] = ct_result
+    return ctarray(*info)
 
 
-def add_accumulate(cc, keys, cta: ctarray, axis=None):
+def add_accumulate(cc, keys, ct_array: ctarray, axis=None):
     """Homomorphic prefix sum: equivalent to np.add.accumulate(cta, axis=axis).
 
     Would be implemented via encrypted rotations + additions.
 
     Example
     -------
-    >>> np.add.accumulate([1, 2, 3])
-    array([1, 3, 6])
+    >>> np.add.accumulate([1, 2, 3, 4])
+    array([1, 3, 6, 10])
     """
     pass
 
 
-def sub_reduce(cc, sum_keys, cta: ctarray, axis=None):
+def sub_reduce(cc, sum_keys, ct_array: ctarray, axis=None):
     """Homomorphic reduction with subtraction: np.subtract.reduce.
 
     Placeholder for sequential subtraction across axis.
@@ -213,7 +222,7 @@ def sub_reduce(cc, sum_keys, cta: ctarray, axis=None):
     pass
 
 
-def sub_accumulate(cc, keys, cta: ctarray, axis=None):
+def sub_accumulate(cc, keys, ct_array: ctarray, axis=None):
     """Homomorphic prefix subtraction: np.subtract.accumulate.
 
     Example
