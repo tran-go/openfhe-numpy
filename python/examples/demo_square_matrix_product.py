@@ -25,7 +25,6 @@ def gen_crypto_context(ring_dim, mult_depth):
         (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-    params.SetSecurityLevel(HEStd_NotSet)
     params.SetRingDim(ring_dim)
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
@@ -86,6 +85,8 @@ def demo():
 
     print("Matrix A:\n", A)
     print("Matrix B:\n", B)
+
+    # todo: explain encoding information, techniques,
 
     # Encrypt both matrices
     ctm_A = fp.array(cc, A, total_slots, pub_key=keys.publicKey)

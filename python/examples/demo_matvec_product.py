@@ -26,7 +26,6 @@ def gen_crypto_context(ring_dim, mult_depth):
         (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-    params.SetSecurityLevel(HEStd_NotSet)
     params.SetRingDim(ring_dim)
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
