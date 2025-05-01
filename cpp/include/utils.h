@@ -5,8 +5,12 @@
 #include "config.h"
 #include "helper.h"
 
+using namespace lbcrypto;
+
 uint32_t NextPow2(const uint32_t x);
-void Debug(CryptoContext, KeyPair keys, Ciphertext, std::string msg, int length = 16);
+template <class Element>
+void Debug(CryptoContext<Element> cc, KeyPair<Element> keys, Ciphertext<Element> ct, std::string msg, int length = 16);
+// void Debug(CryptoContext, KeyPair keys, Ciphertext, std::string msg, int length = 16);
 std::vector<double> GenSigmaDiag(int32_t row_size, int32_t k);
 std::vector<double> GenTauDiag(int32_t total_slots, int32_t row_size, int32_t k);
 std::vector<double> GenPhiDiag(int32_t row_size, int32_t k, int type);

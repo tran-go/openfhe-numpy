@@ -7,6 +7,7 @@
 #include <vector>
 
 // utils implementation
+using namespace lbcrypto;
 
 void RoundVector(std::vector<double>& vector) {
     std::for_each(std::begin(vector), std::end(vector), [](double& e) { e = std::round(e); });
@@ -16,7 +17,8 @@ uint32_t NextPow2(uint32_t x) {
     return pow(2, ceil(log(double(x)) / log(2.0)));
 };
 
-void Debug(CryptoContext cc, KeyPair keys, Ciphertext ct, std::string msg, int length) {
+template <typename Element>
+void Debug(CryptoContext<Element> cc, KeyPair<Element> keys, Ciphertext<Element> ct, std::string msg, int length) {
     Plaintext pt;
     cc->Decrypt(keys.secretKey, ct, &pt);
     pt->SetLength(length);
@@ -42,7 +44,8 @@ std::vector<double> GenSigmaDiag(int32_t rowSize, int32_t k) {
                 diag[i] = 1;
             }
         }
-    } else {
+    }
+    else {
         for (int32_t i = 0; i < n; i++) {
             int32_t tmp = i - (rowSize + k) * rowSize;
             if ((-k <= tmp) and (tmp < rowSize)) {
@@ -84,7 +87,8 @@ std::vector<double> GenPhiDiag(int32_t rowSize, int32_t k, int type) {
 
     if (type == 0) {
         for (int32_t i = 0; i < n; i++)
-            if ((i % rowSize >= 0) and ((i % rowSize) < rowSize - k)) diag[i] = 1;
+            if ((i % rowSize >= 0) and ((i % rowSize) < rowSize - k))
+                diag[i] = 1;
         return diag;
     }
     for (int32_t i = 0; i < n; i++)
@@ -112,12 +116,15 @@ std::vector<double> GenTransposeDiag(int32_t totalSlots, int32_t rowSize, int32_
         if (i >= 0) {
             for (auto j = 0; j < rowSize - i; j++) {
                 auto idx = t * n + (rowSize + 1) * j + i;
-                if (idx < totalSlots) diag[idx] = 1;
+                if (idx < totalSlots)
+                    diag[idx] = 1;
             }
-        } else {
+        }
+        else {
             for (auto j = -i; j < rowSize; j++) {
                 auto idx = t * n + (rowSize + 1) * j + i;
-                if (idx < totalSlots) diag[idx] = 1;
+                if (idx < totalSlots)
+                    diag[idx] = 1;
             }
         }
     }

@@ -1,12 +1,15 @@
 #include "enc_matrix.h"
 #include "openfhe.h"
 #include "utils.h"
+// using namespace lbcrypto;
+using namespace fhemat;
 
 // ============================================================
 // Demo: Homomorphic Matrix-Vector Multiplication
 // ============================================================
 
-void RunMatrixVectorDemo(bool verbose = true) {
+void RunMatrixVectorDemo(bool verbose = true)
+{
     int32_t numRows = 2;
     int32_t numCols = 4;
     int32_t paddedRowSize = NextPow2(numCols);
@@ -21,7 +24,7 @@ void RunMatrixVectorDemo(bool verbose = true) {
     std::vector<double> flatVector = {1, 2, 3, 0, 1, 2, 3, 0};
 
     // Set CKKS encryption parameters
-    CryptoParams encryptionParams;
+    CCParams<CryptoContextCKKSRNS> encryptionParams;
     encryptionParams.SetSecurityLevel(lbcrypto::HEStd_NotSet);
     encryptionParams.SetRingDim(1 << 12);
     encryptionParams.SetBatchSize(1 << 11);
@@ -34,33 +37,36 @@ void RunMatrixVectorDemo(bool verbose = true) {
     encryptionParams.SetMaxRelinSkDeg(1);
 
     std::cout << "Initializing CryptoContext...\n";
-    CryptoContext cryptoContext = GenCryptoContext(encryptionParams);
+
+    auto cryptoContext = GenCryptoContext(encryptionParams);
+
     cryptoContext->Enable(lbcrypto::PKE);
     cryptoContext->Enable(lbcrypto::LEVELEDSHE);
     cryptoContext->Enable(lbcrypto::ADVANCEDSHE);
 
     std::cout << "Generating key pair...\n";
-    KeyPair keyPair = cryptoContext->KeyGen();
+    auto keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeyGen(keyPair.secretKey);
     cryptoContext->EvalSumKeyGen(keyPair.secretKey);
 
-    MatKeys columnSumKeys = cryptoContext->EvalSumColsKeyGen(keyPair.secretKey);
-    MatKeys rowSumKeys = cryptoContext->EvalSumRowsKeyGen(keyPair.secretKey, nullptr, paddedRowSize);
+    auto columnSumKeys = cryptoContext->EvalSumColsKeyGen(keyPair.secretKey);
+    auto rowSumKeys = cryptoContext->EvalSumRowsKeyGen(keyPair.secretKey, nullptr, paddedRowSize);
 
     // Encode and encrypt matrix and vector
-    Plaintext encodedMatrix = cryptoContext->MakeCKKSPackedPlaintext(flatMatrix);
-    Plaintext encodedVector = cryptoContext->MakeCKKSPackedPlaintext(flatVector);
-    Ciphertext encryptedMatrix = cryptoContext->Encrypt(keyPair.publicKey, encodedMatrix);
-    Ciphertext encryptedVector = cryptoContext->Encrypt(keyPair.publicKey, encodedVector);
+    auto encodedMatrix = cryptoContext->MakeCKKSPackedPlaintext(flatMatrix);
+    auto encodedVector = cryptoContext->MakeCKKSPackedPlaintext(flatVector);
+    auto encryptedMatrix = cryptoContext->Encrypt(keyPair.publicKey, encodedMatrix);
+    auto encryptedVector = cryptoContext->Encrypt(keyPair.publicKey, encodedVector);
 
-    if (verbose) {
+    if (verbose)
+    {
         std::cout << "--- Plaintext Matrix-Vector Product ---\n";
         PrintVector(MulMatVec(inputMatrix, inputVector));
     }
 
     // Perform encrypted matrix-vector multiplication
-    Ciphertext encryptedProduct = EvalMultMatVec(cryptoContext, columnSumKeys, MatVecEncoding::MM_CRC, paddedRowSize,
-                                                 encryptedVector, encryptedMatrix);
+    auto encryptedProduct = EvalMultMatVec(cryptoContext, columnSumKeys, MatVecEncoding::MM_CRC,
+                                           paddedRowSize, encryptedVector, encryptedMatrix);
 
     // Decrypt result
     Plaintext ptResult;
@@ -68,7 +74,8 @@ void RunMatrixVectorDemo(bool verbose = true) {
     ptResult->SetLength(numCols * numRows);
     std::vector<double> resultVector = ptResult->GetRealPackedValue();
 
-    if (verbose) {
+    if (verbose)
+    {
         std::cout << "--- Encrypted Matrix-Vector Result ---\n";
         PrintVector(resultVector);
     }
@@ -79,7 +86,11 @@ void RunMatrixVectorDemo(bool verbose = true) {
 // ============================================================
 // Demo: Homomorphic Matrix-Matrix Multiplication
 // ============================================================
-void RunMatrixMultiplicationDemo(bool verbose = true) {
+void DemoMatrixProduct(bool verbose = true)
+{
+    OPENFHE_DEBUG_FLAG(true);
+    OPENFHE_DEBUG("TESTING");
+
     std::vector<std::vector<double>> matrixA = {
         {1, 1, 1, 0},
         {2, 2, 2, 0},
@@ -103,7 +114,7 @@ void RunMatrixMultiplicationDemo(bool verbose = true) {
     std::vector<double> encodedB = EncodeMatrix<double>(matrixB, batchSize);
 
     // Set CKKS encryption parameters
-    CryptoParams encryptionParams;
+    CCParams<CryptoContextCKKSRNS> encryptionParams;
     encryptionParams.SetSecurityLevel(lbcrypto::HEStd_NotSet);
     encryptionParams.SetRingDim(1 << 10);
     encryptionParams.SetBatchSize(batchSize);
@@ -116,30 +127,32 @@ void RunMatrixMultiplicationDemo(bool verbose = true) {
     encryptionParams.SetMaxRelinSkDeg(1);
 
     std::cout << "Initializing CryptoContext...\n";
-    CryptoContext cryptoContext = GenCryptoContext(encryptionParams);
+    CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(encryptionParams);
     cryptoContext->Enable(lbcrypto::PKE);
     cryptoContext->Enable(lbcrypto::LEVELEDSHE);
     cryptoContext->Enable(lbcrypto::ADVANCEDSHE);
 
     std::cout << "Generating key pair...\n";
-    KeyPair keyPair = cryptoContext->KeyGen();
+    auto keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeyGen(keyPair.secretKey);
     cryptoContext->EvalSumKeyGen(keyPair.secretKey);
 
     // Encrypt matrices
     Plaintext ptA = cryptoContext->MakeCKKSPackedPlaintext(encodedA);
     Plaintext ptB = cryptoContext->MakeCKKSPackedPlaintext(encodedB);
-    Ciphertext encryptedA = cryptoContext->Encrypt(keyPair.publicKey, ptA);
-    Ciphertext encryptedB = cryptoContext->Encrypt(keyPair.publicKey, ptB);
+    auto encryptedA = cryptoContext->Encrypt(keyPair.publicKey, ptA);
+    auto encryptedB = cryptoContext->Encrypt(keyPair.publicKey, ptB);
 
-    if (verbose) {
+    if (verbose)
+    {
         std::cout << "--- Plaintext Matrix-Matrix Product ---\n";
         PrintMatrix(MulMats(matrixA, matrixB));
     }
 
     // Perform encrypted matrix-matrix multiplication
     MulMatRotateKeyGen(cryptoContext, keyPair, paddedRowSize);
-    Ciphertext ctProduct = EvalMatMulSquare(cryptoContext, keyPair.publicKey, encryptedA, encryptedB, paddedRowSize);
+    auto ctProduct =
+        EvalMatMulSquare(cryptoContext, keyPair.publicKey, encryptedA, encryptedB, paddedRowSize);
 
     // Decrypt result
     Plaintext ptResult;
@@ -147,19 +160,22 @@ void RunMatrixMultiplicationDemo(bool verbose = true) {
     ptResult->SetLength(numCols * numRows);
     std::vector<double> resultVector = ptResult->GetRealPackedValue();
 
-    if (verbose) {
+    if (verbose)
+    {
         std::cout << "--- Encrypted Matrix-Matrix Result ---\n";
         RoundVector(resultVector);
         PrintVector(resultVector);
     }
 
     // Transpose the first encrypted matrix
-    Ciphertext encryptedTranspose = EvalMatrixTranspose(cryptoContext, keyPair, encryptedA, paddedRowSize);
+    auto encryptedTranspose =
+        EvalMatrixTranspose(cryptoContext, keyPair, encryptedA, paddedRowSize);
     cryptoContext->Decrypt(keyPair.secretKey, encryptedTranspose, &ptResult);
     // ptResult->SetLength(numCols * numRows);
     resultVector = ptResult->GetRealPackedValue();
 
-    if (verbose) {
+    if (verbose)
+    {
         std::cout << "--- Encrypted Transposed Matrix Result ---\n";
         RoundVector(resultVector);
         PrintVector(resultVector);
@@ -168,9 +184,9 @@ void RunMatrixMultiplicationDemo(bool verbose = true) {
     std::cout << "Matrix-Matrix Demo Complete.\n";
 }
 
-
-int main(int argc, char* argv[]) {
-    RunMatrixMultiplicationDemo();
+int main(int argc, char* argv[])
+{
+    DemoMatrixProduct();
     // RunMatrixVectorDemo();
     return 0;
 }

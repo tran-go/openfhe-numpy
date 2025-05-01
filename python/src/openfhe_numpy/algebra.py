@@ -1,10 +1,12 @@
-from openfhe_numpy.tensor import ctarray
 import openfhe_matrix
-from openfhe_numpy.config import MatrixEncoding
 from openfhe_matrix import MatVecEncoding
 
+from openfhe_numpy.tensor import ctArray
+from openfhe_numpy.config import MatrixEncoding
+from openfhe_numpy.log import FP_ERROR, FP_DEBUG
 
-def matmul_square(cc, pub_key, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctarray:
+
+def matmul_square(context, pub_key, ctmat_A: ctArray, ctmat_B: ctArray) -> ctArray:
     """Encrypted matrix multiplication for square matrices.
 
     Equivalent to: np.matmul(A, B) or A @ B
@@ -18,14 +20,14 @@ def matmul_square(cc, pub_key, ct_matrixA: ctarray, ct_matrixB: ctarray) -> ctar
     array([[19, 22], [43, 50]])
     """
     ct_product = openfhe_matrix.EvalMatMulSquare(
-        cc, pub_key, ct_matrixA.data, ct_matrixB.data, ct_matrixA.ncols
+        context, pub_key, ctmat_A.data, ctmat_B.data, ctmat_A.ncols
     )
-    info = ct_matrixA.info()
+    info = ctmat_A.info()
     info[0] = ct_product
-    return ctarray(*info)
+    return ctArray(*info)
 
 
-def multiply(cc, a: ctarray, b: ctarray) -> ctarray:
+def multiply(context, ct_a: ctArray, ct_b: ctArray) -> ctArray:
     """Element-wise multiplication: np.multiply(a, b)
 
     Performs homomorphic multiplication between ciphertext arrays A and B,
@@ -36,14 +38,14 @@ def multiply(cc, a: ctarray, b: ctarray) -> ctarray:
     >>> np.multiply([1, 2, 3], [4, 5, 6])
     array([4, 10, 18])
     """
-    if a.shape != b.shape:
+    if ct_a.shape != ct_b.shape:
         raise ValueError("Shapes do not match for element-wise multiplication")
-    info = a.info()
-    info[0] = cc.EvalMult(a.data, b.data)
-    return ctarray(*info)
+    info = ct_a.info()
+    info[0] = context.EvalMult(ct_a.data, ct_b.data)
+    return ctArray(*info)
 
 
-def add(cc, a, b):
+def add(context, ct_a, ct_b):
     """Element-wise addition: np.add(a, b)
 
     Performs encrypted addition over the packed slots of A and B.
@@ -53,14 +55,14 @@ def add(cc, a, b):
     >>> np.add([1, 2, 3], [4, 5, 6])
     array([5, 7, 9])
     """
-    if a.shape != b.shape:
+    if ct_a.shape != ct_b.shape:
         raise ValueError("Shapes do not match for element-wise addition")
-    info = a.info()
-    info[0] = cc.EvalAdd(a.data, b.data)
-    return a.__class__(*info)
+    info = ct_a.info()
+    info[0] = context.EvalAdd(ct_a.data, ct_b.data)
+    return ct_a.__class__(*info)
 
 
-def sub(cc, a, b):
+def sub(context, ct_a, ct_b):
     """Element-wise subtraction: np.subtract(a, b)
 
     Homomorphically subtracts B from A, slot-by-slot.
@@ -70,14 +72,14 @@ def sub(cc, a, b):
     >>> np.subtract([5, 7, 9], [1, 2, 3])
     array([4, 5, 6])
     """
-    if a.shape != b.shape:
+    if ct_a.shape != ct_b.shape:
         raise ValueError("Shapes do not match for element-wise subtraction")
-    info = a.info()
-    info[0] = cc.EvalSub(a.data, b.data)
-    return a.__class__(*info)
+    info = ct_a.info()
+    info[0] = context.EvalSub(ct_a.data, ct_b.data)
+    return ct_a.__class__(*info)
 
 
-def dot(cc, sum_col_keys, a: ctarray, b: ctarray) -> ctarray:
+def dot(context, pubkey, tensor_a: ctArray, tensor_b: ctArray) -> ctArray:
     """Dot product over encrypted vectors or matrices.
 
     Equivalent to: np.dot(a, b)
@@ -89,18 +91,20 @@ def dot(cc, sum_col_keys, a: ctarray, b: ctarray) -> ctarray:
     >>> np.dot([1, 2, 3], [4, 5, 6])
     32
     """
-    if a.shape != b.shape:
+    if tensor_a.shape != tensor_b.shape:
         raise ValueError("Shapes do not match for dot product")
-    ct_mult = cc.EvalMult(a.data, b.data)
-    ct_dot = cc.EvalSumCols(ct_mult, a.ncols, sum_col_keys)
-    info = a.info()
-    info[0] = ct_dot
-    return ctarray(*info)
+
+    info = tensor_a.info()
+
+    if tensor_a.ndim == 1:
+        info[0] = context.EvalInnerProduct(tensor_a, tensor_b, tensor_a.ncols)
+    else:
+        info[0] = matmul_square(context, pubkey, tensor_a, tensor_b)
+
+    return ctArray(*info)
 
 
-def matvec(
-    cc, keys, sum_col_keys, ct_matrix: ctarray, ct_vector: ctarray, block_size: int
-) -> ctarray:
+def matvec(context, keys, sum_col_keys, ctmat: ctArray, ctvec: ctArray, block_size: int) -> ctArray:
     """Matrix-vector multiplication over encrypted data.
 
     Equivalent to: np.dot(A, v)
@@ -114,36 +118,36 @@ def matvec(
     array([17, 39])
     """
     if (
-        ct_matrix.encoding_order == MatrixEncoding.ROW_MAJOR
-        and ct_vector.encoding_order == MatrixEncoding.COL_MAJOR
+        ctmat.encoding_order == MatrixEncoding.ROW_MAJOR
+        and ctvec.encoding_order == MatrixEncoding.COL_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            cc, sum_col_keys, MatVecEncoding.MM_CRC, block_size, ct_vector.data, ct_matrix.data
+            context, sum_col_keys, MatVecEncoding.MM_CRC, block_size, ctvec.data, ctmat.data
         )
-        rows, _ = ct_matrix.original_shape
-        return ctarray(
+        rows, _ = ctmat.original_shape
+        return ctArray(
             ct_product,
             (rows, 1),
             False,
-            ct_matrix.batch_size,
-            ct_matrix.ncols,
+            ctmat.batch_size,
+            ctmat.ncols,
             MatrixEncoding.COL_MAJOR,
         )
 
     elif (
-        ct_matrix.encoding_order == MatrixEncoding.COL_MAJOR
-        and ct_vector.encoding_order == MatrixEncoding.ROW_MAJOR
+        ctmat.encoding_order == MatrixEncoding.COL_MAJOR
+        and ctvec.encoding_order == MatrixEncoding.ROW_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            cc, sum_col_keys, MatVecEncoding.MM_RCR, block_size, ct_vector.data, ct_matrix.data
+            context, sum_col_keys, MatVecEncoding.MM_RCR, block_size, ctvec.data, ctmat.data
         )
-        rows, _ = ct_matrix.original_shape
-        return ctarray(
+        rows, _ = ctmat.original_shape
+        return ctArray(
             ct_product,
             (rows, 1),
             False,
-            ct_matrix.batch_size,
-            ct_matrix.ncols,
+            ctmat.batch_size,
+            ctmat.ncols,
             MatrixEncoding.ROW_MAJOR,
         )
 
@@ -153,7 +157,7 @@ def matvec(
         )
 
 
-def matrix_power(cc, keys, k: int, ct_matrixA: ctarray) -> ctarray:
+def matrix_power(context, keys, k: int, ctarray: ctArray) -> ctArray:
     """Exponentiate a matrix to power k using homomorphic multiplication.
 
     Equivalent to: np.linalg.matrix_power(A, k)
@@ -165,19 +169,16 @@ def matrix_power(cc, keys, k: int, ct_matrixA: ctarray) -> ctarray:
     >>> np.linalg.matrix_power([[2, 0], [0, 2]], 3)
     array([[8, 0], [0, 8]])
     """
-    result = ct_matrixA
+    result = ctarray
     for _ in range(k):
-        result = matmul_square(cc, keys, result, ct_matrixA)
+        result = matmul_square(context, keys, result, ctarray)
     return result
 
 
-# Reduction/accumulation prototypes (placeholders for now)
-
-
-def add_reduce(cc, matkey, ct_array: ctarray, axis=None):
+def add_reduce(context, sumkey, ctarray: ctArray, axis=None):
     """
-    - axis=0, the function sums over rows — meaning it adds up values column-wise.
-    - axis=1, the function sums over columns — meaning it adds up values row-wise.
+    - axis=0, the function sums over rows; it adds up values column-wise.
+    - axis=1, the function sums over columns; it adds up values row-wise.
     this function is equivalently with np.sum(a, axis)
     Example
     -------
@@ -187,16 +188,18 @@ def add_reduce(cc, matkey, ct_array: ctarray, axis=None):
     array([3, 7])
     """
     if axis == 0:
-        ct_result = cc.EvalSumRows(ct_array, ct_array.ncols, matkey)
+        ct_result = context.EvalSumRows(ctarray.data, ctarray.ncols, sumkey)
     elif axis == 1:
-        ct_result = cc.EvalSumCols(ct_array, ct_array.ncols, matkey)
+        ct_result = context.EvalSumCols(ctarray.data, ctarray.ncols, sumkey)
+    else:
+        FP_ERROR(f"Axis {axis} is out of bound for array of dimension {ctarray.ndim}")
 
-    info = ct_array.info()
+    info = ctarray.info()
     info[0] = ct_result
-    return ctarray(*info)
+    return ctArray(*info)
 
 
-def add_accumulate(cc, keys, ct_array: ctarray, axis=None):
+def add_accumulate(context, sumkey, ctarray: ctArray, axis=None):
     """Homomorphic prefix sum: equivalent to np.add.accumulate(cta, axis=axis).
 
     Would be implemented via encrypted rotations + additions.
@@ -204,13 +207,17 @@ def add_accumulate(cc, keys, ct_array: ctarray, axis=None):
     Example
     -------
     >>> np.add.accumulate([1, 2, 3, 4])
-    array([1, 3, 6, 10])
+    Return: array([1, 3, 6, 10])
     """
-    pass
+    info = ctarray.info()    
+    info[0] = ctarray.data
+    for i in range(ctarray.ncols):
+        rotated = context.EvalRotate(info[0].data, i)
+        info[0] = context.EvalAdd(rotated 
 
 
-def sub_reduce(cc, sum_keys, ct_array: ctarray, axis=None):
-    """Homomorphic reduction with subtraction: np.subtract.reduce.
+def sub_reduce(context, sum_keys, ctarray: ctArray, axis=None):
+    """Homomorphic reduction with subtraction: np.subtract.reduce
 
     Placeholder for sequential subtraction across axis.
 
@@ -222,22 +229,22 @@ def sub_reduce(cc, sum_keys, ct_array: ctarray, axis=None):
     pass
 
 
-def sub_accumulate(cc, keys, ct_array: ctarray, axis=None):
+def sub_accumulate(context, keys, ctarray: ctArray, axis=None):
     """Homomorphic prefix subtraction: np.subtract.accumulate.
 
     Example
     -------
-    >>> np.subtract.accumulate([10, 1, 2])
+    >>> np.subtract.accumulat([10, 1, 2])
     array([10, 9, 7])
     """
     pass
 
 
-def transpose(cc, public_key, ct_matrix) -> ctarray:
+def transpose(context, public_key, ctarray: ctArray) -> ctArray:
     """Transpose a matrix
     Equivalent to: np.transpose()
     """
-    ct_data = openfhe_matrix.EvalMatrixTranspose(cc, public_key, ct_matrix.data, ct_matrix.ncols)
-    info = ct_matrix.info()
+    ct_data = openfhe_matrix.EvalMatrixTranspose(context, public_key, ctarray.data, ctarray.ncols)
+    info = ctarray.info()
     info[0] = ct_data
-    return ctarray(*info)
+    return ctArray(*info)

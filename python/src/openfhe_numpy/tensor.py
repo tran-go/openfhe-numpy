@@ -48,7 +48,7 @@ class BaseTensor:
         return (self.nrows, self.ncols)
 
 
-class ptarray(BaseTensor):
+class ptArray(BaseTensor):
     """Plaintext array representation that includes shape and encoding metadata."""
 
     def __init__(
@@ -64,7 +64,7 @@ class ptarray(BaseTensor):
         self.data = data
 
     def copy(self, is_deep_copy: bool = True):
-        return ptarray(
+        return ptArray(
             self.data,
             self.original_shape,
             self.ndim,
@@ -74,12 +74,12 @@ class ptarray(BaseTensor):
         )
 
 
-class ctarray(BaseTensor):
+class ctArray(BaseTensor):
     """Ciphertext array representation with shape and encoding metadata."""
 
     def __init__(
         self,
-        data: openfhe.Ciphertext,
+        data: openfhe.Ciphertext | None,
         original_shape: Tuple[int, int],
         ndim: int,
         size: int,
@@ -100,7 +100,7 @@ class ctarray(BaseTensor):
         return result
 
     def copy(self):
-        return ctarray(
+        return ctArray(
             self.data,
             self.original_shape,
             self.ndim,

@@ -9,7 +9,8 @@ Displaying the 2D vector
 template <typename Element>
 inline void PrintMatrix(const std::vector<std::vector<Element>>& mat) {
     for (uint32_t i = 0; i < mat.size(); i++) {
-        for (uint32_t j = 0; j < mat[i].size(); j++) std::cout << mat[i][j] << " ";
+        for (uint32_t j = 0; j < mat[i].size(); j++)
+            std::cout << mat[i][j] << " ";
         std::cout << std::endl;
     }
 };
@@ -50,10 +51,12 @@ inline std::vector<std::vector<double>> MulMats(std::vector<std::vector<double>>
                     }
                 }
             }
-        } else {
+        }
+        else {
             throw("Error:: size problems!!!");
         }
-    } catch (...) {
+    }
+    catch (...) {
         OPENFHE_THROW("ERROR ::: Normal Matrix Multiplication ::: size is different");
     }
     return result;
@@ -77,10 +80,12 @@ inline std::vector<double> MulMatVec(std::vector<std::vector<double>> mat, std::
                     result[i] += mat[i][j] * vec[j];
                 }
             }
-        } else {
+        }
+        else {
             throw("Error:: size problems!!!");
         }
-    } catch (...) {
+    }
+    catch (...) {
         OPENFHE_THROW("ERROR ::: Normal Matrix Multiplication ::: size is different");
     }
     return result;
@@ -93,12 +98,14 @@ Sample a rational random vector
 inline std::vector<double> RandVec(const int n, const int modulus = 5, const bool verbose = true) {
     std::vector<double> vec(n, 0);
     std::srand(static_cast<unsigned>(std::time(0)));
-    for (int i = 0; i < n; i++) vec[i] = rand() % modulus;
+    for (int i = 0; i < n; i++)
+        vec[i] = rand() % modulus;
 
     // Print the generated vector
     if (verbose) {
         std::cout << "Random Vector:" << std::endl;
-        for (const auto& element : vec) std::cout << element << " ";
+        for (const auto& element : vec)
+            std::cout << element << " ";
     }
     return vec;
 };
@@ -107,8 +114,11 @@ inline std::vector<double> RandVec(const int n, const int modulus = 5, const boo
 Sample a rational random matrix
 */
 
-inline std::vector<std::vector<double>> RandMatrix(const int n_rows, const int n_cols, const double min_val = 0,
-                                                   const double max_val = 10, const bool verbose = true) {
+inline std::vector<std::vector<double>> RandMatrix(const int n_rows,
+                                                   const int n_cols,
+                                                   const double min_val = 0,
+                                                   const double max_val = 10,
+                                                   const bool verbose   = true) {
     std::vector<std::vector<double>> matrix(n_rows, std::vector<double>(n_cols));
     std::srand(static_cast<unsigned>(std::time(0)));
 
@@ -132,24 +142,12 @@ inline std::vector<std::vector<double>> RandMatrix(const int n_rows, const int n
     return matrix;
 };
 
-template <typename Element>
-std::vector<Element> Flatten(std::vector<std::vector<Element>> mat) {
-    uint32_t n = mat.size();
-    uint32_t m = mat[0].size();
-
-    std::vector<Element> v(n * m, 0);
-    uint32_t k = 0;
-    for (uint32_t i = 0; i < n; i++)
-        for (uint32_t j = 0; j < m; j++) v[k++] = mat[i][j];
-    return v;
-};
-
 template <class Element>
 std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const long total_slots) {
     uint32_t n = mat.size();
     uint32_t m = mat[0].size();
 
-    uint32_t size = n * m;
+    uint32_t size   = n * m;
     uint32_t blocks = total_slots / size;
 
     std::vector<Element> vec(total_slots, 0);
@@ -164,5 +162,27 @@ std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const l
     }
     return vec;
 }
+
+// template <class Element>
+// std::vector<Element> EncodeVector(std::vector<std::vector<Element>> mat, const long total_slots) {
+//     uint32_t n = mat.size();
+//     uint32_t m = mat[0].size();
+
+//     uint32_t size   = n * m;
+//     uint32_t blocks = total_slots / size;
+
+//     std::vector<Element> vec(total_slots, 0);
+//     long k = 0;
+//     for (uint32_t t = 0; t < blocks; ++t) {
+//         for (uint32_t i = 0; i < n; ++i) {
+//             for (uint32_t j = 0; j < m; ++j) {
+//                 vec[k] = mat[i][j];
+//                 k += 1;
+//             }
+//         }
+//     }
+//     return vec;
+// }
+
 
 #endif  // HELPER_H
