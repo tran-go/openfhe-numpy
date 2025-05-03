@@ -80,7 +80,6 @@ Ciphertext<Element> EvalLinTransPsi(CryptoContext<Element>& cryptoContext,
                                     int32_t nRepeats);
 
 template <typename Element>
-
 Ciphertext<Element> EvalMatMulSquare(CryptoContext<Element>& cryptoContext,
                                      const PublicKey<Element>& publicKey,
                                      const Ciphertext<Element>& matrixA,
@@ -98,17 +97,6 @@ Ciphertext<Element> EvalMatrixTranspose(CryptoContext<Element>& cryptoContext,
                                         const PublicKey<Element>& publicKey,
                                         const Ciphertext<Element>& ctMatrix,
                                         int32_t rowSize);
-// template <typename Element>
-// Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element> ciphertext,
-//                                           uint32_t numRows,
-//                                           const std::map<uint32_t, EvalKey<Element>>& evalSumKeys,
-//                                           uint32_t subringDim = 0);
-
-// template <typename Element>
-// Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
-//                                           uint32_t numRows,
-//                                           const std::map<uint32_t, EvalKey<Element>>& evalSumKeys,
-//                                           uint32_t subringDim = 0);
 
 }  // namespace fhemat
 #endif  // ENC_MATRIX_H

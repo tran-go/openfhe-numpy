@@ -552,10 +552,10 @@ template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& crypt
                                                   const Ciphertext<DCRTPoly>& ctMatrix,
                                                   int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& cryptoContext,
-                                                  const PublicKey<DCRTPoly>& publicKey,
-                                                  const Ciphertext<DCRTPoly>& ctMatrix,
-                                                  int32_t rowSize);
+// template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& cryptoContext,
+//                                                   const PublicKey<DCRTPoly>& publicKey,
+//                                                   const Ciphertext<DCRTPoly>& ctMatrix,
+//                                                   int32_t rowSize);
 
 // template Ciphertext<DCRTPoly> EvalAddAccumulateCols(ConstCiphertext<DCRTPoly> ciphertext,
 //                                                     uint32_t numRows,
