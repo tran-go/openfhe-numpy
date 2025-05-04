@@ -5,7 +5,7 @@ openfhe_numpy
 A NumPy-inspired encrypted linear algebra framework built upon OpenFHE.
 """
 
-from .log import FP_DEBUG, FP_ERROR
+from .log import FP_ERROR, FP_ERROR
 from .tensor import ctArray, ptArray
 from .constructors import array
 from .algebra import (
@@ -13,7 +13,7 @@ from .algebra import (
     multiply,
     dot,
     matvec,
-    matmul_square,
+    square_matmul,
     matrix_power,
     transpose,
     add_reduce,
@@ -38,7 +38,7 @@ __all__ = [
     "add",
     "multiply",
     "dot",
-    "matmul_square",
+    "square_matmul",
     "matrix_power",
     "config",
     "utils",

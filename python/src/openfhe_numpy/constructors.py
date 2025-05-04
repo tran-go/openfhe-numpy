@@ -12,7 +12,7 @@ def array(
     batch_size: int = 1,
     encoding_type: int = MatrixEncoding.ROW_MAJOR,
     type: str = DataType.CIPHERTEXT,
-    pubkey=None,
+    public_key=None,
 ):
     """
     Construct either a ciphertext (ctArray) or plaintext (ptArray) from raw input data.
@@ -31,7 +31,7 @@ def array(
         MatrixEncoding.ROW_MAJOR or COL_MAJOR.
     type : str
         DataType.CIPHERTEXT or PLAINTEXT.
-    pubkey : optional
+    public_key : optional
         Public key needed for encryption.
 
     Returns
@@ -58,10 +58,10 @@ def array(
     if type == DataType.PLAINTEXT:
         return ptArray(plaintext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
 
-    if pubkey is None:
+    if public_key is None:
         raise ValueError("Public key must be provided for ciphertext encoding.")
 
-    ciphertext = cc.Encrypt(pubkey, plaintext)
+    ciphertext = cc.Encrypt(public_key, plaintext)
     return ctArray(ciphertext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
 
 

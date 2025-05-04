@@ -21,14 +21,14 @@ class BaseTensor:
         ndim: int,
         size: int,
         ncols: int = 1,
-        encoding_order: int = MatrixEncoding.ROW_MAJOR,
+        matrix_enconding: int = MatrixEncoding.ROW_MAJOR,
     ):
         self.original_shape = original_shape
         self.ndim = ndim
         self.ncols = ncols
         self.nrows = size // ncols
         self.batch_size = size
-        self.encoding_order = encoding_order
+        self.matrix_enconding = matrix_enconding
 
     def info(self):
         return [
@@ -37,11 +37,11 @@ class BaseTensor:
             self.ndim,
             self.batch_size,
             self.ncols,
-            self.encoding_order,
+            self.matrix_enconding,
         ]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(shape=({self.nrows}, {self.ncols}), original={self.original_shape}, encoding={self.encoding_order})"
+        return f"{self.__class__.__name__}(shape=({self.nrows}, {self.ncols}), original={self.original_shape}, encoding={self.matrix_enconding})"
 
     @property
     def shape(self):
@@ -58,9 +58,9 @@ class ptArray(BaseTensor):
         ndim: int,
         size: int,
         ncols: int = 1,
-        encoding_order: int = MatrixEncoding.ROW_MAJOR,
+        matrix_enconding: int = MatrixEncoding.ROW_MAJOR,
     ):
-        super().__init__(original_shape, ndim, size, ncols, encoding_order)
+        super().__init__(original_shape, ndim, size, ncols, matrix_enconding)
         self.data = data
 
     def copy(self, is_deep_copy: bool = True):
@@ -70,7 +70,7 @@ class ptArray(BaseTensor):
             self.ndim,
             self.batch_size,
             self.ncols,
-            self.encoding_order,
+            self.matrix_enconding,
         )
 
 
@@ -84,9 +84,9 @@ class ctArray(BaseTensor):
         ndim: int,
         size: int,
         ncols: int = 1,
-        encoding_order: int = MatrixEncoding.ROW_MAJOR,
+        matrix_enconding: int = MatrixEncoding.ROW_MAJOR,
     ):
-        super().__init__(original_shape, ndim, size, ncols, encoding_order)
+        super().__init__(original_shape, ndim, size, ncols, matrix_enconding)
         self.data = data
 
     def decrypt(self, cc, sk, isFormat=True, precision=None):
@@ -106,5 +106,5 @@ class ctArray(BaseTensor):
             self.ndim,
             self.batch_size,
             self.ncols,
-            self.encoding_order,
+            self.matrix_enconding,
         )

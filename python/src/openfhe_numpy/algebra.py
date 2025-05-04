@@ -6,7 +6,7 @@ from openfhe_numpy.config import MatrixEncoding
 from openfhe_numpy.log import FP_ERROR, FP_DEBUG
 
 
-def matmul_square(context, pub_key, ctmat_A: ctArray, ctmat_B: ctArray) -> ctArray:
+def square_matmul(ctm_matA: ctArray, ctm_matB: ctArray) -> ctArray:
     """Encrypted matrix multiplication for square matrices.
 
     Equivalent to: np.matmul(A, B) or A @ B
@@ -19,15 +19,12 @@ def matmul_square(context, pub_key, ctmat_A: ctArray, ctmat_B: ctArray) -> ctArr
     >>> np.matmul([[1, 2], [3, 4]], [[5, 6], [7, 8]])
     array([[19, 22], [43, 50]])
     """
-    ct_product = openfhe_matrix.EvalMatMulSquare(
-        context, pub_key, ctmat_A.data, ctmat_B.data, ctmat_A.ncols
-    )
-    info = ctmat_A.info()
-    info[0] = ct_product
+    info = ctm_matA.info()
+    info[0] = openfhe_matrix.EvalMatMulSquare(ctm_matA.data, ctm_matB.data, ctm_matA.ncols)
     return ctArray(*info)
 
 
-def multiply(context, ct_a: ctArray, ct_b: ctArray) -> ctArray:
+def multiply(context, tensor_a: ctArray, tensor_b: ctArray) -> ctArray:
     """Element-wise multiplication: np.multiply(a, b)
 
     Performs homomorphic multiplication between ciphertext arrays A and B,
@@ -38,14 +35,14 @@ def multiply(context, ct_a: ctArray, ct_b: ctArray) -> ctArray:
     >>> np.multiply([1, 2, 3], [4, 5, 6])
     array([4, 10, 18])
     """
-    if ct_a.shape != ct_b.shape:
-        raise ValueError("Shapes do not match for element-wise multiplication")
-    info = ct_a.info()
-    info[0] = context.EvalMult(ct_a.data, ct_b.data)
+    if tensor_a.shape != tensor_b.shape:
+        raise ValueError("Shape does not match for element-wise multiplication")
+    info = tensor_a.info()
+    info[0] = context.EvalMult(tensor_a.data, tensor_b.data)
     return ctArray(*info)
 
 
-def add(context, ct_a, ct_b):
+def add(context, tensor_a, tensor_b):
     """Element-wise addition: np.add(a, b)
 
     Performs encrypted addition over the packed slots of A and B.
@@ -55,14 +52,14 @@ def add(context, ct_a, ct_b):
     >>> np.add([1, 2, 3], [4, 5, 6])
     array([5, 7, 9])
     """
-    if ct_a.shape != ct_b.shape:
+    if tensor_a.shape != tensor_b.shape:
         raise ValueError("Shapes do not match for element-wise addition")
-    info = ct_a.info()
-    info[0] = context.EvalAdd(ct_a.data, ct_b.data)
-    return ct_a.__class__(*info)
+    info = tensor_a.info()
+    info[0] = context.EvalAdd(tensor_a.data, tensor_b.data)
+    return tensor_a.__class__(*info)
 
 
-def sub(context, ct_a, ct_b):
+def sub(context, tensor_a, tensor_b):
     """Element-wise subtraction: np.subtract(a, b)
 
     Homomorphically subtracts B from A, slot-by-slot.
@@ -72,11 +69,11 @@ def sub(context, ct_a, ct_b):
     >>> np.subtract([5, 7, 9], [1, 2, 3])
     array([4, 5, 6])
     """
-    if ct_a.shape != ct_b.shape:
+    if tensor_a.shape != tensor_b.shape:
         raise ValueError("Shapes do not match for element-wise subtraction")
-    info = ct_a.info()
-    info[0] = context.EvalSub(ct_a.data, ct_b.data)
-    return ct_a.__class__(*info)
+    info = tensor_a.info()
+    info[0] = context.EvalSub(tensor_a.data, tensor_b.data)
+    return tensor_a.__class__(*info)
 
 
 def dot(context, pubkey, tensor_a: ctArray, tensor_b: ctArray) -> ctArray:
@@ -99,12 +96,14 @@ def dot(context, pubkey, tensor_a: ctArray, tensor_b: ctArray) -> ctArray:
     if tensor_a.ndim == 1:
         info[0] = context.EvalInnerProduct(tensor_a, tensor_b, tensor_a.ncols)
     else:
-        info[0] = matmul_square(context, pubkey, tensor_a, tensor_b)
+        info[0] = square_matmul(tensor_a, tensor_b)
 
     return ctArray(*info)
 
 
-def matvec(context, keys, sum_col_keys, ctmat: ctArray, ctvec: ctArray, block_size: int) -> ctArray:
+def matvec(
+    context, keys, sum_col_keys, tensor_matrix: ctArray, tensor_vector: ctArray, block_size: int
+) -> ctArray:
     """Matrix-vector multiplication over encrypted data.
 
     Equivalent to: np.dot(A, v)
@@ -118,36 +117,46 @@ def matvec(context, keys, sum_col_keys, ctmat: ctArray, ctvec: ctArray, block_si
     array([17, 39])
     """
     if (
-        ctmat.encoding_order == MatrixEncoding.ROW_MAJOR
-        and ctvec.encoding_order == MatrixEncoding.COL_MAJOR
+        tensor_matrix.matrix_enconding == MatrixEncoding.ROW_MAJOR
+        and tensor_vector.matrix_enconding == MatrixEncoding.COL_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            context, sum_col_keys, MatVecEncoding.MM_CRC, block_size, ctvec.data, ctmat.data
+            context,
+            sum_col_keys,
+            MatVecEncoding.MM_CRC,
+            block_size,
+            tensor_vector.data,
+            tensor_matrix.data,
         )
-        rows, _ = ctmat.original_shape
+        rows, _ = tensor_matrix.original_shape
         return ctArray(
             ct_product,
             (rows, 1),
             False,
-            ctmat.batch_size,
-            ctmat.ncols,
+            tensor_matrix.batch_size,
+            tensor_matrix.ncols,
             MatrixEncoding.COL_MAJOR,
         )
 
     elif (
-        ctmat.encoding_order == MatrixEncoding.COL_MAJOR
-        and ctvec.encoding_order == MatrixEncoding.ROW_MAJOR
+        tensor_matrix.matrix_enconding == MatrixEncoding.COL_MAJOR
+        and tensor_vector.matrix_enconding == MatrixEncoding.ROW_MAJOR
     ):
         ct_product = openfhe_matrix.EvalMultMatVec(
-            context, sum_col_keys, MatVecEncoding.MM_RCR, block_size, ctvec.data, ctmat.data
+            context,
+            sum_col_keys,
+            MatVecEncoding.MM_RCR,
+            block_size,
+            tensor_vector.data,
+            tensor_matrix.data,
         )
-        rows, _ = ctmat.original_shape
+        rows, _ = tensor_matrix.original_shape
         return ctArray(
             ct_product,
             (rows, 1),
             False,
-            ctmat.batch_size,
-            ctmat.ncols,
+            tensor_matrix.batch_size,
+            tensor_matrix.ncols,
             MatrixEncoding.ROW_MAJOR,
         )
 
@@ -171,7 +180,7 @@ def matrix_power(context, keys, k: int, ctarray: ctArray) -> ctArray:
     """
     result = ctarray
     for _ in range(k):
-        result = matmul_square(context, keys, result, ctarray)
+        result = square_matmul(result, ctarray)
     return result
 
 
@@ -209,11 +218,8 @@ def add_accumulate(context, sumkey, ctarray: ctArray, axis=None):
     >>> np.add.accumulate([1, 2, 3, 4])
     Return: array([1, 3, 6, 10])
     """
-    info = ctarray.info()    
-    info[0] = ctarray.data
-    for i in range(ctarray.ncols):
-        rotated = context.EvalRotate(info[0].data, i)
-        info[0] = context.EvalAdd(rotated 
+
+    pass
 
 
 def sub_reduce(context, sum_keys, ctarray: ctArray, axis=None):
@@ -240,11 +246,11 @@ def sub_accumulate(context, keys, ctarray: ctArray, axis=None):
     pass
 
 
-def transpose(context, public_key, ctarray: ctArray) -> ctArray:
+def transpose(ctarray: ctArray) -> ctArray:
     """Transpose a matrix
     Equivalent to: np.transpose()
     """
-    ct_data = openfhe_matrix.EvalMatrixTranspose(context, public_key, ctarray.data, ctarray.ncols)
+    ct_data = openfhe_matrix.EvalTranspose(ctarray.data, ctarray.ncols)
     info = ctarray.info()
     info[0] = ct_data
     return ctArray(*info)
