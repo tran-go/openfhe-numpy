@@ -1,9 +1,8 @@
 #include "enc_matrix.h"
-
 #include <iostream>
 #include <stdexcept>
 
-namespace fhemat {
+namespace openfhe_matrix {
 
 using namespace lbcrypto;
 /**
@@ -12,41 +11,41 @@ using namespace lbcrypto;
      *
      * @param rowSize   The row size (number of columns) of the matrix.
      * @param type      The linear transformation type (SIGMA, TAU, PHI, PSI, TRANSPOSE).
-     * @param nRepeats   Optional offset used by PHI and PSI types.
+     * @param numRepeats   Optional offset used by PHI and PSI types.
      * @return std::vector<int32_t> List of rotation indices to be used for EvalRotateKeyGen.
-     */
+**/
 
-std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int32_t nRepeats = 0) {
+std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int32_t numRepeats = 0) {
     std::vector<int32_t> rotationIndices;
 
     switch (type) {
-        case SIGMA:
+        case LinTransType::SIGMA:
             // Generate indices from -rowSize to rowSize - 1
             for (int32_t k = -rowSize; k < (rowSize); ++k) {
                 rotationIndices.push_back(k);
             }
             break;
 
-        case TAU:
+        case LinTransType::TAU:
             // Generate indices: 0, rowSize, 2*rowSize, ..., (rowSize-1)*rowSize
             for (int32_t k = 0; k < rowSize; ++k) {
                 rotationIndices.push_back(rowSize * k);
             }
             break;
 
-        case PHI:
-            // Generate indices: nRepeats, nRepeats - rowSize
-            for (auto i = 0; i < 2; ++i) {
-                rotationIndices.push_back(nRepeats - i * rowSize);
+        case LinTransType::PHI:
+            // Generate indices: numRepeats, numRepeats - rowSize
+            for (int32_t k = 0; k < 2; ++k) {
+                rotationIndices.push_back(numRepeats - k * rowSize);
             }
             break;
 
-        case PSI:
+        case LinTransType::PSI:
             // Generate a single index based on offset
-            rotationIndices.push_back(rowSize * nRepeats);
+            rotationIndices.push_back(rowSize * numRepeats);
             break;
 
-        case TRANSPOSE:
+        case LinTransType::TRANSPOSE:
             // Generate indices for transposing a square matrix via diagonals
             for (int32_t k = -rowSize + 1; k < rowSize; ++k) {
                 rotationIndices.push_back((rowSize - 1) * k);
@@ -54,7 +53,7 @@ std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int3
             break;
 
         default:
-            // No action for undefined types
+            OPENFHE_THROW("Linear transformation is undefined");
             break;
     }
 
@@ -73,52 +72,47 @@ std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int3
      * rotation keys.
      * @param rowSize        The row size of the matrix being transformed.
      * @param type           The type of linear transformation.
-     * @param nRepeats       Optional nRepeats used by PHI and PSI transformations.
-     */
-template <typename Element>
-void EvalLinTransKeyGenFromInt(CryptoContext<Element>& cc,
-                               const KeyPair<Element>& keyPair,
-                               int32_t rowSize,
-                               int typeInt,
-                               int32_t repeats) {
-    if (typeInt < 0 || typeInt > 4) {
-        throw std::invalid_argument("Invalid LinTransType enum value.");
-    }
-    auto type = static_cast<LinTransType>(typeInt);
-    EvalLinTransKeyGen(cc, keyPair, rowSize, type, repeats);
-}
-template <typename Element>
-void EvalLinTransKeyGen(CryptoContext<Element>& cryptoContext,
-                        const KeyPair<Element>& keyPair,
-                        int32_t rowSize,
-                        LinTransType type,
-                        int32_t nRepeats) {
-    auto rotationIndices = GenLinTransIndices(rowSize, type, nRepeats);
+     * @param numRepeats       Optional numRepeats used by PHI and PSI transformations.
+**/
+// template <typename Element>
+// void EvalLinTransKeyGenFromInt(const PrivateKey<Element>& secretKey,
+//                                int32_t rowSize,
+//                                int typeInt,
+//                                int32_t numRepeats) {
+//     if (typeInt < 0 || typeInt > 4)
+//         throw std::invalid_argument("Invalid LinTransType enum value.");
+//     EvalLinTransKeyGen(secretKey, rowSize, static_cast<LinTransType>(typeInt), numRepeats);
+// }
 
-    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, rotationIndices);
+template <typename Element>
+void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats) {
+    auto rotationIndices = GenLinTransIndices(rowSize, type, numRepeats);
+    auto cryptoContext   = secretKey->GetCryptoContext();
+    cryptoContext->EvalRotateKeyGen(secretKey, rotationIndices);
 }
 
 /**
      * @brief Generates rotation keys for a matrix linear transformation.
      * @param rowSize        size of a row
      * @param type           type of linear transformation
-     * @param nRepeats
-     */
+     * @param numRepeats
+*/
 
 template <typename Element>
-void MulMatRotateKeyGen(CryptoContext<Element>& cryptoContext, const KeyPair<Element>& keyPair, int32_t rowSize) {
-    auto indicesSigma = GenLinTransIndices(rowSize, SIGMA);
-    auto indicesTau   = GenLinTransIndices(rowSize, TAU);
+void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize) {
+    auto indicesSigma = GenLinTransIndices(rowSize, LinTransType::SIGMA);
+    auto indicesTau   = GenLinTransIndices(rowSize, LinTransType::TAU);
 
-    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indicesSigma);
-    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indicesTau);
+    auto cryptoContext = secretKey->GetCryptoContext();
+    cryptoContext->EvalRotateKeyGen(secretKey, indicesSigma);
+    cryptoContext->EvalRotateKeyGen(secretKey, indicesTau);
 
-    for (int32_t nRepeats = 1; nRepeats < rowSize; ++nRepeats) {
-        auto indicesPhi = GenLinTransIndices(rowSize, PHI, nRepeats);
-        auto indicesPsi = GenLinTransIndices(rowSize, PSI, nRepeats);
+    for (int32_t numRepeats = 1; numRepeats < rowSize; ++numRepeats) {
+        auto indicesPhi = GenLinTransIndices(rowSize, LinTransType::PHI, numRepeats);
+        auto indicesPsi = GenLinTransIndices(rowSize, LinTransType::PSI, numRepeats);
 
-        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indicesPhi);
-        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indicesPsi);
+        cryptoContext->EvalRotateKeyGen(secretKey, indicesPhi);
+        cryptoContext->EvalRotateKeyGen(secretKey, indicesPsi);
     }
 }
 
@@ -138,29 +132,28 @@ void MulMatRotateKeyGen(CryptoContext<Element>& cryptoContext, const KeyPair<Ele
      *
      * @return The ciphertext resulting from the matrix-vector product.
      *
-     */
+*/
+// template <typename Element>
+// Ciphertext<Element> EvalMultMatVecFromInt(MatKeys<Element> evalKeys,
+//                                           int typeInt,
+//                                           int32_t rowSize,
+//                                           const Ciphertext<Element>& ctVector,
+//                                           const Ciphertext<Element>& ctMatrix) {
+//     if (typeInt < 0 || typeInt > 3) {
+//         OPENFHE_THROW("Invalid MatVecEncoding enum value.");
+//     }
+
+//     return EvalMultMatVec(evalKeys, static_cast<MatVecEncoding>(typeInt), rowSize, ctVector, ctMatrix);
+// }
 template <typename Element>
-Ciphertext<Element> EvalMultMatVecFromInt(CryptoContext<Element>& cryptoContext,
-                                          MatKeys<Element> evalKeys,
-                                          int typeInt,
-                                          int32_t rowSize,
-                                          const Ciphertext<Element>& ctVector,
-                                          const Ciphertext<Element>& ctMatrix) {
-    if (typeInt < 0 || typeInt > 3) {
-        OPENFHE_THROW("Invalid MatVecEncoding enum value.");
-    }
-    auto type = static_cast<MatVecEncoding>(typeInt);
-    return EvalMultMatVec(cryptoContext, evalKeys, type, rowSize, ctVector, ctMatrix);
-}
-template <typename Element>
-Ciphertext<Element> EvalMultMatVec(CryptoContext<Element>& cryptoContext,
-                                   MatKeys<Element> evalKeys,
+Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
                                    MatVecEncoding encodeType,
                                    int32_t rowSize,
                                    const Ciphertext<Element>& ctVector,
                                    const Ciphertext<Element>& ctMatrix) {
     Ciphertext<Element> ctProduct;
-    auto multiplied = cryptoContext->EvalMult(ctMatrix, ctVector);
+    auto cryptoContext = ctVector->GetCryptoContext();
+    auto multiplied    = cryptoContext->EvalMult(ctMatrix, ctVector);
     if (encodeType == MatVecEncoding::MM_CRC) {
         ctProduct = cryptoContext->EvalSumCols(multiplied, rowSize, *evalKeys);
     }
@@ -185,31 +178,34 @@ Ciphertext<Element> EvalMultMatVec(CryptoContext<Element>& cryptoContext,
      * where d is the number of columns of the matrix 0 <= i,j < d and
      * @param rowSize   The number of padded cols in the encoded matrix
      */
+
 template <typename Element>
-Ciphertext<Element> EvalLinTransSigma(CryptoContext<Element>& cryptoContext,
-                                      const PublicKey<Element>& publicKey,
-                                      const Ciphertext<Element>& ctVector,
+Ciphertext<Element> EvalLinTransSigma(PrivateKey<Element>& secretKey,
+                                      const Ciphertext<Element>& ciphertext,
                                       int32_t rowSize) {
-    int32_t permMatrixSize       = rowSize * rowSize;
-    Plaintext ptZeros            = cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0));
-    Ciphertext<Element> ctResult = cryptoContext->Encrypt(publicKey, ptZeros);
+    EvalLinTransKeyGen(secretKey, rowSize, LinTransType::SIGMA);
+    return EvalLinTransSigma(ciphertext, rowSize);
+}
+
+template <typename Element>
+Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t rowSize) {
+    int32_t d          = rowSize * rowSize;
+    auto cryptoContext = ciphertext->GetCryptoContext();
+    bool flag          = true;
+    Ciphertext<Element> ctResult;
 
     for (int k = -rowSize; k < rowSize; ++k) {
-        auto diag    = GenSigmaDiag(rowSize, k);  // returns std::vector<double>
-        auto ptDiag  = cryptoContext->MakeCKKSPackedPlaintext(diag);
-        auto rotated = cryptoContext->EvalRotate(ctVector, k);
-        cryptoContext->EvalAddInPlace(ctResult, cryptoContext->EvalMult(rotated, ptDiag));
+        auto diag       = GenSigmaDiag(rowSize, k);  // returns std::vector<double>
+        auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diag);
+        auto ctRotated  = cryptoContext->EvalRotate(ciphertext, k);
+        auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
+        if (flag)
+            ctResult = ctProduct;
+        else
+            cryptoContext->EvalAddInPlace(ctResult, ctProduct);
     }
 
     return ctResult;
-}
-template <typename Element>
-Ciphertext<Element> EvalLinTransSigma(CryptoContext<Element>& cryptoContext,
-                                      const KeyPair<Element>& keyPair,
-                                      const Ciphertext<Element>& ctVector,
-                                      int32_t rowSize) {
-    EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, SIGMA);
-    return EvalLinTransSigma(cryptoContext, keyPair.publicKey, ctVector, rowSize);
 }
 
 /**
@@ -224,31 +220,34 @@ Ciphertext<Element> EvalLinTransSigma(CryptoContext<Element>& cryptoContext,
      * @param rowSize   The number of padded cols in the encoded matrix
      */
 template <typename Element>
-Ciphertext<Element> EvalLinTransTau(CryptoContext<Element>& cryptoContext,
-                                    const PublicKey<Element>& publicKey,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize) {
-    int32_t permMatrixSize       = rowSize * rowSize;
-    Plaintext ptZeros            = cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0));
-    Ciphertext<Element> ctResult = cryptoContext->Encrypt(publicKey, ptZeros);
+Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t rowSize) {
+    int32_t permMatrixSize = rowSize * rowSize;
+    auto cryptoContext     = ctVector->GetCryptoContext();
+    bool flag              = true;
+    Ciphertext<Element> ctResult;
 
     int32_t slots = cryptoContext->GetEncodingParams()->GetBatchSize();
     for (auto k = 0; k < rowSize; ++k) {
-        auto diag    = GenTauDiag(slots, rowSize, k);
-        auto ptDiag  = cryptoContext->MakeCKKSPackedPlaintext(diag);
-        auto rotated = cryptoContext->EvalRotate(ctVector, rowSize * k);
-        cryptoContext->EvalAddInPlace(ctResult, cryptoContext->EvalMult(ptDiag, rotated));
+        auto diag       = GenTauDiag(slots, rowSize, k);
+        auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diag);
+        auto ctRotated  = cryptoContext->EvalRotate(ctVector, rowSize * k);
+        auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
+        if (flag) {
+            ctResult = ctProduct;
+        }
+        else {
+            cryptoContext->EvalAddInPlace(ctResult, ctProduct);
+        }
     }
 
     return ctResult;
 }
 template <typename Element>
-Ciphertext<Element> EvalLinTransTau(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
-                                    const Ciphertext<Element>& ctVector,
+Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
+                                    const Ciphertext<Element>& ciphertext,
                                     int32_t rowSize) {
-    EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, TAU);
-    return EvalLinTransTau(cryptoContext, keyPair.publicKey, ctVector, rowSize);
+    EvalLinTransKeyGen(secretKey, rowSize, LinTransType::TAU);
+    return EvalLinTransTau(ciphertext, rowSize);
 }
 
 /**
@@ -263,33 +262,33 @@ Ciphertext<Element> EvalLinTransTau(CryptoContext<Element>& cryptoContext,
      * @param rowSize   The number of padded cols in the encoded matrix
      */
 template <typename Element>
-Ciphertext<Element> EvalLinTransPhi(CryptoContext<Element>& cryptoContext,
-                                    const PublicKey<Element>& publicKey,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats) {
-    auto permMatrixSize          = rowSize * rowSize;
-    auto ptZeros                 = cryptoContext->MakeCKKSPackedPlaintext(std::vector<double>(permMatrixSize, 0.0));
-    Ciphertext<Element> ctResult = cryptoContext->Encrypt(publicKey, ptZeros);
+Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats) {
+    auto permMatrixSize = rowSize * rowSize;
+    auto cryptoContext  = ctVector->GetCryptoContext();
+    bool flag           = true;
+    Ciphertext<Element> ctResult;
 
     for (auto i = 0; i < 2; ++i) {
-        auto rotateIdx = nRepeats - i * rowSize;
-        auto diag      = GenPhiDiag(rowSize, nRepeats, i);
-        auto ptDiag    = cryptoContext->MakeCKKSPackedPlaintext(diag);
-        auto rotated   = cryptoContext->EvalRotate(ctVector, rotateIdx);
-        cryptoContext->EvalAddInPlace(ctResult, cryptoContext->EvalMult(rotated, ptDiag));
+        auto rotateIdx  = numRepeats - i * rowSize;
+        auto diag       = GenPhiDiag(rowSize, numRepeats, i);
+        auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diag);
+        auto ctRotated  = cryptoContext->EvalRotate(ctVector, rotateIdx);
+        auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
+        if (flag)
+            ctResult = ctProduct;
+        else
+            cryptoContext->EvalAddInPlace(ctResult, ctProduct);
     }
 
     return ctResult;
 }
 template <typename Element>
-Ciphertext<Element> EvalLinTransPhi(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
+Ciphertext<Element> EvalLinTransPhi(PrivateKey<Element>& secretKey,
                                     const Ciphertext<Element>& ctVector,
                                     int32_t rowSize,
-                                    int32_t nRepeats) {
-    EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, PHI, nRepeats);
-    return EvalLinTransPhi(cryptoContext, keyPair.publicKey, ctVector, rowSize, nRepeats);
+                                    int32_t numRepeats) {
+    EvalLinTransKeyGen(secretKey, rowSize, LinTransType::PHI, numRepeats);
+    return EvalLinTransPhi(ctVector, rowSize, numRepeats);
 }
 
 /**
@@ -304,38 +303,34 @@ Ciphertext<Element> EvalLinTransPhi(CryptoContext<Element>& cryptoContext,
      * @param rowSize   The number of padded cols in the encoded matrix
      */
 template <typename Element>
-Ciphertext<Element> EvalLinTransPsi(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
+Ciphertext<Element> EvalLinTransPsi(PrivateKey<Element>& secretKey,
                                     const Ciphertext<Element>& ctVector,
                                     int32_t rowSize,
-                                    int32_t nRepeats) {
-    EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, PSI, nRepeats);
-    return EvalLinTransPsi(cryptoContext, ctVector, rowSize, nRepeats);
+                                    int32_t numRepeats) {
+    EvalLinTransKeyGen(secretKey, rowSize, LinTransType::PSI, numRepeats);
+    return EvalLinTransPsi(ctVector, rowSize, numRepeats);
 }
 template <typename Element>
-Ciphertext<Element> EvalLinTransPsi(CryptoContext<Element>& cryptoContext,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats) {
-    return cryptoContext->EvalRotate(ctVector, rowSize * nRepeats);
+Ciphertext<Element> EvalLinTransPsi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats) {
+    auto cryptoContext = ctVector->GetCryptoContext();
+    return cryptoContext->EvalRotate(ctVector, rowSize * numRepeats);
 }
 
 // -------------------------------------------------------------
 // EvalMatMulSquare (based on https://eprint.iacr.org/2018/1041)
 // -------------------------------------------------------------
 template <typename Element>
-Ciphertext<Element> EvalMatMulSquare(CryptoContext<Element>& cryptoContext,
-                                     const PublicKey<Element>& publicKey,
-                                     const Ciphertext<Element>& matrixA,
+Ciphertext<Element> EvalMatMulSquare(const Ciphertext<Element>& matrixA,
                                      const Ciphertext<Element>& matrixB,
                                      int32_t rowSize) {
-    Ciphertext<Element> transformedA = EvalLinTransSigma(cryptoContext, publicKey, matrixA, rowSize);
-    Ciphertext<Element> transformedB = EvalLinTransTau(cryptoContext, publicKey, matrixB, rowSize);
+    auto cryptoContext               = matrixA->GetCryptoContext();
+    Ciphertext<Element> transformedA = EvalLinTransSigma(matrixA, rowSize);
+    Ciphertext<Element> transformedB = EvalLinTransTau(matrixB, rowSize);
     Ciphertext<Element> ctProduct    = cryptoContext->EvalMult(transformedA, transformedB);
 
     for (auto k = 1; k < rowSize; ++k) {
-        auto transformedAk = EvalLinTransPhi(cryptoContext, publicKey, transformedA, rowSize, k);
-        auto transformedBk = EvalLinTransPsi(cryptoContext, transformedB, rowSize, k);
+        auto transformedAk = EvalLinTransPhi(transformedA, rowSize, k);
+        auto transformedBk = EvalLinTransPsi(transformedB, rowSize, k);
         ctProduct          = cryptoContext->EvalAdd(ctProduct, cryptoContext->EvalMult(transformedAk, transformedBk));
     }
 
@@ -343,42 +338,40 @@ Ciphertext<Element> EvalMatMulSquare(CryptoContext<Element>& cryptoContext,
 }
 
 // -------------------------------------------------------------
-// EvalMatrixTranspose
+// EvalTranspose
 // -------------------------------------------------------------
 template <typename Element>
-Ciphertext<Element> EvalMatrixTranspose(CryptoContext<Element>& cryptoContext,
-                                        const KeyPair<Element>& keyPair,
-                                        const Ciphertext<Element>& ctMatrix,
-                                        int32_t rowSize) {
-    EvalLinTransKeyGen(cryptoContext, keyPair, rowSize, TRANSPOSE);
-    return EvalMatrixTranspose(cryptoContext, keyPair.publicKey, ctMatrix, rowSize);
+Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
+                                  const Ciphertext<Element>& ciphertext,
+                                  int32_t rowSize) {
+    EvalLinTransKeyGen(secretKey, rowSize, LinTransType::TRANSPOSE);
+    return EvalTranspose(ciphertext, rowSize);
 }
 template <typename Element>
-Ciphertext<Element> EvalMatrixTranspose(CryptoContext<Element>& cryptoContext,
-                                        const PublicKey<Element>& publicKey,
-                                        const Ciphertext<Element>& ctMatrix,
-                                        int32_t rowSize) {
+Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize) {
     try {
         int32_t totalElements = rowSize * rowSize;
-        const uint32_t slots  = cryptoContext->GetEncodingParams()->GetBatchSize();
-
-        std::vector<double> zeroVector(totalElements, 0.0);
-        Plaintext plaintext          = cryptoContext->MakeCKKSPackedPlaintext(zeroVector);
-        Ciphertext<Element> ctResult = cryptoContext->Encrypt(publicKey, plaintext);
+        auto cryptoContext    = ciphertext->GetCryptoContext();
+        uint32_t slots        = cryptoContext->GetEncodingParams()->GetBatchSize();
+        bool flag             = true;
+        Ciphertext<Element> ctResult;
 
         for (int32_t index = -rowSize + 1; index < rowSize; ++index) {
             int32_t rotationIndex = (rowSize - 1) * index;
             auto diagonalVector   = GenTransposeDiag(slots, rowSize, index);
             auto ptDiagonal       = cryptoContext->MakeCKKSPackedPlaintext(diagonalVector);
-            auto ctRotated        = cryptoContext->EvalRotate(ctMatrix, rotationIndex);
+            auto ctRotated        = cryptoContext->EvalRotate(ciphertext, rotationIndex);
             auto ctProduct        = cryptoContext->EvalMult(ctRotated, ptDiagonal);
-            cryptoContext->EvalAddInPlace(ctResult, ctProduct);
+            if (flag)
+                ctResult = ctProduct;
+            else
+                cryptoContext->EvalAddInPlace(ctResult, ctProduct);
         }
 
         return ctResult;
     }
     catch (const std::exception& e) {
-        OPENFHE_THROW("EvalMatrixTranspose: Homomorphic operation failed. Details: " + std::string(e.what()));
+        OPENFHE_THROW("EvalTranspose: Homomorphic operation failed. Details: " + std::string(e.what()));
     }
 }
 // -------------------------------------------------------------
@@ -425,7 +418,7 @@ Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element> ciphertext,
             mask[i * colSize + j] = 1;
         }
 
-        auto ciphertextRotated = cc->EvalRotate(ciphertext, i*colSize);
+        auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
         auto ciphertextTmp     = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
         cc->EvalMultInPlace(ciphertextTmp, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
         cc->EvalAddInPlace(newCiphertext, ciphertextTmp);
@@ -474,7 +467,7 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
             mask[i * colSize + j] = 1;
         }
 
-        auto ciphertextRotated = cc->EvalRotate(ciphertext, i*colSize);
+        auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
         auto ciphertextTmp     = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
         cc->EvalMultInPlace(ciphertextTmp, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
         cc->EvalAddInPlace(newCiphertext, ciphertextTmp);
@@ -483,76 +476,64 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
     return newCiphertext;
 }
 
-template void EvalLinTransKeyGenFromInt(CryptoContext<DCRTPoly>& cryptoContext,
-                                        const KeyPair<DCRTPoly>& keyPair,
-                                        int32_t rowSize,
-                                        int linTransTypeInt,
-                                        int32_t repeats = 0);
+// template void EvalLinTransKeyGenFromInt(CryptoContext<DCRTPoly>& cryptoContext,
+//                                         const KeyPair<DCRTPoly>& keyPair,
+//                                         int32_t rowSize,
+//                                         int linTransTypeInt,
+//                                         int32_t numRepeats = 0);
 
-template void EvalLinTransKeyGen(CryptoContext<DCRTPoly>& cryptoContext,
-                                 const KeyPair<DCRTPoly>& keyPair,
+template void EvalLinTransKeyGen(PrivateKey<DCRTPoly>& secretKey,
                                  int32_t rowSize,
-                                 LinTransType linTransType,
-                                 int32_t nRepeats = 0);
+                                 LinTransType type,
+                                 int32_t numRepeats);
 
-template void MulMatRotateKeyGen(CryptoContext<DCRTPoly>& cryptoContext,
-                                 const KeyPair<DCRTPoly>& keyPair,
-                                 int32_t rowSize);
+template void EvalSquareMatMultRotateKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalMultMatVec(CryptoContext<DCRTPoly>& cryptoContext,
-                                             MatKeys<DCRTPoly> evalKeys,
+template Ciphertext<DCRTPoly> EvalMultMatVec(MatKeys<DCRTPoly> evalKeys,
                                              MatVecEncoding encodeType,
                                              int32_t rowSize,
                                              const Ciphertext<DCRTPoly>& ctVector,
                                              const Ciphertext<DCRTPoly>& ctMatrix);
 
-template Ciphertext<DCRTPoly> EvalLinTransSigma(CryptoContext<DCRTPoly>& cryptoContext,
-                                                const PublicKey<DCRTPoly>& publicKey,
-                                                const Ciphertext<DCRTPoly>& ctVector,
+template Ciphertext<DCRTPoly> EvalLinTransSigma(const Ciphertext<DCRTPoly>& ciphertext, int32_t rowSize);
+
+template Ciphertext<DCRTPoly> EvalLinTransSigma(PrivateKey<DCRTPoly>& secretKey,
+                                                const Ciphertext<DCRTPoly>& ciphertext,
                                                 int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalLinTransSigma(CryptoContext<DCRTPoly>& cryptoContext,
-                                                const KeyPair<DCRTPoly>& keyPair,
-                                                const Ciphertext<DCRTPoly>& ctVector,
-                                                int32_t rowSize);
-
-template Ciphertext<DCRTPoly> EvalLinTransTau(CryptoContext<DCRTPoly>& cryptoContext,
-                                              const KeyPair<DCRTPoly>& keyPair,
-                                              const Ciphertext<DCRTPoly>& ctVector,
+template Ciphertext<DCRTPoly> EvalLinTransTau(PrivateKey<DCRTPoly>& secretKey,
+                                              const Ciphertext<DCRTPoly>& ciphertext,
                                               int32_t rowSize);
-template Ciphertext<DCRTPoly> EvalLinTransPhi(CryptoContext<DCRTPoly>& cryptoContext,
-                                              const PublicKey<DCRTPoly>& publicKey,
-                                              const Ciphertext<DCRTPoly>& ctVector,
-                                              int32_t rowSize,
-                                              int32_t nRepeats);
-template Ciphertext<DCRTPoly> EvalLinTransPhi(CryptoContext<DCRTPoly>& cryptoContext,
-                                              const KeyPair<DCRTPoly>& keyPair,
-                                              const Ciphertext<DCRTPoly>& ctVector,
-                                              int32_t rowSize,
-                                              int32_t nRepeats);
-template Ciphertext<DCRTPoly> EvalLinTransPsi(CryptoContext<DCRTPoly>& cryptoContext,
-                                              const Ciphertext<DCRTPoly>& ctVector,
-                                              int32_t rowSize,
-                                              int32_t nRepeats);
+template Ciphertext<DCRTPoly> EvalLinTransTau(const Ciphertext<DCRTPoly>& ctVector, int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalLinTransPsi(CryptoContext<DCRTPoly>& cryptoContext,
-                                              const KeyPair<DCRTPoly>& keyPair,
+template Ciphertext<DCRTPoly> EvalLinTransPhi(PrivateKey<DCRTPoly>& secretKey,
                                               const Ciphertext<DCRTPoly>& ctVector,
                                               int32_t rowSize,
-                                              int32_t nRepeats);
+                                              int32_t numRepeats);
 
-template Ciphertext<DCRTPoly> EvalMatMulSquare(CryptoContext<DCRTPoly>& cryptoContext,
-                                               const PublicKey<DCRTPoly>& publicKey,
-                                               const Ciphertext<DCRTPoly>& matrixA,
+template Ciphertext<DCRTPoly> EvalLinTransPhi(const Ciphertext<DCRTPoly>& ctVector,
+                                              int32_t rowSize,
+                                              int32_t numRepeats);
+
+template Ciphertext<DCRTPoly> EvalLinTransPsi(PrivateKey<DCRTPoly>& secretKey,
+                                              const Ciphertext<DCRTPoly>& ctVector,
+                                              int32_t rowSize,
+                                              int32_t numRepeats);
+
+template Ciphertext<DCRTPoly> EvalLinTransPsi(const Ciphertext<DCRTPoly>& ctVector,
+                                              int32_t rowSize,
+                                              int32_t numRepeats);
+
+template Ciphertext<DCRTPoly> EvalMatMulSquare(const Ciphertext<DCRTPoly>& matrixA,
                                                const Ciphertext<DCRTPoly>& matrixB,
                                                int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& cryptoContext,
-                                                  const KeyPair<DCRTPoly>& keyPair,
-                                                  const Ciphertext<DCRTPoly>& ctMatrix,
-                                                  int32_t rowSize);
+template Ciphertext<DCRTPoly> EvalTranspose(PrivateKey<DCRTPoly>& secretKey,
+                                            const Ciphertext<DCRTPoly>& ciphertext,
+                                            int32_t rowSize);
+template Ciphertext<DCRTPoly> EvalTranspose(const Ciphertext<DCRTPoly>& ctMatrix, int32_t rowSize);
 
-// template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& cryptoContext,
+// template Ciphertext<DCRTPoly> EvalTranspose(CryptoContext<DCRTPoly>& cryptoContext,
 //                                                   const PublicKey<DCRTPoly>& publicKey,
 //                                                   const Ciphertext<DCRTPoly>& ctMatrix,
 //                                                   int32_t rowSize);
@@ -567,4 +548,4 @@ template Ciphertext<DCRTPoly> EvalMatrixTranspose(CryptoContext<DCRTPoly>& crypt
 //                                                     const std::map<uint32_t, EvalKey<DCRTPoly>>& evalSumKeys,
 //                                                     uint32_t subringDim);
 
-}  // namespace fhemat
+}  // namespace openfhe_matrix

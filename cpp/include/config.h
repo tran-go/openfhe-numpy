@@ -10,12 +10,12 @@
 
 #include "openfhe.h"
 
-namespace lbcrypto
+namespace openfhe_matrix
 {
     // -----------------------------------------------------------------------------
     // Encoding Style Enum
     // -----------------------------------------------------------------------------
-    enum MatVecEncoding
+    enum class MatVecEncoding
     {
         MM_CRC = 0,  // Matrix: row-wise, Vector: column-wise → Result: column-wise
         MM_RCR = 1,  // Matrix: column-wise, Vector: row-wise → Result: row-wise
@@ -25,7 +25,7 @@ namespace lbcrypto
     // -----------------------------------------------------------------------------
     // Permutation Type Enum
     // -----------------------------------------------------------------------------
-    enum LinTransType
+    enum class LinTransType
     {
         SIGMA = 0,
         TAU = 1,
@@ -48,6 +48,6 @@ namespace lbcrypto
     // lbcrypto::EvalKey<lbcrypto::DCRTPoly>;
     // // automorphism keys for EvalSumRows/EvalSumCols; works only for packed encoding
     template <typename Element>
-    using MatKeys = std::shared_ptr<std::map<usint, EvalKey<Element>>>;
+    using MatKeys = std::shared_ptr<std::map<usint, lbcrypto::EvalKey<Element>>>;
 }
 #endif  // CONFIG_H

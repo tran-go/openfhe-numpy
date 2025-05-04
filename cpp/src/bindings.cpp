@@ -1,7 +1,9 @@
 #include <pybind11/pybind11.h>
+// #include <pybind11/enum.h>
 #include "enc_matrix.h"
 #include "config.h"
-using namespace fhemat;
+
+using namespace openfhe_matrix;
 using namespace lbcrypto;
 
 namespace py = pybind11;
@@ -26,104 +28,126 @@ void bind_enums_and_constants(py::module& m) {
         .value("TRANSPOSE", LinTransType::TRANSPOSE)
         .export_values();
 
+    py::implicitly_convertible<int, LinTransType>();
+    //     m.attr("SIGMA")     = py::cast(LinTransType::SIGMA);
+    //     m.attr("TAU")       = py::cast(LinTransType::TAU);
+    //     m.attr("PHI")       = py::cast(LinTransType::PHI);
+    //     m.attr("PSI")       = py::cast(LinTransType::PSI);
+    //     m.attr("TRANSPOSE") = py::cast(LinTransType::TRANSPOSE);
+
     // Matrix Vector Multiplication Types
     py::enum_<MatVecEncoding>(m, "MatVecEncoding")
         .value("MM_CRC", MatVecEncoding::MM_CRC)
         .value("MM_RCR", MatVecEncoding::MM_RCR)
         .value("MM_DIAG", MatVecEncoding::MM_DIAG)
         .export_values();
+    py::implicitly_convertible<int, MatVecEncoding>();
+    //     m.attr("MM_CRC")  = py::cast(MatVecEncoding::MM_CRC);
+    //     m.attr("MM_RCR")  = py::cast(MatVecEncoding::MM_RCR);
+    //     m.attr("MM_DIAG") = py::cast(MatVecEncoding::MM_DIAG);
 }
+
 void bind_matrix_funcs(py::module& m) {
     // EvalLinTransKeyGen
     m.def("EvalLinTransKeyGen",
-          static_cast<void (*)(CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, int32_t, int, int32_t)>(
-              &EvalLinTransKeyGenFromInt<DCRTPoly>),
-          py::arg("cryptoContext"),
-          py::arg("keyPair"),
+          static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t, LinTransType, int32_t)>(&EvalLinTransKeyGen<DCRTPoly>),
+          py::arg("secretKey"),
           py::arg("rowSize"),
           py::arg("type"),
-          py::arg("nRepeats") = 0);
+          py::arg("numRepeats") = 0);
+
     // EvalLinTransSigma
     m.def("EvalLinTransSigma",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const PublicKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
+          static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
               &EvalLinTransSigma),
-          "EvalLinTransSigma with PublicKey<DCRTPoly>");
+        //   py::arg("secretKey"),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+          "EvalLinTransSigma with secretKey");
 
     m.def("EvalLinTransSigma",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
-              &EvalLinTransSigma),
-          "EvalLinTransSigma with KeyPair<DCRTPoly>");
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, int32_t)>(&EvalLinTransSigma),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+          "EvalLinTransSigma");
 
     // EvalLinTransTau
     m.def("EvalLinTransTau",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
+          static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
               &EvalLinTransTau),
+        //   py::arg("secretKey"),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+          "EvalLinTransTau with SecretKey");
+
+    m.def("EvalLinTransTau",
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, int32_t)>(&EvalLinTransTau),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
           "EvalLinTransTau");
 
     // EvalLinTransPhi
-    m.def("EvalLinTransPhi",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const PublicKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
-              &EvalLinTransPhi),
-          "EvalLinTransPhi with PublicKey<DCRTPoly>");
 
     m.def("EvalLinTransPhi",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
+          static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
               &EvalLinTransPhi),
-          "EvalLinTransPhi with KeyPair<DCRTPoly>");
+        //   py::arg("secretKey"),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+        //   py::arg("numRepeats"),
+          "EvalLinTransPhi with SecretKey");
+
+    m.def("EvalLinTransPhi",
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(&EvalLinTransPhi),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+        //   py::arg("numRepeats"),
+          "EvalLinTransPhi");
 
     // EvalLinTransPsi
-    m.def(
-        "EvalLinTransPsi",
-        static_cast<Ciphertext<DCRTPoly> (*)(CryptoContext<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
-            &EvalLinTransPsi),
-        "EvalLinTransPsi (default)");
+    m.def("EvalLinTransPsi",
+          static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
+              &EvalLinTransPsi),
+        //   py::arg("secretKey"),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+        //   py::arg("numRepeats"),
+          "EvalLinTransPsi with SecretKey");
 
     m.def("EvalLinTransPsi",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(
-              &EvalLinTransPsi),
-          "EvalLinTransPsi with KeyPair<DCRTPoly>");
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, int32_t, int32_t)>(&EvalLinTransPsi),
+        //   py::arg("ciphertext"),
+        //   py::arg("rowSize"),
+        //   py::arg("numRepeats"),
+          "EvalLinTransPsi");
 
     // EvalMatMulSquare
     m.def("EvalMatMulSquare",
-          static_cast<Ciphertext<DCRTPoly> (*)(CryptoContext<DCRTPoly>&,
-                                               const PublicKey<DCRTPoly>&,
-                                               const Ciphertext<DCRTPoly>&,
-                                               const Ciphertext<DCRTPoly>&,
-                                               int32_t)>(&EvalMatMulSquare),
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
+              &EvalMatMulSquare),
           "EvalMatMulSquare");
 
-    // EvalMatrixTranspose
-    m.def("EvalMatrixTranspose",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
-              &EvalMatrixTranspose),
-          "EvalMatrixTranspose with KeyPair<DCRTPoly>");
-    m.def("EvalMatrixTranspose",
-          static_cast<Ciphertext<DCRTPoly> (*)(
-              CryptoContext<DCRTPoly>&, const PublicKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
-              &EvalMatrixTranspose),
-          "EvalMatrixTranspose with KeyPair<DCRTPoly>");
+    // EvalTranspose
+    m.def("EvalTranspose",
+          static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
+              &EvalTranspose),
+          "EvalTranspose with KeyPair<DCRTPoly>");
 
-    // MulMatRotateKeyGen
+    m.def("EvalTranspose",
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, int32_t)>(&EvalTranspose),
+          "EvalTranspose with KeyPair<DCRTPoly>");
 
-    m.def("MulMatRotateKeyGen",
-          static_cast<void (*)(CryptoContext<DCRTPoly>&, const KeyPair<DCRTPoly>&, int32_t)>(&MulMatRotateKeyGen),
-          "MulMatRotateKeyGen with KeyPair<DCRTPoly>");
+    // EvalSquareMatMultRotateKeyGen
+
+    m.def("EvalSquareMatMultRotateKeyGen",
+          static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t)>(&EvalSquareMatMultRotateKeyGen),
+          "EvalSquareMatMultRotateKeyGen with KeyPair<DCRTPoly>");
 
     // EvalMultMatVec
     m.def("EvalMultMatVec",
-          static_cast<Ciphertext<DCRTPoly> (*)(CryptoContext<DCRTPoly>&,
-                                               MatKeys<DCRTPoly>,
-                                               MatVecEncoding,
-                                               int32_t,
-                                               const Ciphertext<DCRTPoly>&,
-                                               const Ciphertext<DCRTPoly>&)>(&EvalMultMatVec),
+          static_cast<Ciphertext<DCRTPoly> (*)(
+              MatKeys<DCRTPoly>, MatVecEncoding, int32_t, const Ciphertext<DCRTPoly>&, const Ciphertext<DCRTPoly>&)>(
+              &EvalMultMatVec),
           "EvalMultMatVec with MatKeys<DCRTPoly>");
 }
 

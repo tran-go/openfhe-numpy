@@ -7,96 +7,76 @@
 #include "utils.h"
 
 #define ENC_MATRIX_API
-namespace fhemat {
+namespace openfhe_matrix {
 
 using namespace lbcrypto;
 
-template <typename Element>
-void EvalLinTransKeyGenFromInt(CryptoContext<Element>& cryptoContext,
-                               const KeyPair<Element>& keyPair,
-                               int32_t rowSize,
-                               int linTransTypeInt,
-                               int32_t repeats = 0);
+// template <typename Element>
+// void EvalLinTransKeyGenFromInt(CryptoContext<Element>& cryptoContext,
+//                                const KeyPair<Element>& keyPair,
+//                                int32_t rowSize,
+//                                int linTransTypeInt,
+//                                int32_t repeats = 0);
 
 template <typename Element>
-void EvalLinTransKeyGen(CryptoContext<Element>& cryptoContext,
-                        const KeyPair<Element>& keyPair,
-                        int32_t rowSize,
-                        LinTransType linTransType,
-                        int32_t nRepeats = 0);
+void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats = 0);
 
 template <typename Element>
-void MulMatRotateKeyGen(CryptoContext<Element>& cryptoContext, const KeyPair<Element>& keyPair, int32_t rowSize);
+void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalMultMatVec(CryptoContext<Element>& cryptoContext,
-                                   MatKeys<Element> evalKeys,
+Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
                                    MatVecEncoding encodeType,
                                    int32_t rowSize,
                                    const Ciphertext<Element>& ctVector,
                                    const Ciphertext<Element>& ctMatrix);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransSigma(CryptoContext<Element>& cryptoContext,
-                                      const PublicKey<Element>& publicKey,
-                                      const Ciphertext<Element>& ctVector,
+Ciphertext<Element> EvalLinTransSigma(PrivateKey<Element>& secretKey,
+                                      const Ciphertext<Element>& ciphertext,
                                       int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransSigma(CryptoContext<Element>& cryptoContext,
-                                      const KeyPair<Element>& keyPair,
-                                      const Ciphertext<Element>& ctVector,
-                                      int32_t rowSize);
+Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransTau(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
-                                    const Ciphertext<Element>& ctVector,
+Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t rowSize);
+
+template <typename Element>
+Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
+                                    const Ciphertext<Element>& ciphertext,
                                     int32_t rowSize);
-template <typename Element>
-Ciphertext<Element> EvalLinTransPhi(CryptoContext<Element>& cryptoContext,
-                                    const PublicKey<Element>& publicKey,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats);
-template <typename Element>
-
-Ciphertext<Element> EvalLinTransPhi(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats);
-template <typename Element>
-Ciphertext<Element> EvalLinTransPsi(CryptoContext<Element>& cryptoContext,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransPsi(CryptoContext<Element>& cryptoContext,
-                                    const KeyPair<Element>& keyPair,
-                                    const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
-                                    int32_t nRepeats);
+Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats);
 
 template <typename Element>
-Ciphertext<Element> EvalMatMulSquare(CryptoContext<Element>& cryptoContext,
-                                     const PublicKey<Element>& publicKey,
-                                     const Ciphertext<Element>& matrixA,
+Ciphertext<Element> EvalLinTransPhi(PrivateKey<Element>& secretKey,
+                                    const Ciphertext<Element>& ctVector,
+                                    int32_t rowSize,
+                                    int32_t numRepeats);
+
+template <typename Element>
+Ciphertext<Element> EvalLinTransPsi(PrivateKey<Element>& secretKey,
+                                    const Ciphertext<Element>& ctVector,
+                                    int32_t rowSize,
+                                    int32_t numRepeats);
+
+template <typename Element>
+Ciphertext<Element> EvalLinTransPsi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats);
+
+template <typename Element>
+Ciphertext<Element> EvalMatMulSquare(const Ciphertext<Element>& matrixA,
                                      const Ciphertext<Element>& matrixB,
                                      int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalMatrixTranspose(CryptoContext<Element>& cryptoContext,
-                                        const KeyPair<Element>& keyPair,
-                                        const Ciphertext<Element>& ctMatrix,
-                                        int32_t rowSize);
+Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
+                                  const Ciphertext<Element>& ciphertext,
+                                  int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalMatrixTranspose(CryptoContext<Element>& cryptoContext,
-                                        const PublicKey<Element>& publicKey,
-                                        const Ciphertext<Element>& ctMatrix,
-                                        int32_t rowSize);
+Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize);
 
-}  // namespace fhemat
+}  // namespace openfhe_matrix
 #endif  // ENC_MATRIX_H
