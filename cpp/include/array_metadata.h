@@ -105,8 +105,12 @@ public:
     template <class Archive>
     void load(Archive& ar, std::uint32_t);
 
-    std::string SerializedObjectName() const;
-    static uint32_t SerializedVersion();
+    std::string SerializedObjectName() const {
+        return "ArrayMetadata";
+    }
+    static uint32_t SerializedVersion() {
+        return 1;
+    }
 
     /* helper to attach / get from ciphertext  (must stay in header) */
     template <class Element>
