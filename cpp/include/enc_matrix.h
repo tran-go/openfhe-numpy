@@ -1,7 +1,6 @@
 #ifndef ENC_MATRIX_H
 #define ENC_MATRIX_H
 
-// #include "openfhe.h"
 #include "config.h"
 #include "helper.h"
 #include "utils.h"

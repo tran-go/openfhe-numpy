@@ -29,13 +29,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================
 
-#ifndef FHEMAT_ARRAY_METADATA_H
-#define FHEMAT_ARRAY_METADATA_H
+#ifndef ARRAY_METADATA_H
+#define ARRAY_METADATA_H
 
+#include "config.h"
 #include <cstdint>
 #include <ostream>
 #include <memory>
 
+#define ARRAY_METADATA_API
 /* ------------------------------------------------------------------ */
 /*  ArrayMetadata declaration                                         */
 /* ------------------------------------------------------------------ */
@@ -43,7 +45,7 @@ namespace openfhe_matrix {
 class ArrayMetadata : public lbcrypto::Metadata {
 public:
     /* constructors / destructor */
-    constexpr ArrayMetadata() = default;
+    ArrayMetadata() = default;
     ArrayMetadata(int32_t initialShape,
                   int32_t ndim,
                   int32_t ncols,
@@ -94,13 +96,13 @@ public:
     }
 
     /* Metadata interface overrides */
-    std::shared_ptr<lbcrypto::Metadata> Clone() const;
-    bool operator==(const lbcrypto::Metadata& rhs) const;
-    std::ostream& print(std::ostream& os) const;
+    std::shared_ptr<lbcrypto::Metadata> Clone() const override;
+    bool operator==(const lbcrypto::Metadata& rhs) const override;
+    std::ostream& print(std::ostream& os) const override;
 
     template <class Archive>
     void save(Archive& ar, std::uint32_t) const;
-    template <class Ar>
+    template <class Archive>
     void load(Archive& ar, std::uint32_t);
 
     std::string SerializedObjectName() const;
@@ -121,54 +123,9 @@ private:
     int32_t m_ncols{0};
     int32_t m_nrows{0};
     int32_t m_batchSize{0};
-    ArrayEncodingType m_encType{ArrayEncodingType::ROW_MAJOR};
+    ArrayEncodingType m_encodeType{ArrayEncodingType::ROW_MAJOR};
 };
 
-/* ---------- template bodies (header‑only) ------------------------ */
-template <class Archive>
-inline void ArrayMetadata::save(Archive& ar, std::uint32_t) const {
-    ar(cereal::base_class<lbcrypto::Metadata>(this), m_initialShape, m_ndim, m_ncols, m_nrows, m_batchSize, m_encType);
-}
-template <class Archive>
-inline void ArrayMetadata::load(Archive& ar, std::uint32_t ver) {
-    if (ver > SerializedVersion())
-        OPENFHE_THROW("ArrayMetadata: incompatible version");
-    ar(cereal::base_class<lbcrypto::Metadata>(this), m_initialShape, m_ndim, m_ncols, m_nrows, m_batchSize, m_encType);
-}
 
-/* helper templates */
-template <class Element>
-inline std::shared_ptr<ArrayMetadata> ArrayMetadata::GetMetadata(
-    const std::shared_ptr<const lbcrypto::CiphertextImpl<Element>>& ct) {
-    auto it = ct->FindMetadataByKey(METADATA_ARRAYINFO_TAG);
-    if (!ct->MetadataFound(it))
-        OPENFHE_THROW("ArrayMetadata not set");
-    return std::dynamic_pointer_cast<ArrayMetadata>(ct->GetMetadata(it));
-}
-template <class Element>
-inline void ArrayMetadata::StoreMetadata(std::shared_ptr<lbcrypto::CiphertextImpl<Element>> ct,
-                                         std::shared_ptr<ArrayMetadata> meta) {
-    ct->SetMetadataByKey(METADATA_ARRAYINFO_TAG, std::move(meta));
-}
-
-/* inline constexpr getters that are trivial */
-inline constexpr int32_t ArrayMetadata::initialShape() const noexcept {
-    return m_initialShape;
-}
-inline constexpr int32_t ArrayMetadata::ndim() const noexcept {
-    return m_ndim;
-}
-inline constexpr int32_t ArrayMetadata::ncols() const noexcept {
-    return m_ncols;
-}
-inline constexpr int32_t ArrayMetadata::nrows() const noexcept {
-    return m_nrows;
-}
-inline constexpr int32_t ArrayMetadata::batchSize() const noexcept {
-    return m_batchSize;
-}
-inline constexpr ArrayEncodingType ArrayMetadata::encType() const noexcept {
-    return m_encType;
-}
 }  // namespace openfhe_matrix
-#endif  // FHEMAT_ARRAY_METADATA_H
+#endif  // ARRAY_METADATA_H

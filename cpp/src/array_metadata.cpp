@@ -35,16 +35,62 @@ using namespace lbcrypto;
 namespace openfhe_matrix {
 
 /* ---- Metadata interface ------------------------------------- */
-std::shared_ptr<Metadata> Clone() const {
+std::shared_ptr<Metadata> ArrayMetadata::Clone() const {
     return std::make_shared<ArrayMetadata>(*this);
 }
-bool operator==(const Metadata& rhs) const {
+bool ArrayMetadata::operator==(const Metadata& rhs) const {
     auto p = dynamic_cast<const ArrayMetadata*>(&rhs);
     return p && m_initialShape == p->m_initialShape && m_ndim == p->m_ndim && m_ncols == p->m_ncols &&
            m_nrows == p->m_nrows && m_batchSize == p->m_batchSize && m_encodeType == p->m_encodeType;
 }
-std::ostream& print(std::ostream& os) const {
+std::ostream& ArrayMetadata::print(std::ostream& os) const {
     return os << "[shape=" << m_initialShape << ", ndim=" << m_ndim << ", cols=" << m_ncols << ", rows=" << m_nrows
               << ", batch=" << m_batchSize << ", encodeType=" << static_cast<int>(m_encodeType) << ']';
 }
+
+/* ---------- template bodies (header‑only) ------------------------ */
+template <class Archive>
+inline void ArrayMetadata::save(Archive& ar, std::uint32_t) const {
+    ar(cereal::base_class<lbcrypto::Metadata>(this),
+       m_initialShape,
+       m_ndim,
+       m_ncols,
+       m_nrows,
+       m_batchSize,
+       m_encodeType);
 }
+template <class Archive>
+inline void ArrayMetadata::load(Archive& ar, std::uint32_t ver) {
+    if (ver > SerializedVersion())
+        OPENFHE_THROW("ArrayMetadata: incompatible version");
+    ar(cereal::base_class<lbcrypto::Metadata>(this),
+       m_initialShape,
+       m_ndim,
+       m_ncols,
+       m_nrows,
+       m_batchSize,
+       m_encodeType);
+}
+
+/* helper templates */
+template <class Element>
+std::shared_ptr<ArrayMetadata> ArrayMetadata::GetMetadata(
+    const std::shared_ptr<const lbcrypto::CiphertextImpl<Element>>& ct) {
+    auto it = ct->FindMetadataByKey(METADATA_ARRAYINFO_TAG);
+    if (!ct->MetadataFound(it))
+        OPENFHE_THROW("ArrayMetadata not set");
+    return std::dynamic_pointer_cast<ArrayMetadata>(ct->GetMetadata(it));
+}
+template <class Element>
+void ArrayMetadata::StoreMetadata(std::shared_ptr<lbcrypto::CiphertextImpl<Element>> ct,
+                                  std::shared_ptr<ArrayMetadata> meta) {
+    ct->SetMetadataByKey(METADATA_ARRAYINFO_TAG, std::move(meta));
+}
+
+template std::shared_ptr<ArrayMetadata> ArrayMetadata::GetMetadata(
+    const std::shared_ptr<const lbcrypto::CiphertextImpl<DCRTPoly>>& ct);
+
+template void ArrayMetadata::StoreMetadata(std::shared_ptr<lbcrypto::CiphertextImpl<DCRTPoly>> ct,
+                                           std::shared_ptr<ArrayMetadata> meta);
+
+}  // namespace openfhe_matrix

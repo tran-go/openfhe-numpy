@@ -15,7 +15,7 @@ namespace openfhe_matrix {
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------
-inline constexpr const std::string_view METADATA_ARRAYINFO_TAG = "arrayInfo";
+inline const std::string METADATA_ARRAYINFO_TAG = "arrayInfo";
 
 // -----------------------------------------------------------------------------
 // Encoding Style Enum

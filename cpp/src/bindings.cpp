@@ -2,6 +2,7 @@
 // #include <pybind11/enum.h>
 #include "enc_matrix.h"
 #include "config.h"
+#include "array_metadata.h"
 
 using namespace openfhe_matrix;
 using namespace lbcrypto;
@@ -144,40 +145,66 @@ void bind_metadata(py::module& m) {
              py::arg("encodeType") = ArrayEncodingType::ROW_MAJOR)
 
         // properties for all fields
+        // properties, using lambdas to disambiguate
         .def_property(
-            "initialShape", &ArrayMetadata::initialShape, (int32_t& (ArrayMetadata::*)())&ArrayMetadata::initialShape)
-        .def_property("ndim", &ArrayMetadata::ndim, (int32_t& (ArrayMetadata::*)())&ArrayMetadata::ndim)
-        .def_property("ncols", &ArrayMetadata::ncols, (int32_t& (ArrayMetadata::*)())&ArrayMetadata::ncols)
-        .def_property("nrows", &ArrayMetadata::nrows, (int32_t& (ArrayMetadata::*)())&ArrayMetadata::nrows)
-        .def_property("batchSize", &ArrayMetadata::batchSize, (int32_t& (ArrayMetadata::*)())&ArrayMetadata::batchSize)
-        .def_property("encodeType",
-                      &ArrayMetadata::encodeType,
-                      (ArrayEncodingType & (ArrayMetadata::*)()) & ArrayMetadata::encodeType)
+            "initialShape",
+            [](const ArrayMetadata& a) -> int32_t { return a.initialShape(); },
+            [](ArrayMetadata& a, int32_t v) { a.initialShape() = v; },
+            "Original (flattened) array length")
+        .def_property(
+            "ndim",
+            [](const ArrayMetadata& a) -> int32_t { return a.ndim(); },
+            [](ArrayMetadata& a, int32_t v) { a.ndim() = v; },
+            "Number of dimensions")
+        .def_property(
+            "ncols",
+            [](const ArrayMetadata& a) -> int32_t { return a.ncols(); },
+            [](ArrayMetadata& a, int32_t v) { a.ncols() = v; },
+            "Number of columns")
+        .def_property(
+            "nrows",
+            [](const ArrayMetadata& a) -> int32_t { return a.nrows(); },
+            [](ArrayMetadata& a, int32_t v) { a.nrows() = v; },
+            "Number of rows")
+        .def_property(
+            "batchSize",
+            [](const ArrayMetadata& a) -> int32_t { return a.batchSize(); },
+            [](ArrayMetadata& a, int32_t v) { a.batchSize() = v; },
+            "Batch size")
+        .def_property(
+            "encodeType",
+            [](const ArrayMetadata& a) -> ArrayEncodingType { return a.encodeType(); },
+            [](ArrayMetadata& a, ArrayEncodingType e) { a.encodeType() = e; },
+            "Row‐ or column‐major encoding")
 
         // Metadata interface
-        .def("Clone", &ArrayMetadata::Clone)
-        .def("__eq__", [](const ArrayMetadata& self, const Metadata& other) { return self == other; })
-        .def("print",
-             [](const ArrayMetadata& self) {
-                 std::ostringstream os;
-                 self.print(os);
-                 return os.str();
-             })
+        .def("Clone", &ArrayMetadata::Clone, "Return a deep copy of this ArrayMetadata")
+        .def(
+            "__eq__",
+            [](const ArrayMetadata& a, const Metadata& b) { return a == b; },
+            py::is_operator(),
+            "Compare metadata for equality")
+        .def(
+            "print",
+            [](const ArrayMetadata& a) {
+                std::ostringstream os;
+                a.print(os);
+                return os.str();
+            },
+            "Stringify the metadata")
 
-        // serialization
+        // Serialization
         .def("SerializedObjectName", &ArrayMetadata::SerializedObjectName)
         .def_static("SerializedVersion", &ArrayMetadata::SerializedVersion);
 
-    //
-    m.def("GetArrayMetadata",
-          &ArrayMetadata::GetMetadata<lbcrypto::DCRTPoly>,
+    // 3) If you need the template helpers for DCRTPoly:
+    m.def("GetArrayMetadata_DCRTPoly",
+          &ArrayMetadata::GetMetadata<DCRTPoly>,
           py::arg("ciphertext"),
-          "Retrieve the ArrayMetadata attached to a Ciphertext<DCRTPoly>");
-
-    m.def("StoreArrayMetadata",
-          &ArrayMetadata::StoreMetadata<lbcrypto::DCRTPoly>,
+          "Retrieve ArrayMetadata from a Ciphertext<DCRTPoly>");
+    m.def("StoreArrayMetadata_DCRTPoly",
+          &ArrayMetadata::StoreMetadata<DCRTPoly>,
           py::arg("ciphertext"),
           py::arg("metadata"),
           "Attach ArrayMetadata to a Ciphertext<DCRTPoly>");
-}
 }
