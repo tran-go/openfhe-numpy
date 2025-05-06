@@ -10,13 +10,6 @@ namespace openfhe_matrix {
 
 using namespace lbcrypto;
 
-// template <typename Element>
-// void EvalLinTransKeyGenFromInt(CryptoContext<Element>& cryptoContext,
-//                                const KeyPair<Element>& keyPair,
-//                                int32_t rowSize,
-//                                int linTransTypeInt,
-//                                int32_t repeats = 0);
-
 template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats = 0);
 

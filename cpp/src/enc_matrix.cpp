@@ -133,18 +133,7 @@ void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSi
      * @return The ciphertext resulting from the matrix-vector product.
      *
 */
-// template <typename Element>
-// Ciphertext<Element> EvalMultMatVecFromInt(MatKeys<Element> evalKeys,
-//                                           int typeInt,
-//                                           int32_t rowSize,
-//                                           const Ciphertext<Element>& ctVector,
-//                                           const Ciphertext<Element>& ctMatrix) {
-//     if (typeInt < 0 || typeInt > 3) {
-//         OPENFHE_THROW("Invalid MatVecEncoding enum value.");
-//     }
 
-//     return EvalMultMatVec(evalKeys, static_cast<MatVecEncoding>(typeInt), rowSize, ctVector, ctMatrix);
-// }
 template <typename Element>
 Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
                                    MatVecEncoding encodeType,
@@ -199,8 +188,10 @@ Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int
         auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diag);
         auto ctRotated  = cryptoContext->EvalRotate(ciphertext, k);
         auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
-        if (flag)
+        if (flag) {
             ctResult = ctProduct;
+            flag     = false;
+        }
         else
             cryptoContext->EvalAddInPlace(ctResult, ctProduct);
     }
@@ -222,8 +213,8 @@ Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int
 template <typename Element>
 Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t rowSize) {
     // int32_t permMatrixSize = rowSize * rowSize;
-    auto cryptoContext     = ctVector->GetCryptoContext();
-    bool flag              = true;
+    auto cryptoContext = ctVector->GetCryptoContext();
+    bool flag          = true;
     Ciphertext<Element> ctResult;
 
     int32_t slots = cryptoContext->GetEncodingParams()->GetBatchSize();
@@ -234,6 +225,7 @@ Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t
         auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
         if (flag) {
             ctResult = ctProduct;
+            flag     = false;
         }
         else {
             cryptoContext->EvalAddInPlace(ctResult, ctProduct);
@@ -264,8 +256,8 @@ Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
 template <typename Element>
 Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats) {
     // auto permMatrixSize = rowSize * rowSize;
-    auto cryptoContext  = ctVector->GetCryptoContext();
-    bool flag           = true;
+    auto cryptoContext = ctVector->GetCryptoContext();
+    bool flag          = true;
     Ciphertext<Element> ctResult;
 
     for (auto i = 0; i < 2; ++i) {
@@ -274,8 +266,10 @@ Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t
         auto ptDiagonal = cryptoContext->MakeCKKSPackedPlaintext(diag);
         auto ctRotated  = cryptoContext->EvalRotate(ctVector, rotateIdx);
         auto ctProduct  = cryptoContext->EvalMult(ctRotated, ptDiagonal);
-        if (flag)
+        if (flag) {
             ctResult = ctProduct;
+            flag     = false;
+        }
         else
             cryptoContext->EvalAddInPlace(ctResult, ctProduct);
     }
@@ -351,9 +345,9 @@ template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize) {
     try {
         // int32_t totalElements = rowSize * rowSize;
-        auto cryptoContext    = ciphertext->GetCryptoContext();
-        uint32_t slots        = cryptoContext->GetEncodingParams()->GetBatchSize();
-        bool flag             = true;
+        auto cryptoContext = ciphertext->GetCryptoContext();
+        uint32_t slots     = cryptoContext->GetEncodingParams()->GetBatchSize();
+        bool flag          = true;
         Ciphertext<Element> ctResult;
 
         for (int32_t index = -rowSize + 1; index < rowSize; ++index) {
@@ -362,8 +356,10 @@ Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t
             auto ptDiagonal       = cryptoContext->MakeCKKSPackedPlaintext(diagonalVector);
             auto ctRotated        = cryptoContext->EvalRotate(ciphertext, rotationIndex);
             auto ctProduct        = cryptoContext->EvalMult(ctRotated, ptDiagonal);
-            if (flag)
+            if (flag) {
                 ctResult = ctProduct;
+                flag     = false;
+            }
             else
                 cryptoContext->EvalAddInPlace(ctResult, ctProduct);
         }
