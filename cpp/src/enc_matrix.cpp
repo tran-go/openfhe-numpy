@@ -189,7 +189,7 @@ Ciphertext<Element> EvalLinTransSigma(PrivateKey<Element>& secretKey,
 
 template <typename Element>
 Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t rowSize) {
-    int32_t d          = rowSize * rowSize;
+    // int32_t d          = rowSize * rowSize;
     auto cryptoContext = ciphertext->GetCryptoContext();
     bool flag          = true;
     Ciphertext<Element> ctResult;
@@ -221,7 +221,7 @@ Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int
      */
 template <typename Element>
 Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t rowSize) {
-    int32_t permMatrixSize = rowSize * rowSize;
+    // int32_t permMatrixSize = rowSize * rowSize;
     auto cryptoContext     = ctVector->GetCryptoContext();
     bool flag              = true;
     Ciphertext<Element> ctResult;
@@ -263,7 +263,7 @@ Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
      */
 template <typename Element>
 Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats) {
-    auto permMatrixSize = rowSize * rowSize;
+    // auto permMatrixSize = rowSize * rowSize;
     auto cryptoContext  = ctVector->GetCryptoContext();
     bool flag           = true;
     Ciphertext<Element> ctResult;
@@ -350,7 +350,7 @@ Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
 template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize) {
     try {
-        int32_t totalElements = rowSize * rowSize;
+        // int32_t totalElements = rowSize * rowSize;
         auto cryptoContext    = ciphertext->GetCryptoContext();
         uint32_t slots        = cryptoContext->GetEncodingParams()->GetBatchSize();
         bool flag             = true;
@@ -476,11 +476,7 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
     return newCiphertext;
 }
 
-// template void EvalLinTransKeyGenFromInt(CryptoContext<DCRTPoly>& cryptoContext,
-//                                         const KeyPair<DCRTPoly>& keyPair,
-//                                         int32_t rowSize,
-//                                         int linTransTypeInt,
-//                                         int32_t numRepeats = 0);
+// Convert Element to DCRTPoly
 
 template void EvalLinTransKeyGen(PrivateKey<DCRTPoly>& secretKey,
                                  int32_t rowSize,
