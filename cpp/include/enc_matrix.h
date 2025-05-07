@@ -14,6 +14,9 @@ template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats = 0);
 
 template <typename Element>
+void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
+
+template <typename Element>
 void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
 
 template <typename Element>
@@ -69,6 +72,9 @@ Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
 
 template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize);
+
+template <typename Element>
+Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim=0);
 
 }  // namespace openfhe_matrix
 #endif  // ENC_MATRIX_H

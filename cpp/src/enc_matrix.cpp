@@ -74,15 +74,6 @@ std::vector<int32_t> GenLinTransIndices(int32_t rowSize, LinTransType type, int3
      * @param type           The type of linear transformation.
      * @param numRepeats       Optional numRepeats used by PHI and PSI transformations.
 **/
-// template <typename Element>
-// void EvalLinTransKeyGenFromInt(const PrivateKey<Element>& secretKey,
-//                                int32_t rowSize,
-//                                int typeInt,
-//                                int32_t numRepeats) {
-//     if (typeInt < 0 || typeInt > 4)
-//         throw std::invalid_argument("Invalid LinTransType enum value.");
-//     EvalLinTransKeyGen(secretKey, rowSize, static_cast<LinTransType>(typeInt), numRepeats);
-// }
 
 template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats) {
@@ -114,6 +105,20 @@ void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSi
         cryptoContext->EvalRotateKeyGen(secretKey, indicesPhi);
         cryptoContext->EvalRotateKeyGen(secretKey, indicesPsi);
     }
+}
+
+template <typename Element>
+void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize) {
+    auto cryptoContext = secretKey->GetCryptoContext();
+    auto slots         = cryptoContext->GetEncodingParams()->GetBatchSize();
+    auto colSize       = (int32_t)slots / rowSize;
+    std::vector<int32_t> indices;
+
+    for (size_t i = 1; i < static_cast<size_t>(colSize); ++i) {
+        indices.push_back(colSize * i);
+        indices.push_back(-colSize * i);
+    }
+    cryptoContext->EvalRotateKeyGen(secretKey, indices);
 }
 
 /**
@@ -369,16 +374,13 @@ Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t
     catch (const std::exception& e) {
         OPENFHE_THROW("EvalTranspose: Homomorphic operation failed. Details: " + std::string(e.what()));
     }
-}
+};
 // -------------------------------------------------------------
 // EvalSumAccumulate
 // -------------------------------------------------------------
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element> ciphertext,
-                                          uint32_t rowSize,
-                                          const std::map<uint32_t, EvalKey<Element>>& evalSumKeys,
-                                          uint32_t subringDim) {
+Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
         OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
 
@@ -390,12 +392,12 @@ Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element> ciphertext,
         OPENFHE_THROW(
             "Packed encoding parameters 'batch size' is not set. Please check the EncodingParams passed to the crypto context.");
 
-    uint32_t slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
+    auto slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
 
     if (!IsPowerOfTwo(slots))
         OPENFHE_THROW("Matrix summation accumulation of row-vectors is not supported for arbitrary cyclotomics.");
 
-    uint32_t colSize = slots / (4 * rowSize);
+    auto colSize = slots / (4 * rowSize);
 
     Ciphertext<Element> newCiphertext(std::make_shared<CiphertextImpl<Element>>(*ciphertext));
 
@@ -415,11 +417,10 @@ Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element> ciphertext,
         }
 
         auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
-        auto ciphertextTmp     = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
-        cc->EvalMultInPlace(ciphertextTmp, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
-        cc->EvalAddInPlace(newCiphertext, ciphertextTmp);
+        ciphertextRotated      = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
+        ciphertextRotated      = cc->EvalMult(ciphertextRotated, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+        cc->EvalAddInPlace(newCiphertext, ciphertextRotated);
     }
-
     return newCiphertext;
 }
 
@@ -458,7 +459,8 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
     newCiphertext = cc->EvalMult(ciphertext, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
 
     for (size_t i = 1; i < static_cast<size_t>(colSize); ++i) {
-        mask = std::vector<std::complex<double>>(slots, 0);  // create a mask vector and set all its elements to zero
+        // create a mask vector and set all its elements to zero
+        mask = std::vector<std::complex<double>>(slots, 0);
         for (size_t j = 0; j < colSize; j++) {
             mask[i * colSize + j] = 1;
         }
@@ -480,6 +482,8 @@ template void EvalLinTransKeyGen(PrivateKey<DCRTPoly>& secretKey,
                                  int32_t numRepeats);
 
 template void EvalSquareMatMultRotateKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t rowSize);
+
+template void EvalAccumulationKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t rowSize);
 
 template Ciphertext<DCRTPoly> EvalMultMatVec(MatKeys<DCRTPoly> evalKeys,
                                              MatVecEncoding encodeType,
@@ -525,19 +529,5 @@ template Ciphertext<DCRTPoly> EvalTranspose(PrivateKey<DCRTPoly>& secretKey,
                                             int32_t rowSize);
 template Ciphertext<DCRTPoly> EvalTranspose(const Ciphertext<DCRTPoly>& ctMatrix, int32_t rowSize);
 
-// template Ciphertext<DCRTPoly> EvalTranspose(CryptoContext<DCRTPoly>& cryptoContext,
-//                                                   const PublicKey<DCRTPoly>& publicKey,
-//                                                   const Ciphertext<DCRTPoly>& ctMatrix,
-//                                                   int32_t rowSize);
-
-// template Ciphertext<DCRTPoly> EvalAddAccumulateCols(ConstCiphertext<DCRTPoly> ciphertext,
-//                                                     uint32_t numRows,
-//                                                     const std::map<uint32_t, EvalKey<DCRTPoly>>& evalSumKeys,
-//                                                     uint32_t subringDim);
-
-// template Ciphertext<DCRTPoly> EvalAddAccumulateRows(ConstCiphertext<DCRTPoly> ciphertext,
-//                                                     uint32_t numRows,
-//                                                     const std::map<uint32_t, EvalKey<DCRTPoly>>& evalSumKeys,
-//                                                     uint32_t subringDim);
-
+template Ciphertext<DCRTPoly> EvalAddAccumulateRows(ConstCiphertext<DCRTPoly>&, uint32_t, uint32_t);
 }  // namespace openfhe_matrix

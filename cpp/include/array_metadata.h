@@ -46,17 +46,20 @@ class ArrayMetadata : public lbcrypto::Metadata {
 public:
     /* constructors / destructor */
     ArrayMetadata() = default;
-    ArrayMetadata(int32_t initialShape,
-                  int32_t ndim,
-                  int32_t ncols,
-                  int32_t batchSize,
-                  ArrayEncodingType enc = ArrayEncodingType::ROW_MAJOR);
+
+    ArrayMetadata(std::array<int, 2> initialShape,
+                                 int32_t ndim,
+                                 int32_t ncols,
+                                 int32_t batchSize,
+                                 ArrayEncodingType enc = ArrayEncodingType::ROW_MAJOR)
+        : m_initialShape(initialShape), m_ndim(ndim), m_ncols(ncols), m_batchSize(batchSize), m_encodeType(enc) {}
+        
     ~ArrayMetadata() override = default;
 
-    int32_t& initialShape() noexcept {
+    std::array<int, 2>& initialShape() noexcept {
         return m_initialShape;
     }
-    constexpr int32_t initialShape() const noexcept {
+    constexpr std::array<int, 2> initialShape() const noexcept {
         return m_initialShape;
     }
 
@@ -122,14 +125,13 @@ public:
                               std::shared_ptr<ArrayMetadata> meta);
 
 private:
-    int32_t m_initialShape{0};
+    std::array<int, 2> m_initialShape{0};
     int32_t m_ndim{0};
     int32_t m_ncols{0};
     int32_t m_nrows{0};
     int32_t m_batchSize{0};
     ArrayEncodingType m_encodeType{ArrayEncodingType::ROW_MAJOR};
 };
-
 
 }  // namespace openfhe_matrix
 #endif  // ARRAY_METADATA_H

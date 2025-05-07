@@ -34,6 +34,9 @@ using namespace lbcrypto;
 
 namespace openfhe_matrix {
 
+/* ---- Metadata contructor ------------------------------------- */
+
+
 /* ---- Metadata interface ------------------------------------- */
 std::shared_ptr<Metadata> ArrayMetadata::Clone() const {
     return std::make_shared<ArrayMetadata>(*this);
@@ -44,8 +47,9 @@ bool ArrayMetadata::operator==(const Metadata& rhs) const {
            m_nrows == p->m_nrows && m_batchSize == p->m_batchSize && m_encodeType == p->m_encodeType;
 }
 std::ostream& ArrayMetadata::print(std::ostream& os) const {
-    return os << "[shape=" << m_initialShape << ", ndim=" << m_ndim << ", cols=" << m_ncols << ", rows=" << m_nrows
-              << ", batch=" << m_batchSize << ", encodeType=" << static_cast<int>(m_encodeType) << ']';
+    return os << "[shape= (" << m_initialShape[0] << ", " << m_initialShape[1] << "), ndim=" << m_ndim
+              << ", cols=" << m_ncols << ", rows=" << m_nrows << ", batch=" << m_batchSize
+              << ", encodeType=" << static_cast<int>(m_encodeType) << ']';
 }
 
 /* ---------- template bodies (header‑only) ------------------------ */
