@@ -1,5 +1,5 @@
 from openfhe_numpy.utils import get_shape, next_power_of_two, is_power_of_two
-from openfhe_numpy.tensor import ctArray, ptArray
+from openfhe_numpy.tensor import CTarray, PTarray
 from openfhe_numpy.config import MatrixEncoding, DataType
 from openfhe_numpy import utils
 import numpy as np
@@ -15,7 +15,7 @@ def array(
     public_key=None,
 ):
     """
-    Construct either a ciphertext (ctArray) or plaintext (ptArray) from raw input data.
+    Construct either a ciphertext (CTarray) or plaintext (PTarray) from raw input data.
 
     Parameters
     ----------
@@ -36,7 +36,7 @@ def array(
 
     Returns
     -------
-    ctArray or ptArray
+    CTarray or PTarray
     """
     org_rows, org_cols, ndim = get_shape(data)
 
@@ -56,13 +56,13 @@ def array(
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
-        return ptArray(plaintext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
+        return PTarray(plaintext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
 
     if public_key is None:
         raise ValueError("Public key must be provided for ciphertext encoding.")
 
     ciphertext = cc.Encrypt(public_key, plaintext)
-    return ctArray(ciphertext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
+    return CTarray(ciphertext, (org_rows, org_cols), ndim, slots, ncols, encoding_type)
 
 
 def ravel_mat(data, slots, row_size=1, order=MatrixEncoding.ROW_MAJOR, reps=1):

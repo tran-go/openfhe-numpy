@@ -48,7 +48,7 @@ class BaseTensor:
         return (self.nrows, self.ncols)
 
 
-class ptArray(BaseTensor):
+class PTarray(BaseTensor):
     """Plaintext array representation that includes shape and encoding metadata."""
 
     def __init__(
@@ -64,7 +64,7 @@ class ptArray(BaseTensor):
         self.data = data
 
     def copy(self, is_deep_copy: bool = True):
-        return ptArray(
+        return PTarray(
             self.data,
             self.original_shape,
             self.ndim,
@@ -74,7 +74,7 @@ class ptArray(BaseTensor):
         )
 
 
-class ctArray(BaseTensor):
+class CTarray(BaseTensor):
     """Ciphertext array representation with shape and encoding metadata."""
 
     def __init__(
@@ -92,15 +92,13 @@ class ctArray(BaseTensor):
     def decrypt(self, cc, sk, isFormat=True, precision=None):
         result = cc.Decrypt(self.data, sk)
         result.SetLength(self.batch_size)
-        # if precision is not None:
-        #     result.GetFormattedValues(precision)
         result = result.GetRealPackedValue()
         if isFormat:
             result = utils.format(result, self.ndim, self.original_shape, self.shape)
         return result
 
     def copy(self):
-        return ctArray(
+        return CTarray(
             self.data,
             self.original_shape,
             self.ndim,

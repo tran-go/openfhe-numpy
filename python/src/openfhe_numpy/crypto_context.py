@@ -1,5 +1,39 @@
-from openfhe_matrix import LinTransType
+from openfhe import CryptoContext as _originCryptoContext
 import openfhe_matrix as fp
+
+
+class CryptoContext(_originCryptoContext):
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+
+        if not callable(attr):
+            return attr
+
+        def wrapped(*args, **kwargs):
+            def unwrap(x):
+                if isinstance(x, CTArray):
+                    return x.data
+                if isinstance(x, PTArray):
+                    return x.data
+                return x
+
+            def wrap(x):
+                if isinstance(x, PTArray):
+                    return PTArray(x)
+                if isinstance(x, CTArray):
+                    return CTArray(x)
+                return x
+
+            u_args = [unwrap(a) for a in args]
+            u_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
+
+            # 2) Call the real C++ method
+            result = attr(*u_args, **u_kwargs)
+
+            # 3) Re-wrap results:
+            if isinstance(result, (list, tuple)):
+                return type(result)(wrap(x) for x in result)
+            return wrapped(x)
 
 
 def gen_sum_row_keys(context, private_key, block_size):

@@ -237,7 +237,7 @@ def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
     row_size = next_power_of_two(row_size)
 
     if not is_power_of_two(total_slots):
-        raise ValueError("total_slots must be a power of two")
+        raise ValueError(f"total_slots [{total_slots}] must be a power of two")
     if total_slots % row_size != 0:
         raise ValueError("total_slots must be divisible by row_size")
 
