@@ -380,7 +380,7 @@ Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t
 // -------------------------------------------------------------
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
+Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
         OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
 
@@ -398,6 +398,7 @@ Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, 
         OPENFHE_THROW("Matrix summation accumulation of row-vectors is not supported for arbitrary cyclotomics.");
 
     auto colSize = slots / (4 * rowSize);
+
 
     Ciphertext<Element> newCiphertext(std::make_shared<CiphertextImpl<Element>>(*ciphertext));
 
@@ -425,10 +426,7 @@ Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, 
 }
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
-                                          uint32_t rowSize,
-                                          const std::map<uint32_t, EvalKey<Element>>& evalSumKeys,
-                                          uint32_t subringDim) {
+Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
         OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
 
@@ -440,12 +438,13 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
         OPENFHE_THROW(
             "Packed encoding parameters 'batch size' is not set. Please check the EncodingParams passed to the crypto context.");
 
-    uint32_t slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
+    auto slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
 
     if (!IsPowerOfTwo(slots))
         OPENFHE_THROW("Matrix summation accumulation of row-vectors is not supported for arbitrary cyclotomics.");
 
-    uint32_t colSize = slots / (4 * rowSize);
+    auto colSize = slots / (4 * rowSize);
+
 
     Ciphertext<Element> newCiphertext(std::make_shared<CiphertextImpl<Element>>(*ciphertext));
 
@@ -459,22 +458,113 @@ Ciphertext<Element> EvalAddAccumulateCols(ConstCiphertext<Element> ciphertext,
     newCiphertext = cc->EvalMult(ciphertext, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
 
     for (size_t i = 1; i < static_cast<size_t>(colSize); ++i) {
-        // create a mask vector and set all its elements to zero
-        mask = std::vector<std::complex<double>>(slots, 0);
+        mask = std::vector<std::complex<double>>(slots, 0);  // create a mask vector and set all its elements to zero
         for (size_t j = 0; j < colSize; j++) {
             mask[i * colSize + j] = 1;
         }
 
         auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
-        auto ciphertextTmp     = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
-        cc->EvalMultInPlace(ciphertextTmp, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
-        cc->EvalAddInPlace(newCiphertext, ciphertextTmp);
+        ciphertextRotated      = cc->EvalRotate(cc->EvalAdd(ciphertext, ciphertextRotated), -i * colSize);
+        ciphertextRotated      = cc->EvalMult(ciphertextRotated, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+        cc->EvalAddInPlace(newCiphertext, ciphertextRotated);
     }
-
     return newCiphertext;
 }
 
-// Convert Element to DCRTPoly
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
+    if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
+        OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
+
+    const auto cryptoParams   = ciphertext->GetCryptoParameters();
+    const auto encodingParams = cryptoParams->GetEncodingParams();
+    auto cc                   = ciphertext->GetCryptoContext();
+
+    if ((encodingParams->GetBatchSize() == 0))
+        OPENFHE_THROW(
+            "Packed encoding parameters 'batch size' is not set. Please check the EncodingParams passed to the crypto context.");
+
+    auto slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
+
+    if (!IsPowerOfTwo(slots))
+        OPENFHE_THROW("Matrix summation accumulation of row-vectors is not supported for arbitrary cyclotomics.");
+
+    auto colSize = slots / (4 * rowSize);
+
+
+    Ciphertext<Element> newCiphertext(std::make_shared<CiphertextImpl<Element>>(*ciphertext));
+
+    std::vector<Ciphertext<Element>> ciphertextVec(colSize, std::make_shared<CiphertextImpl<Element>>(*ciphertext));
+
+    std::vector<std::complex<double>> mask(slots, 0);  // create a mask vector and set all its elements to zero
+    for (size_t j = 0; j < colSize; j++) {
+        mask[j] = 1;
+    }
+
+    newCiphertext = cc->EvalMult(ciphertext, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+
+    for (size_t i = 1; i < static_cast<size_t>(colSize); ++i) {
+        mask = std::vector<std::complex<double>>(slots, 0);  // create a mask vector and set all its elements to zero
+        for (size_t j = 0; j < colSize; j++) {
+            mask[i * colSize + j] = 1;
+        }
+
+        auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
+        ciphertextRotated      = cc->EvalRotate(cc->EvalSub(ciphertext, ciphertextRotated), -i * colSize);
+        ciphertextRotated      = cc->EvalMult(ciphertextRotated, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+        cc->EvalSubInPlace(newCiphertext, ciphertextRotated);
+    }
+    return newCiphertext;
+}
+
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim) {
+    if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
+        OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
+
+    const auto cryptoParams   = ciphertext->GetCryptoParameters();
+    const auto encodingParams = cryptoParams->GetEncodingParams();
+    auto cc                   = ciphertext->GetCryptoContext();
+
+    if ((encodingParams->GetBatchSize() == 0))
+        OPENFHE_THROW(
+            "Packed encoding parameters 'batch size' is not set. Please check the EncodingParams passed to the crypto context.");
+
+    auto slots = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() : subringDim;
+
+    if (!IsPowerOfTwo(slots))
+        OPENFHE_THROW("Matrix summation accumulation of row-vectors is not supported for arbitrary cyclotomics.");
+
+    auto colSize = slots / (4 * rowSize);
+
+
+    Ciphertext<Element> newCiphertext(std::make_shared<CiphertextImpl<Element>>(*ciphertext));
+
+    std::vector<Ciphertext<Element>> ciphertextVec(colSize, std::make_shared<CiphertextImpl<Element>>(*ciphertext));
+
+    std::vector<std::complex<double>> mask(slots, 0);  // create a mask vector and set all its elements to zero
+    for (size_t j = 0; j < colSize; j++) {
+        mask[j] = 1;
+    }
+
+    newCiphertext = cc->EvalMult(ciphertext, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+
+    for (size_t i = 1; i < static_cast<size_t>(colSize); ++i) {
+        mask = std::vector<std::complex<double>>(slots, 0);  // create a mask vector and set all its elements to zero
+        for (size_t j = 0; j < colSize; j++) {
+            mask[i * colSize + j] = 1;
+        }
+
+        auto ciphertextRotated = cc->EvalRotate(ciphertext, i * colSize);
+        ciphertextRotated      = cc->EvalRotate(cc->EvalSub(ciphertext, ciphertextRotated), -i * colSize);
+        ciphertextRotated      = cc->EvalMult(ciphertextRotated, cc->MakeCKKSPackedPlaintext(mask, 1, 0, nullptr, slots));
+        cc->EvalSubInPlace(newCiphertext, ciphertextRotated);
+    }
+    return newCiphertext;
+}
+
+
+// template
 
 template void EvalLinTransKeyGen(PrivateKey<DCRTPoly>& secretKey,
                                  int32_t rowSize,
@@ -529,5 +619,11 @@ template Ciphertext<DCRTPoly> EvalTranspose(PrivateKey<DCRTPoly>& secretKey,
                                             int32_t rowSize);
 template Ciphertext<DCRTPoly> EvalTranspose(const Ciphertext<DCRTPoly>& ctMatrix, int32_t rowSize);
 
-template Ciphertext<DCRTPoly> EvalAddAccumulateRows(ConstCiphertext<DCRTPoly>&, uint32_t, uint32_t);
+template Ciphertext<DCRTPoly> EvalAddAccumulateRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
+
+template Ciphertext<DCRTPoly> EvalAddAccumulateCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
+
+template Ciphertext<DCRTPoly> EvalSubAccumulateRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
+
+template Ciphertext<DCRTPoly> EvalSubAccumulateCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
 }  // namespace openfhe_matrix

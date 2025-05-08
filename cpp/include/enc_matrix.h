@@ -74,7 +74,23 @@ template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize);
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext, uint32_t rowSize, uint32_t subringDim=0);
+Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
+                                          uint32_t rowSize,
+                                          uint32_t subringDim = 0);
 
+template <typename Element>
+Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
+                                          uint32_t rowSize,
+                                          uint32_t subringDim = 0);
+
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
+                                          uint32_t rowSize,
+                                          uint32_t subringDim = 0);
+
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
+                                          uint32_t rowSize,
+                                          uint32_t subringDim = 0);
 }  // namespace openfhe_matrix
 #endif  // ENC_MATRIX_H
