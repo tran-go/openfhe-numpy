@@ -17,7 +17,7 @@ def fhe_vector_add(params, input):
     input1 = np.array(input[1])
     ct_input0 = fp.array(cc, input0, total_slots, block_size, "C", public_key=keys.publicKey)
     ct_input1 = fp.array(cc, input1, total_slots, block_size, "C", public_key=keys.publicKey)
-    return fp.add(cc, cta, ctb).decrypt(keys.secretKey)
+    return fp.add(cta, ctb).decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":

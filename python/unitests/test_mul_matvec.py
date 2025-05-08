@@ -22,7 +22,7 @@ def fhe_matrix_vector_product(params, input):
 
     ct_vector = fp.array(cc, vector, total_slots, block_size, "C", public_key=public_key)
 
-    ct_result = fp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
+    ct_result = fp.matvec(sumkey, ct_matrix, ct_vector, block_size)
     result = ct_result.decrypt(keys.secretKey)
     return result
 

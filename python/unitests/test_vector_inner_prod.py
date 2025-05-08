@@ -22,7 +22,7 @@ def fhe_vector_dot(params, input):
         ct_input0 = fp.array(cc, input0, total_slots, public_key=keys.publicKey)
         ct_input1 = fp.array(cc, input1, total_slots, public_key=keys.publicKey)
 
-    return fp.dot(cc, ct_input0, ct_input1).decrypt(keys.secretKey)
+    return fp.dot(ct_input0, ct_input1).decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":
