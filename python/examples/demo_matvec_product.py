@@ -9,7 +9,7 @@ import openfhe_numpy as fp
 from openfhe_numpy.utils import check_equality_matrix
 
 
-def gen_crypto_context(ring_dim, mult_depth):
+def gen_crypto_context(mult_depth, ring_dim=0):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
 
@@ -26,11 +26,13 @@ def gen_crypto_context(ring_dim, mult_depth):
         (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-    params.SetRingDim(ring_dim)
+    if ring_dim != 0:
+        params.SetRingDim(ring_dim)
+        params.SetBatchSize(ring_dim // 2)
+        params.SetSecurityLevel(HEStd_NotSet)
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
     params.SetFirstModSize(60)
-    params.SetBatchSize(ring_dim // 2)
     params.SetScalingTechnique(FIXEDAUTO)
     params.SetKeySwitchTechnique(HYBRID)
     params.SetSecretKeyDist(UNIFORM_TERNARY)
@@ -51,11 +53,11 @@ def demo():
     """
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
-    ring_dim = 2**12
+    ring_dim = 2**15
     mult_depth = 4
     total_slots = ring_dim // 2
 
-    cc, keys = gen_crypto_context(ring_dim, mult_depth)
+    cc, keys = gen_crypto_context(mult_depth, ring_dim)
 
     # Sample input matrices (8x8)
     A = np.array(
@@ -79,14 +81,14 @@ def demo():
     print("Vector b:\n", b)
 
     # Encrypt both matrices
-    ct_matrix = fp.array(cc, A, total_slots, pub_key=keys.publicKey)
-    block_size = ct_matrix.ncols
-    sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_vector = fp.array(cc, b, total_slots, block_size, "C", pub_key=keys.publicKey)
+    ct_matrix = fp.array(cc, A, total_slots, public_key=keys.publicKey)
+    block_size = ct_matrix.rowsize
+    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_vector = fp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC Matrix Vector Product **********")
-    ct_result = fp.matvec(cc, keys, sum_col_keys, ct_matrix, ct_vector, block_size)
-    result = ct_result.decrypt(cc, keys.secretKey)
+    ct_result = fp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
+    result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
     # Compare with plain result
     expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)
     print(f"\nExpected:\n{expected}")

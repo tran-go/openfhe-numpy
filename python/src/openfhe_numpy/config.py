@@ -9,7 +9,7 @@ KeyPair = openfhe.KeyPair
 
 
 # Encoding strategy for matrix packing
-class MatrixEncoding:
+class MatrixOrder:
     ROW_MAJOR = "R"  # Encode data row-wise (default)
     COL_MAJOR = "C"  # Encode data column-wise
     DIAG_MAJOR = "D"  # Optional: encode data diagonally (future use)

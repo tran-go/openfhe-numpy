@@ -6,7 +6,7 @@ A NumPy-inspired encrypted linear algebra framework built upon OpenFHE.
 """
 
 from .log import FP_DEBUG, FP_ERROR
-from .tensor import CTarray, PTarray
+from .tensor import FHETensor, PTArray, CTArray, BaseTensor
 from .constructors import array
 from .algebra import (
     add,
@@ -32,8 +32,8 @@ from . import config
 from . import utils
 
 __all__ = [
-    "CTarray",
-    "PTarray",
+    "FHETensor",
+    "PTArray",
     "array",
     "add",
     "multiply",

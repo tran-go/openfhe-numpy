@@ -6,7 +6,7 @@ from openfhe_matrix import *
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as fp
 from openfhe_numpy.utils import check_equality_matrix
-from openfhe_numpy.config import MatrixEncoding
+from openfhe_numpy.config import MatrixOrder
 import os
 import numpy as np
 from typing import Tuple
@@ -18,8 +18,8 @@ from openfhe_numpy.matlib import *
 import openfhe_numpy.utils as utils
 
 from openfhe_numpy.utils import get_shape, next_power_of_two, is_power_of_two
-from openfhe_numpy.config import MatrixEncoding, DataType
-from openfhe_numpy.constructors import ravel_mat
+from openfhe_numpy.config import MatrixOrder, DataType
+from openfhe_numpy.constructors import ravel_matrix
 
 
 class ctarray(Ciphertext):
@@ -31,29 +31,29 @@ class ctarray(Ciphertext):
         original_shape,
         ndim,
         size,
-        ncols,
-        encoding_order: int = MatrixEncoding.ROW_MAJOR,
+        rowsize,
+        order: int = MatrixOrder.ROW_MAJOR,
     ):
         super().__init__(data)
         # object.__setattr__(self, "data", data)
         # object.__setattr__(self, "original_shape", original_shape)
         # object.__setattr__(self, "ndim", ndim)
-        # object.__setattr__(self, "ncols", ncols)
-        # object.__setattr__(self, "nrows", size // ncols)
+        # object.__setattr__(self, "rowsize", rowsize)
+        # object.__setattr__(self, "nrows", size // rowsize)
         # object.__setattr__(self, "batch_size", size)
-        # object.__setattr__(self, "encoding_order", encoding_order)
+        # object.__setattr__(self, "order", order)
         self.original_shape = original_shape
         self.ndim = ndim
-        self.ncols = ncols
-        self.nrows = size // ncols
-        self.batch_size = size
-        self.encoding_order = encoding_order
+        self.rowsize = rowsize
+        self.nrows = size // rowsize
+        self.size = size
+        self.order = order
 
-        # self.data = data
+        # self._data = data
 
     # def __getattr__(self, name):
     #     # Forward attribute/method calls to self._ct
-    #     return getattr(self.data, name)
+    #     return getattr(self._data, name)
 
     # def __setattr__(self, name, value):
     #     # Forward attribute setting to self._ct (except _ct itself)
@@ -61,14 +61,14 @@ class ctarray(Ciphertext):
     #         "data",
     #         "original_shape",
     #         "ndim",
-    #         "ncols",
+    #         "rowsize",
     #         "nrows",
     #         "batch_size",
     #         "encoding_size",
     #     }:
     #         object.__setattr__(self, name, value)
     #     else:
-    #         setattr(self.data, name, value)
+    #         setattr(self._data, name, value)
 
     # def __setattr__(self, name, value):
     #     if name in {"_ct", "shape"}:
@@ -77,8 +77,8 @@ class ctarray(Ciphertext):
     #         setattr(self._ct, name, value)
 
     def decrypt(self, cc, sk, isFormat=True, precision=None):
-        result = cc.Decrypt(self.data, sk)
-        result.SetLength(self.batch_size)
+        result = cc.Decrypt(self._data, sk)
+        result.SetLength(self.size)
         if precision is not None:
             result.GetFormattedValues(precision)
         result = result.GetRealPackedValue()
@@ -88,12 +88,12 @@ class ctarray(Ciphertext):
 
     def copy(self):
         return ctarray(
-            self.data,
+            self._data,
             self.original_shape,
             self.ndim,
-            self.batch_size,
-            self.ncols,
-            self.encoding_order,
+            self.size,
+            self.rowsize,
+            self.order,
         )
 
 
@@ -141,32 +141,32 @@ def xarray(
     data: list,
     total_slots: int,
     batch_size: int = 1,
-    encoding_type: int = MatrixEncoding.ROW_MAJOR,
+    encoding_type: int = MatrixOrder.ROW_MAJOR,
     type: str = DataType.CIPHERTEXT,
-    pub_key=None,
+    public_key=None,
 ):
     org_rows, org_cols, ndim = get_shape(data)
 
     if ndim == 2:
-        ncols = next_power_of_two(org_cols)
-        packed_data = ravel_mat(data, total_slots, ncols, encoding_type)
+        rowsize = next_power_of_two(org_cols)
+        packed_data = ravel_matrix(data, total_slots, rowsize, encoding_type)
     else:
-        ncols = batch_size
-        packed_data = ravel_vec(data, total_slots, ncols, encoding_type)
+        rowsize = batch_size
+        packed_data = ravel_vector(data, total_slots, rowsize, encoding_type)
 
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
-        return ptArray(plaintext, (org_rows, org_cols), ndim, total_slots, ncols, encoding_type)
+        return PTArray(plaintext, (org_rows, org_cols), ndim, total_slots, rowsize, encoding_type)
 
-    if pub_key is None:
+    if public_key is None:
         raise ValueError("Public key must be provided for ciphertext encoding.")
 
-    ciphertext = cc.Encrypt(pub_key, plaintext)
+    ciphertext = cc.Encrypt(public_key, plaintext)
     # print(type(ciphertext))
 
     print(ciphertext)
-    return ctarray(ciphertext, (org_rows, org_cols), ndim, total_slots, ncols, encoding_type)
+    return ctarray(ciphertext, (org_rows, org_cols), ndim, total_slots, rowsize, encoding_type)
 
 
 def demo():
@@ -210,8 +210,8 @@ def demo():
     print("Matrix B:\n", B)
 
     # Encrypt both matrices
-    ctm_A = xarray(cc, A, total_slots, pub_key=keys.publicKey)
-    # ctm_B = fp.array(cc, B, total_slots, pub_key=keys.publicKey)
+    ctm_A = xarray(cc, A, total_slots, public_key=keys.publicKey)
+    # ctm_B = fp.array(cc, B, total_slots, public_key=keys.publicKey)
     # c1 = ctm_A.GetCryptoContext()
     # if c1 == cc:
     #     print("HAHA")
@@ -225,7 +225,7 @@ def demo():
     result = result.GetRealPackedValue()
     print(result)
 
-    # result.SetLength(self.batch_size)
+    # result.SetLength(self.size)
     # if precision is not None:
     #     result.GetFormattedValues(precision)
     # result = result.GetRealPackedValue()

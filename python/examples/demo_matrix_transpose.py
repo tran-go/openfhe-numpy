@@ -8,14 +8,12 @@ import openfhe_numpy as fp
 from openfhe_numpy.utils import check_equality_matrix
 
 
-def gen_crypto_context(ring_dim, mult_depth):
+def gen_crypto_context(mult_depth):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
 
     Parameters
     ----------
-    ring_dim : int
-        Ring dimension (must be power of two).
     mult_depth : int
         Maximum multiplicative depth for the ciphertext.
 
@@ -25,12 +23,9 @@ def gen_crypto_context(ring_dim, mult_depth):
         (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-    # Todo: compute the exact mult_depth
-    params.SetRingDim(ring_dim)
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
     params.SetFirstModSize(60)
-    params.SetBatchSize(ring_dim // 2)
     params.SetScalingTechnique(FIXEDAUTO)
     params.SetKeySwitchTechnique(HYBRID)
     params.SetSecretKeyDist(UNIFORM_TERNARY)
@@ -44,21 +39,19 @@ def gen_crypto_context(ring_dim, mult_depth):
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
 
-    return cc, keys
+    return cc, params, keys
 
 
 def demo():
     """
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
-    ring_dim = 2**16
-    mult_depth = 4
-    total_slots = ring_dim // 2
 
-    cc, keys = gen_crypto_context(ring_dim, mult_depth)
+    mult_depth = 4
+    cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
-    A = np.array(
+    matrix = np.array(
         [
             [0, 7, 8, 10, 1, 2, 7, 6],
             [0, 1, 1, 9, 7, 5, 1, 7],
@@ -71,22 +64,24 @@ def demo():
         ]
     )
 
-    print("Matrix A:\n", A)
+    print("Matrix:\n", matrix)
+    slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 4
+    print(params.GetBatchSize(), params.GetRingDim())
 
     # Encrypt matrix A
-    ctm_A = fp.array(cc, A, total_slots, pub_key=keys.publicKey)
+    ctm_matA = fp.array(cc, matrix, slots, public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC MATRIX TRANSPOSE **********")
 
     # Perform matrix tranpose on ciphertexts
-    fp.gen_transpose_keys(cc, keys, ctm_A)
-    ctm_result = fp.transpose(cc, keys.publicKey, ctm_A)
+    fp.gen_transpose_keys(keys.secretKey, ctm_matA)
+    ctm_result = fp.transpose(ctm_matA)
 
     # Decrypt the result
     result = ctm_result.decrypt(cc, keys.secretKey)
 
     # Compare with plain result
-    expected = A.T
+    expected = matrix.T
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 

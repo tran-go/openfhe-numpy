@@ -61,11 +61,11 @@ def demo():
     print("c: ", c)
     print("d: ", d)
 
-    ctm_a = fp.array(cc, a, total_slots, pub_key=keys.publicKey)
-    ctm_b = fp.array(cc, b, total_slots, pub_key=keys.publicKey)
+    ctm_a = fp.array(cc, a, total_slots, public_key=keys.publicKey)
+    ctm_b = fp.array(cc, b, total_slots, public_key=keys.publicKey)
 
-    ctv_c = fp.array(cc, c, total_slots, block_size, "C", pub_key=keys.publicKey)
-    ctv_d = fp.array(cc, d, total_slots, block_size, "C", pub_key=keys.publicKey)
+    ctv_c = fp.array(cc, c, total_slots, block_size, "C", public_key=keys.publicKey)
+    ctv_d = fp.array(cc, d, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print()
     print("*" * 10, "ADDITION", "*" * 10)
@@ -89,7 +89,7 @@ def demo():
     print("*" * 10, "MULTIPLICATION", "*" * 10)
 
     print("\n1.Matrix multiplication:")
-    ct_product = fp.matmul_square(cc, keys, ctm_a, ctm_b)
+    ct_product = fp.square_matmul(ctm_a, ctm_b)
     result = ct_product.decrypt(cc, keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a @ b}")
@@ -98,8 +98,8 @@ def demo():
 
     print("\n2.Matrix Vector multiplication: A@c")
     vec_ac = pack_vec_row_wise((a @ c), block_size, total_slots)
-    sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_product = fp.matvec(cc, keys, sum_col_keys, ctm_a, ctv_c, block_size)
+    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_product = fp.matvec(cc, keys, sumkey, ctm_a, ctv_c, block_size)
     result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {vec_ac}")
@@ -108,8 +108,8 @@ def demo():
 
     print("\n3.Dot product c.d = <c,d>:")
     dot_prod = np.dot(c, d)
-    sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_product = fp.dot(cc, keys, sum_col_keys, ctv_c, ctv_d)
+    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_product = fp.dot(cc, keys, sumkey, ctv_c, ctv_d)
     result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {dot_prod}")
@@ -126,7 +126,7 @@ def demo():
     # aa = np.array([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
 
     # # aa = np.array([1, 2, 3, 4])
-    # # ctm_a1 = fp.array(cc, a, total_slots, pub_key=keys.publicKey)
+    # # ctm_a1 = fp.array(cc, a, total_slots, public_key=keys.publicKey)
     # matI = np.array(gen_comm_mat(2, 2, 0))
 
     # print(a)
@@ -134,19 +134,19 @@ def demo():
     # expected = np.matmul(matI, aa)
     # print(f"Expected: {expected}")
 
-    # def gen_transpose_diag(total_slots, row_size, i):
-    #     n = row_size * row_size
+    # def gen_transpose_diag(total_slots, rowsize, i):
+    #     n = rowsize * rowsize
     #     diag = np.zeros(n)
 
     #     if i >= 0:
     #         for l in range(n):
-    #             for j in range(row_size):
-    #                 if (l - i == (row_size + 1) * j) and (j < row_size - i):
+    #             for j in range(rowsize):
+    #                 if (l - i == (rowsize + 1) * j) and (j < rowsize - i):
     #                     diag[i] = 1
     #     else:
     #         for l in range(n):
-    #             for j in range(row_size):
-    #                 if l - i == (row_size + 1) * j and -i <= j and j < row_size:
+    #             for j in range(rowsize):
+    #                 if l - i == (rowsize + 1) * j and -i <= j and j < rowsize:
     #                     diag[i] = 1
     #     return diag
 
@@ -176,8 +176,8 @@ def demo():
 
     # size = block_size * block_size
 
-    # sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, size)
-    # ct_product = fp.matvec(cc, keys, sum_col_keys, pt_matI, ctm_a, size)
+    # sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, size)
+    # ct_product = fp.matvec(cc, keys, sumkey, pt_matI, ctm_a, size)
     # result = ct_product.decrypt(cc, keys.secretKey, format=0)
     # result = np.round(result, decimals=1)
     # print(f"Expected: {expected}")

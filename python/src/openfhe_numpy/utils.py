@@ -150,13 +150,13 @@ def pack_vec_col_wise(v, block_size, num_slots):
 
 
 # convert a vector of an packed_rw_mat to its original matrix
-def reoriginal_shape(vec, total_slots, row_size):
+def reoriginal_shape(vec, total_slots, rowsize):
     n_slots = len(vec)
     row = []
     mat = []
     for k in range(n_slots):
         row.append(vec[k])
-        if (k + 1) % row_size == 0 and k >= 1:
+        if (k + 1) % rowsize == 0 and k >= 1:
             mat.append(row)
             row = []
     return mat
@@ -208,17 +208,17 @@ def print_matrix(matrix, rows):
         print(f"[{row_str}]")
 
 
-def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
+def pack_mat_row_wise(matrix, rowsize, total_slots, pad_cols=False):
     """Pack a matrix into a flat array row-wise with zero padding.
 
     Parameters
     ----------
     matrix : array_like
         The input 2D matrix to be packed.
-    row_size : int
+    rowsize : int
         Target row size after padding; must be a power of two.
     total_slots : int
-        Total number of slots available in the output array; must be a power of two and divisible by row_size.
+        Total number of slots available in the output array; must be a power of two and divisible by rowsize.
     pad_rows : bool, optional
         If True, pad the number of rows to the next power of two. Default is False.
 
@@ -230,19 +230,19 @@ def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
     Raises
     ------
     ValueError
-        If row_size or total_slots are not powers of two, or total_slots is insufficient.
+        If rowsize or total_slots are not powers of two, or total_slots is insufficient.
     """
 
     rows, cols = len(matrix), len(matrix[0])
-    row_size = next_power_of_two(row_size)
+    rowsize = next_power_of_two(rowsize)
 
     if not is_power_of_two(total_slots):
         raise ValueError(f"total_slots [{total_slots}] must be a power of two")
-    if total_slots % row_size != 0:
-        raise ValueError("total_slots must be divisible by row_size")
+    if total_slots % rowsize != 0:
+        raise ValueError("total_slots must be divisible by rowsize")
 
     padded_cols = next_power_of_two(rows) if pad_cols else rows
-    required_size = padded_cols * row_size
+    required_size = padded_cols * rowsize
 
     if total_slots < required_size:
         raise ValueError("Total slots insufficient for the given matrix and padding.")
@@ -255,28 +255,28 @@ def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
     for _ in range(repeats):
         for i in range(rows):
             flat_array[index : index + cols] = matrix[i]
-            index += row_size
+            index += rowsize
 
-        index += (padded_cols - rows) * row_size
+        index += (padded_cols - rows) * rowsize
 
     return flat_array
 
 
-# def pack_mat_row_wise(matrix, row_size, total_slots, reps=0, debug=0):
+# def pack_mat_row_wise(matrix, rowsize, total_slots, reps=0, debug=0):
 #     """
 #     Packing Matrix M using row-wise
 #     [[1 2 3] -> [1 2 3 0 4 5 6 0 7 8 9 0]
 #     [4 5 6]
 #     [7 8 9]]
 #     """
-#     assert is_power_of_two(row_size)
+#     assert is_power_of_two(rowsize)
 #     assert is_power_of_two(total_slots)
-#     assert total_slots % row_size == 0
+#     assert total_slots % rowsize == 0
 #     n, m = len(matrix), len(matrix[0])
 #     col_size = len(matrix)
 #     if reps > 0:
 #         col_size = next_power_of_two(col_size)
-#     size = col_size * row_size
+#     size = col_size * rowsize
 
 #     if total_slots < size:
 #         Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
@@ -289,7 +289,7 @@ def pack_mat_row_wise(matrix, row_size, total_slots, pad_cols=False):
 #             for j in range(m):
 #                 flat[k] = matrix[i][j]
 #                 k += 1
-#             for j in range(m, row_size):
+#             for j in range(m, rowsize):
 #                 k += 1
 
 #         for i in range(n, col_size):
