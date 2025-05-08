@@ -36,12 +36,32 @@ import openfhe_matrix as fp
 #             return wrapped(x)
 
 
-def gen_sum_row_keys(context, private_key, block_size):
+def gen_sum_row_keys(context, private_key, block_size=0):
+    print(f"[gen_sum_row_keys] block_size={block_size}")
     return context.EvalSumRowsKeyGen(private_key, None, block_size)
 
 
-def gen_sum_col_keys(context, private_key, block_size):
-    return context.EvalSumColsKeyGen(private_key)
+def gen_sum_col_keys(context, sk, rowsize=0):
+    indices = []
+    for i in range(rowsize):
+        indices.append(i * rowsize)
+        indices.append(-i * rowsize)
+
+    context.EvalRotateKeyGen(sk, indices)
+
+
+def gen_accumulate_rows_key(context, sk, rowsize):
+    indices = []
+    for i in range(rowsize):
+        indices.append(i * rowsize)
+        indices.append(-i * rowsize)
+
+    context.EvalRotateKeyGen(sk, indices)
+
+
+def gen_accumulate_cols_key(context, sk, rowsize):
+    indices = list(range(-rowsize, rowsize + 1))
+    context.EvalRotateKeyGen(sk, indices)
 
 
 def gen_rotation_keys(context, sk, rotation_indices):

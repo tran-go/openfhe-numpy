@@ -65,17 +65,22 @@ def demo():
     )
 
     print("Matrix:\n", matrix)
-    slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 4
-    print(params.GetBatchSize(), params.GetRingDim())
+    slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
+    print(f"slots = {slots}, dim = {cc.GetRingDimension()}")
 
     # Encrypt matrix A
     ctm_matA = fp.array(cc, matrix, slots, public_key=keys.publicKey)
+    print(ctm_matA)
 
-    print("\n********** HOMOMORPHIC MATRIX TRANSPOSE **********")
+    print("\n********** HOMOMORPHIC MATRIX Accumulation **********")
 
     # Perform matrix tranpose on ciphertexts
-    fp.gen_transpose_keys(keys.secretKey, ctm_matA)
-    ctm_result = fp.transpose(ctm_matA)
+    print("11111111111111111111111111111111111")
+    fp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.rowsize)
+    print("222222222222222222222222222222222222222")
+    # fp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.rowsize)
+    # print("333333333333333333333333333333333333333333333")
+    ctm_result = fp.add_accumulate(ctm_matA, 1)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

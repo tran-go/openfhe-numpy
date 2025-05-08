@@ -174,7 +174,8 @@ class CTArray(FHETensor):
             f"size={self.batch_size}, rowsize={self.rowsize}, order={self.order})"
         )
 
-    def decrypt(self, cc, sk, isFormat=True, precision=None):
+    def decrypt(self, sk, isFormat=True, precision=None):
+        cc = self.data.GetCryptoContext()
         result = cc.Decrypt(self._data, sk)
         result.SetLength(self.batch_size)
         result = result.GetRealPackedValue()

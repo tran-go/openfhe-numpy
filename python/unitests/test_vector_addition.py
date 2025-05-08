@@ -12,12 +12,12 @@ from main_unittest import gen_crypto_context_from_params
 def fhe_vector_add(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
-    pub_key = keys.publicKey
+    public_key = keys.publicKey
     input0 = np.array(input[0])
     input1 = np.array(input[1])
-    ct_input0 = fp.array(cc, input0, total_slots, block_size, "C", pub_key=keys.publicKey)
-    ct_input1 = fp.array(cc, input1, total_slots, block_size, "C", pub_key=keys.publicKey)
-    return fp.add(cc, cta, ctb).decrypt(cc, keys.secretKey)
+    ct_input0 = fp.array(cc, input0, total_slots, block_size, "C", public_key=keys.publicKey)
+    ct_input1 = fp.array(cc, input1, total_slots, block_size, "C", public_key=keys.publicKey)
+    return fp.add(cc, cta, ctb).decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":

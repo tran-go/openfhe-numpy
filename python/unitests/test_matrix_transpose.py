@@ -13,12 +13,12 @@ from main_unittest import gen_crypto_context_from_params
 def fhe_matrix_transpose(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
-    pub_key = keys.publicKey
+    public_key = keys.publicKey
     matrixA = np.array(input[0])
-    ct_matrixA = fp.array(cc, matrixA, total_slots, pub_key=pub_key)
+    ct_matrixA = fp.array(cc, matrixA, total_slots, public_key=public_key)
     fp.gen_transpose_keys(cc, keys, ct_matrixA)
-    ct_result = fp.transpose(cc, pub_key, ct_matrixA)
-    result = ct_result.decrypt(cc, keys.secretKey)
+    ct_result = fp.transpose(cc, public_key, ct_matrixA)
+    result = ct_result.decrypt(keys.secretKey)
     return result
 
 

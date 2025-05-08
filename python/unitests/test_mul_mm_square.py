@@ -12,16 +12,16 @@ from main_unittest import gen_crypto_context_from_params
 def fhe_square_matrix_product(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
-    pub_key = keys.publicKey
+    public_key = keys.publicKey
     matrixA = np.array(input[0])
     matrixB = np.array(input[1])
 
-    ct_matrixA = fp.array(cc, matrixA, total_slots, pub_key=pub_key)
-    ct_matrixB = fp.array(cc, matrixB, total_slots, pub_key=pub_key)
-    block_size = ct_matrixA.ncols
+    ct_matrixA = fp.array(cc, matrixA, total_slots, public_key=public_key)
+    ct_matrixB = fp.array(cc, matrixB, total_slots, public_key=public_key)
+    block_size = ct_matrixA.rowsize
     fp.gen_square_matrix_product(cc, keys, block_size)
-    ct_result = fp.matmul_square(cc, pub_key, ct_matrixA, ct_matrixB)
-    return ct_result.decrypt(cc, keys.secretKey)
+    ct_result = fp.square_matmul(ct_matrixA, ct_matrixB)
+    return ct_result.decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":

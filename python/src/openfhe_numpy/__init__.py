@@ -17,6 +17,7 @@ from .algebra import (
     matrix_power,
     transpose,
     add_reduce,
+    add_accumulate,
 )
 from .utils import pack_vec_row_wise
 from .crypto_context import (
@@ -25,6 +26,8 @@ from .crypto_context import (
     gen_rotation_keys,
     gen_lintrans_keys,
     gen_transpose_keys,
+    gen_accumulate_cols_key,
+    gen_accumulate_rows_key,
     gen_square_matrix_product,
 )
 from .matlib import *

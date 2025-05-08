@@ -12,18 +12,18 @@ from main_unittest import gen_crypto_context_from_params
 def fhe_matrix_vector_product(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
-    pub_key = keys.publicKey
+    public_key = keys.publicKey
     matrix = np.array(input[0])
     vector = np.array(input[1])
 
-    ct_matrix = fp.array(cc, matrix, total_slots, pub_key=pub_key)
-    block_size = ct_matrix.ncols
-    sum_col_keys = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_matrix = fp.array(cc, matrix, total_slots, public_key=public_key)
+    block_size = ct_matrix.rowsize
+    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
 
-    ct_vector = fp.array(cc, vector, total_slots, block_size, "C", pub_key=pub_key)
+    ct_vector = fp.array(cc, vector, total_slots, block_size, "C", public_key=public_key)
 
-    ct_result = fp.matvec(cc, keys, sum_col_keys, ct_matrix, ct_vector, block_size)
-    result = ct_result.decrypt(cc, keys.secretKey)
+    ct_result = fp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
+    result = ct_result.decrypt(keys.secretKey)
     return result
 
 

@@ -103,7 +103,7 @@ def demo():
     ctm_result = fp.square_matmul(ctm_A, ctm_B)
 
     # Decrypt the result
-    result = ctm_result.decrypt(cc, keys.secretKey)
+    result = ctm_result.decrypt(keys.secretKey)
 
     # Compare with plain result
     expected = A @ B

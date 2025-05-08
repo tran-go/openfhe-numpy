@@ -121,12 +121,10 @@ def dot(tensor_a: CTArray, tensor_b: CTArray) -> CTArray:
     else:
         info[0] = square_matmul(tensor_a, tensor_b)
 
-    return BaseCTArrayTensor(*info)
+    return BaseTensor(*info)
 
 
-def matvec(
-    crypto_context, keys, sumkey, tensor_matrix: CTArray, tensor_vector: CTArray, rowsize: int
-) -> BaseTensor:
+def matvec(sumkey, tensor_matrix: CTArray, tensor_vector: CTArray, rowsize: int) -> BaseTensor:
     """Matrix-vector multiplication over encrypted data.
 
     Equivalent to: np.dot(A, v)
@@ -139,6 +137,7 @@ def matvec(
     >>> np.dot([[1, 2], [3, 4]], [5, 6])
     array([17, 39])
     """
+    crypto_context = tensor_matrix.data.GetCryptoContext()
     if (
         tensor_matrix.order == MatrixOrder.ROW_MAJOR
         and tensor_vector.order == MatrixOrder.COL_MAJOR
@@ -187,7 +186,7 @@ def matvec(
         )
 
 
-def matrix_power(crypto_context, keys, k: int, ctarray: CTArray) -> BaseTensor:
+def matrix_power(tensor: CTArray, k: int) -> BaseTensor:
     """Exponentiate a matrix to power k using homomorphic multiplication.
 
     Equivalent to: np.linalg.matrix_power(A, k)
@@ -199,9 +198,20 @@ def matrix_power(crypto_context, keys, k: int, ctarray: CTArray) -> BaseTensor:
     >>> np.linalg.matrix_power([[2, 0], [0, 2]], 3)
     array([[8, 0], [0, 8]])
     """
-    result = ctarray
-    for _ in range(k):
-        result = square_matmul(result, ctarray)
+
+    if k < 0:
+        FP_ERROR("The kth power is negative")
+
+    flag = True
+    while k > 0:
+        if k % 2 == 1:
+            if flag:
+                result = tensor
+                flag = False
+            else:
+                result = square_matmul(result, tensor)
+            tensor = square_matmul(tensor, tensor)
+            k //= 2
     return result
 
 
@@ -229,7 +239,7 @@ def add_reduce(crypto_context, sumkey, ctarray: CTArray, axis=None):
     return CTArray(*info)
 
 
-def add_accumulate(crypto_context, sumkey, ctarray: CTArray, axis=None):
+def add_accumulate(tensor: CTArray, axis=None):
     """Homomorphic prefix sum: equivalent to np.add.accumulate(cta, axis=axis).
 
     Would be implemented via encrypted rotations + additions.
@@ -240,7 +250,23 @@ def add_accumulate(crypto_context, sumkey, ctarray: CTArray, axis=None):
     Return: array([1, 3, 6, 10])
     """
 
-    pass
+    if axis == 0:
+        print("rowsize = ", tensor.rowsize)
+        ct_result = openfhe_matrix.EvalAddAccumulateRows(
+            tensor.data, tensor.rowsize, tensor.batch_size
+        )
+    elif axis == 1:
+        print("rowsize = ", tensor.rowsize)
+        ct_result = openfhe_matrix.EvalAddAccumulateCols(
+            tensor.data, tensor.rowsize, tensor.batch_size
+        )
+
+    else:
+        FP_ERROR(f"Axis {axis} is out of bound for array of dimension {tensor.ndim}")
+
+    info = tensor.info()
+    info[0] = ct_result
+    return CTArray(*info)
 
 
 def sub_reduce(crypto_context, sum_keys, ctarray: CTArray, axis=None):

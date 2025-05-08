@@ -95,7 +95,7 @@ def demo():
 
     # Perform matrix additions on ciphertexts
     ctm_result = fp.add(ctm_matA, ctm_matB)
-    result = ctm_result.decrypt(cc, keys.secretKey)
+    result = ctm_result.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
 
     # Compare with plain result
