@@ -142,7 +142,7 @@ void bind_ciphertext(py::module& m) {
 //         .def(py::init<std::array<int,2>, int32_t, int32_t, int32_t, ArrayEncodingType>(),
 //              py::arg("initialShape"),
 //              py::arg("ndim"),
-//              py::arg("ncols"),
+//              py::arg("rowsize"),
 //              py::arg("batchSize"),
 //              py::arg("encodeType") = ArrayEncodingType::ROW_MAJOR)
 
@@ -159,9 +159,9 @@ void bind_ciphertext(py::module& m) {
 //             [](ArrayMetadata& a, int32_t v) { a.ndim() = v; },
 //             "Number of dimensions")
 //         .def_property(
-//             "ncols",
-//             [](const ArrayMetadata& a) -> int32_t { return a.ncols(); },
-//             [](ArrayMetadata& a, int32_t v) { a.ncols() = v; },
+//             "rowsize",
+//             [](const ArrayMetadata& a) -> int32_t { return a.rowsize(); },
+//             [](ArrayMetadata& a, int32_t v) { a.rowsize() = v; },
 //             "Number of columns")
 //         .def_property(
 //             "nrows",

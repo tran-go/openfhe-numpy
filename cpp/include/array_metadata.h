@@ -49,10 +49,10 @@ public:
 
     ArrayMetadata(std::array<int, 2> initialShape,
                                  int32_t ndim,
-                                 int32_t ncols,
+                                 int32_t rowsize,
                                  int32_t batchSize,
                                  ArrayEncodingType enc = ArrayEncodingType::ROW_MAJOR)
-        : m_initialShape(initialShape), m_ndim(ndim), m_ncols(ncols), m_batchSize(batchSize), m_encodeType(enc) {}
+        : m_initialShape(initialShape), m_ndim(ndim), m_ncols(rowsize), m_batchSize(batchSize), m_encodeType(enc) {}
         
     ~ArrayMetadata() override = default;
 
@@ -70,10 +70,10 @@ public:
         return m_ndim;
     }
 
-    int32_t& ncols() noexcept {
+    int32_t& rowsize() noexcept {
         return m_ncols;
     }
-    constexpr int32_t ncols() const noexcept {
+    constexpr int32_t rowsize() const noexcept {
         return m_ncols;
     }
 
