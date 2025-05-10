@@ -17,8 +17,8 @@ uint32_t NextPow2(uint32_t x) {
     return pow(2, ceil(log(double(x)) / log(2.0)));
 };
 
-template <typename Element>
-void Debug(CryptoContext<Element> cc, KeyPair<Element> keys, Ciphertext<Element> ct, std::string msg, int length) {
+
+void Debug(CryptoContext<DCRTPoly> cc, KeyPair<DCRTPoly> keys, Ciphertext<DCRTPoly> ct, std::string msg, int length) {
     Plaintext pt;
     cc->Decrypt(keys.secretKey, ct, &pt);
     pt->SetLength(length);

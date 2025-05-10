@@ -10,11 +10,14 @@ namespace openfhe_matrix {
 
 using namespace lbcrypto;
 
+//TODO: Change from const Ciphertext to ConstCiphertext
+//TODO: using references
+
 template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats = 0);
 
 template <typename Element>
-void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
+void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t numRows, int32_t numCols);
 
 template <typename Element>
 void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
@@ -75,22 +78,23 @@ Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t
 
 template <typename Element>
 Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
-                                          uint32_t rowSize,
-                                          uint32_t subringDim = 0);
+                                          uint32_t numCols,
+                                          uint32_t numRows = 0,
+                                          uint32_t slots = 0);
 
 template <typename Element>
 Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
                                           uint32_t rowSize,
                                           uint32_t subringDim = 0);
 
-template <typename Element>
-Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
-                                          uint32_t rowSize,
-                                          uint32_t subringDim = 0);
+// template <typename Element>
+// Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
+//                                           uint32_t rowSize,
+//                                           uint32_t subringDim = 0);
 
-template <typename Element>
-Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
-                                          uint32_t rowSize,
-                                          uint32_t subringDim = 0);
+// template <typename Element>
+// Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
+//                                           uint32_t rowSize,
+//                                           uint32_t subringDim = 0);
 }  // namespace openfhe_matrix
 #endif  // ENC_MATRIX_H

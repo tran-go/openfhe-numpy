@@ -128,11 +128,12 @@ void bind_matrix_funcs(py::module& m) {
 
     // EvalAddAccumulateRows
     m.def("EvalAddAccumulateRows",
-          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
+          static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t)>(
               &EvalAddAccumulateRows<DCRTPoly>),
           py::arg("ciphertext"),
-          py::arg("rowSize"),
-          py::arg("subringDim") = 0,
+          py::arg("numCols"),
+          py::arg("numRows") = 0,
+          py::arg("slots") = 0,
           "Accumulate rows of a matrix ciphertext.");
 
     // EvalAddAccumulateCols
@@ -144,29 +145,30 @@ void bind_matrix_funcs(py::module& m) {
           py::arg("subringDim") = 0,
           "Accumulate cols of a matrix ciphertext.");
 
-              // EvalAddAccumulateRows
-    m.def("EvalSubAccumulateRows",
-        static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
-            &EvalSubAccumulateRows<DCRTPoly>),
-        py::arg("ciphertext"),
-        py::arg("rowSize"),
-        py::arg("subringDim") = 0,
-        "Sub accumulate rows of a matrix ciphertext.");
+//               // EvalAddAccumulateRows
+//     m.def("EvalSubAccumulateRows",
+//         static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
+//             &EvalSubAccumulateRows<DCRTPoly>),
+//         py::arg("ciphertext"),
+//         py::arg("rowSize"),
+//         py::arg("subringDim") = 0,
+//         "Sub accumulate rows of a matrix ciphertext.");
 
-  // EvalAddAccumulateCols
-  m.def("EvalSubAccumulateCols",
-        static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
-            &EvalSubAccumulateCols<DCRTPoly>),
-        py::arg("ciphertext"),
-        py::arg("rowSize"),
-        py::arg("subringDim") = 0,
-        "Sub accumulate cols of a matrix ciphertext.");
+//   // EvalAddAccumulateCols
+//   m.def("EvalSubAccumulateCols",
+//         static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
+//             &EvalSubAccumulateCols<DCRTPoly>),
+//         py::arg("ciphertext"),
+//         py::arg("rowSize"),
+//         py::arg("subringDim") = 0,
+//         "Sub accumulate cols of a matrix ciphertext.");
 }
 
-template <typename Element>
-Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext,
-                                          uint32_t rowSize,
-                                          uint32_t subringDim = 0);
+// template <typename Element>
+// Ciphertext<Element> EvalAddAccumulateRows(ConstCiphertext<Element>& ciphertext,
+//                                           uint32_t numRows,
+//                                           uint32_t numCols = 0,
+//                                           uint32_t subringDim = 0);
 
 void bind_ciphertext(py::module& m) {
     py::object existingModule = py::module_::import("openfhe");
