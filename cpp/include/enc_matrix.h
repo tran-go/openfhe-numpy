@@ -80,21 +80,22 @@ template <typename Element>
 Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t numRows = 0,
-                                          uint32_t slots = 0);
+                                          uint32_t slots   = 0);
 
 template <typename Element>
 Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
-                                          uint32_t rowSize,
+                                          uint32_t numCols,
                                           uint32_t subringDim = 0);
 
-// template <typename Element>
-// Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
-//                                           uint32_t rowSize,
-//                                           uint32_t subringDim = 0);
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
+                                          uint32_t numCols,
+                                          uint32_t numRows = 0,
+                                          uint32_t slots   = 0);
 
-// template <typename Element>
-// Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
-//                                           uint32_t rowSize,
-//                                           uint32_t subringDim = 0);
-}  // namespace openfhe_matrix
+template <typename Element>
+Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
+                                          uint32_t numCols,
+                                          uint32_t subringDim = 0);
+}
 #endif  // ENC_MATRIX_H
