@@ -49,6 +49,11 @@ class BaseTensor(ABC):
     # @abstractmethod
     # def add(self, other): ...
 
+    # a.add(b)
+
+    # add(a, b):
+    #     a.add(b)
+
     # @abstractmethod
     # def sum(self): ...
 
@@ -110,7 +115,7 @@ class FHETensor(BaseTensor):
     ):
         self._original_shape = original_shape
         self._batch_size = batch_size
-        self._rowsize = rowsize
+        self._rowsize = rowsize  # TODO: Change _rowsize -> _ncols
         self._ndim = len(original_shape)
         self._order = order
 
@@ -174,6 +179,8 @@ class CTArray(FHETensor):
             f"size={self.batch_size}, rowsize={self.rowsize}, order={self.order})"
         )
 
+    # TODO: change fp to encnp / enp / onp (Y) / ofnp / onpy
+    # TODO: only use fp.decrypt(sk, A) from now
     def decrypt(self, sk, isFormat=True, precision=None):
         cc = self.data.GetCryptoContext()
         result = cc.Decrypt(self._data, sk)
@@ -188,7 +195,6 @@ class CTArray(FHETensor):
         return CTArray(
             self._data,
             self.original_shape,
-            self.ndim,
             self.batch_size,
             self.rowsize,
             self.order,
