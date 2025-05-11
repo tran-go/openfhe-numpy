@@ -9,7 +9,7 @@ from datetime import datetime
 from openfhe import *
 
 # from openfhe_matrix import *
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 # from openfhe_numpy.utils import *
 
 PARAMS_CSV = "ckks_params.csv"
@@ -115,11 +115,11 @@ def OPENFHE_test_result(name, test_name, input, expected, result, error_size, pa
 class MainUnittest(unittest.TestCase):
     @classmethod
     def generate_test_case(
-        cls, func_name, name, test_name, params, input, expected, eps=fp.matlib.EPSILON
+        cls, func_name, name, test_name, params, input, expected, eps=onp.matlib.EPSILON
     ):
         def test(self):
             result = func_name(params, input)
-            flag, error_size = fp.matlib.check_equality_matrix(result, expected, eps)
+            flag, error_size = onp.matlib.check_equality_matrix(result, expected, eps)
             if flag:
                 OPENFHE_test_result(
                     name, test_name, input, expected, result, error_size, passed=True
@@ -129,7 +129,7 @@ class MainUnittest(unittest.TestCase):
                     name, test_name, input, expected, result, error_size, passed=False
                 )
                 OPENFHE_failure_to_file(
-                    test_name, input, expected, result, fp.matlib.FHEErrorCodes.ERROR_MATCHING
+                    test_name, input, expected, result, onp.matlib.FHEErrorCodes.ERROR_MATCHING
                 )
                 raise
 

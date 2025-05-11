@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 
 from main_unittest import MainUnittest
 from main_unittest import load_ckks_params
@@ -15,9 +15,9 @@ def fhe_vector_add(params, input):
     public_key = keys.publicKey
     input0 = np.array(input[0])
     input1 = np.array(input[1])
-    ct_input0 = fp.array(cc, input0, total_slots, block_size, "C", public_key=keys.publicKey)
-    ct_input1 = fp.array(cc, input1, total_slots, block_size, "C", public_key=keys.publicKey)
-    return fp.add(cta, ctb).decrypt(keys.secretKey)
+    ct_input0 = onp.array(cc, input0, total_slots, block_size, "C", public_key=keys.publicKey)
+    ct_input1 = onp.array(cc, input1, total_slots, block_size, "C", public_key=keys.publicKey)
+    return onp.add(cta, ctb).decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":

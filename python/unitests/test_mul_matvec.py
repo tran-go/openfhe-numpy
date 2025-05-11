@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 
 from main_unittest import MainUnittest
 from main_unittest import load_ckks_params
@@ -16,13 +16,13 @@ def fhe_matrix_vector_product(params, input):
     matrix = np.array(input[0])
     vector = np.array(input[1])
 
-    ct_matrix = fp.array(cc, matrix, total_slots, public_key=public_key)
+    ct_matrix = onp.array(cc, matrix, total_slots, public_key=public_key)
     block_size = ct_matrix.rowsize
-    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
 
-    ct_vector = fp.array(cc, vector, total_slots, block_size, "C", public_key=public_key)
+    ct_vector = onp.array(cc, vector, total_slots, block_size, "C", public_key=public_key)
 
-    ct_result = fp.matvec(sumkey, ct_matrix, ct_vector, block_size)
+    ct_result = onp.matvec(sumkey, ct_matrix, ct_vector, block_size)
     result = ct_result.decrypt(keys.secretKey)
     return result
 

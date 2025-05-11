@@ -4,7 +4,7 @@ from openfhe import *
 from openfhe_matrix import *
 
 # Import OpenFHE NumPy-style interface
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 
 
@@ -92,15 +92,15 @@ def demo():
     # todo: explain encoding information, techniques,
 
     # Encrypt both matrices
-    ctm_A = fp.array(cc, A, total_slots, public_key=keys.publicKey)
-    ctm_B = fp.array(cc, B, total_slots, public_key=keys.publicKey)
+    ctm_A = onp.array(cc, A, total_slots, public_key=keys.publicKey)
+    ctm_B = onp.array(cc, B, total_slots, public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC MULTIPLICATION **********")
     print("1. Matrix Multiplication...")
 
     # Perform matrix multiplication on ciphertexts
-    fp.gen_square_matrix_product(keys.secretKey, ctm_A.rowsize)
-    ctm_result = fp.square_matmul(ctm_A, ctm_B)
+    onp.gen_square_matrix_product(keys.secretKey, ctm_A.rowsize)
+    ctm_result = onp.square_matmul(ctm_A, ctm_B)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

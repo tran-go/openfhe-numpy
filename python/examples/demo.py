@@ -4,7 +4,7 @@ from openfhe import *
 from openfhe_matrix import *
 
 # Import OpenFHE NumPy-style interface
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 from openfhe_numpy.config import MatrixOrder
 import os
@@ -211,7 +211,7 @@ def demo():
 
     # Encrypt both matrices
     ctm_A = xarray(cc, A, total_slots, public_key=keys.publicKey)
-    # ctm_B = fp.array(cc, B, total_slots, public_key=keys.publicKey)
+    # ctm_B = onp.array(cc, B, total_slots, public_key=keys.publicKey)
     # c1 = ctm_A.GetCryptoContext()
     # if c1 == cc:
     #     print("HAHA")

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 
 # from openfhe_matrix import *
 from main_unittest import MainUnittest
@@ -15,9 +15,9 @@ def fhe_matrix_transpose(params, input):
     cc, keys = gen_crypto_context_from_params(params)
     public_key = keys.publicKey
     matrixA = np.array(input[0])
-    ct_matrixA = fp.array(cc, matrixA, total_slots, public_key=public_key)
-    fp.gen_transpose_keys(cc, keys, ct_matrixA)
-    ct_result = fp.transpose(cc, public_key, ct_matrixA)
+    ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
+    onp.gen_transpose_keys(cc, keys, ct_matrixA)
+    ct_result = onp.transpose(cc, public_key, ct_matrixA)
     result = ct_result.decrypt(keys.secretKey)
     return result
 

@@ -5,7 +5,7 @@ from openfhe_matrix import *
 from openfhe_numpy import utils
 
 # Import OpenFHE NumPy-style interface
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 
 
@@ -81,13 +81,13 @@ def demo():
     print("Vector b:\n", b)
 
     # Encrypt both matrices
-    ct_matrix = fp.array(cc, A, total_slots, public_key=keys.publicKey)
+    ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
     block_size = ct_matrix.rowsize
-    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_vector = fp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
+    sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC Matrix Vector Product **********")
-    ct_result = fp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
+    ct_result = onp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
     result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
     # Compare with plain result
     expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)

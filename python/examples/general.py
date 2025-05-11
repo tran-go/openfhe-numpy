@@ -4,7 +4,7 @@ from openfhe import *
 from openfhe_matrix import *
 
 # import openfhe_numpy library
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import *
 
 
@@ -61,16 +61,16 @@ def demo():
     print("c: ", c)
     print("d: ", d)
 
-    ctm_a = fp.array(cc, a, total_slots, public_key=keys.publicKey)
-    ctm_b = fp.array(cc, b, total_slots, public_key=keys.publicKey)
+    ctm_a = onp.array(cc, a, total_slots, public_key=keys.publicKey)
+    ctm_b = onp.array(cc, b, total_slots, public_key=keys.publicKey)
 
-    ctv_c = fp.array(cc, c, total_slots, block_size, "C", public_key=keys.publicKey)
-    ctv_d = fp.array(cc, d, total_slots, block_size, "C", public_key=keys.publicKey)
+    ctv_c = onp.array(cc, c, total_slots, block_size, "C", public_key=keys.publicKey)
+    ctv_d = onp.array(cc, d, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print()
     print("*" * 10, "ADDITION", "*" * 10)
     print("\n1. Matrix addition:")
-    ct_sum = fp.add(cc, ctm_a, ctm_b)
+    ct_sum = onp.add(cc, ctm_a, ctm_b)
     result = ct_sum.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a + b}")
@@ -78,7 +78,7 @@ def demo():
     print(f"Matching = [{np.array_equal(result, a + b)}]")
 
     print("\n2. Vector addition:")
-    ct_sum = fp.add(cc, ctv_c, ctv_d)
+    ct_sum = onp.add(cc, ctv_c, ctv_d)
     result = ct_sum.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {c + d}")
@@ -89,7 +89,7 @@ def demo():
     print("*" * 10, "MULTIPLICATION", "*" * 10)
 
     print("\n1.Matrix multiplication:")
-    ct_product = fp.square_matmul(ctm_a, ctm_b)
+    ct_product = onp.square_matmul(ctm_a, ctm_b)
     result = ct_product.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a @ b}")
@@ -98,8 +98,8 @@ def demo():
 
     print("\n2.Matrix Vector multiplication: A@c")
     vec_ac = pack_vec_row_wise((a @ c), block_size, total_slots)
-    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_product = fp.matvec(cc, keys, sumkey, ctm_a, ctv_c, block_size)
+    sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_product = onp.matvec(cc, keys, sumkey, ctm_a, ctv_c, block_size)
     result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {vec_ac}")
@@ -108,8 +108,8 @@ def demo():
 
     print("\n3.Dot product c.d = <c,d>:")
     dot_prod = np.dot(c, d)
-    sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, block_size)
-    ct_product = fp.dot(cc, keys, sumkey, ctv_c, ctv_d)
+    sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
+    ct_product = onp.dot(cc, keys, sumkey, ctv_c, ctv_d)
     result = ct_product.decrypt(cc, keys.secretKey, format=0)
     result = np.round(result, decimals=1)
     print(f"Expected: {dot_prod}")
@@ -126,7 +126,7 @@ def demo():
     # aa = np.array([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
 
     # # aa = np.array([1, 2, 3, 4])
-    # # ctm_a1 = fp.array(cc, a, total_slots, public_key=keys.publicKey)
+    # # ctm_a1 = onp.array(cc, a, total_slots, public_key=keys.publicKey)
     # matI = np.array(gen_comm_mat(2, 2, 0))
 
     # print(a)
@@ -172,12 +172,12 @@ def demo():
     # print("u = ", gen_transpose_diag(2, 2))
     # print("u = ", gen_transpose_diag(2, 3))
 
-    # pt_matI = fp.array(cc, data=matI, size=total_slots, block_size=len(a) * len(a))
+    # pt_matI = onp.array(cc, data=matI, size=total_slots, block_size=len(a) * len(a))
 
     # size = block_size * block_size
 
-    # sumkey = fp.gen_sum_col_keys(cc, keys.secretKey, size)
-    # ct_product = fp.matvec(cc, keys, sumkey, pt_matI, ctm_a, size)
+    # sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, size)
+    # ct_product = onp.matvec(cc, keys, sumkey, pt_matI, ctm_a, size)
     # result = ct_product.decrypt(cc, keys.secretKey, format=0)
     # result = np.round(result, decimals=1)
     # print(f"Expected: {expected}")
@@ -188,7 +188,7 @@ def demo():
     # print()
     print("*" * 10, "SUM", "*" * 10)
     print("\n1. Matrix addition:")
-    ct_sum = fp.add(cc, ctm_a, ctm_b)
+    ct_sum = onp.add(cc, ctm_a, ctm_b)
     result = ct_sum.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a + b}")

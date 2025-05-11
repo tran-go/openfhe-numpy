@@ -53,7 +53,7 @@ void bind_matrix_funcs(py::module& m) {
     m.def("EvalLinTransKeyGen",
           static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t, LinTransType, int32_t)>(&EvalLinTransKeyGen<DCRTPoly>),
           py::arg("secretKey"),
-          py::arg("rowSize"),
+          py::arg("numCols"),
           py::arg("type"),
           py::arg("numRepeats") = 0);
 

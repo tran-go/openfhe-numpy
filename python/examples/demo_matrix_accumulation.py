@@ -4,7 +4,7 @@ from openfhe import *
 from openfhe_matrix import *
 
 # Import OpenFHE NumPy-style interface
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 
 
@@ -69,18 +69,18 @@ def demo():
     print(f"slots = {slots}, dim = {cc.GetRingDimension()}")
 
     # Encrypt matrix A
-    ctm_matA = fp.array(cc, matrix, slots, public_key=keys.publicKey)
+    ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
     print(ctm_matA)
 
     print("\n********** HOMOMORPHIC MATRIX Accumulation **********")
 
     # Perform matrix tranpose on ciphertexts
     print("11111111111111111111111111111111111")
-    fp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.rowsize)
+    onp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.rowsize)
     print("222222222222222222222222222222222222222")
-    # fp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.rowsize)
+    # onp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.rowsize)
     # print("333333333333333333333333333333333333333333333")
-    ctm_result = fp.add_accumulate(ctm_matA, 1)
+    ctm_result = onp.add_accumulate(ctm_matA, 1)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

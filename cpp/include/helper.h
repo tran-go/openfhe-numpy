@@ -115,16 +115,16 @@ Sample a rational random matrix
 */
 
 inline std::vector<std::vector<double>> RandMatrix(const int nrows,
-                                                   const int rowsize,
+                                                   const int numCols,
                                                    const double min_val = 0,
                                                    const double max_val = 10,
                                                    const bool verbose   = true) {
-    std::vector<std::vector<double>> matrix(nrows, std::vector<double>(rowsize));
+    std::vector<std::vector<double>> matrix(nrows, std::vector<double>(numCols));
     std::srand(static_cast<unsigned>(std::time(0)));
 
     // Fill the matrix with random numbers in the range [minVal, maxVal]
     for (int i = 0; i < nrows; ++i) {
-        for (int j = 0; j < rowsize; ++j) {
+        for (int j = 0; j < numCols; ++j) {
             matrix[i][j] = min_val + std::fmod(std::rand(), (max_val - min_val + 1));
         }
     }

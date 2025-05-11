@@ -4,7 +4,7 @@ from openfhe import *
 from openfhe_matrix import *
 
 # Import OpenFHE NumPy-style interface
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 
 
@@ -87,14 +87,14 @@ def demo():
     print("Matrix B:\n", matB)
 
     # Encrypt both matrices
-    ctm_matA = fp.array(cc, matA, total_slots, public_key=keys.publicKey)
-    ctm_matB = fp.array(cc, matB, total_slots, public_key=keys.publicKey)
+    ctm_matA = onp.array(cc, matA, total_slots, public_key=keys.publicKey)
+    ctm_matB = onp.array(cc, matB, total_slots, public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC ADDITIONS **********")
     print("1. Matrix Additions...")
 
     # Perform matrix additions on ciphertexts
-    ctm_result = fp.add(ctm_matA, ctm_matB)
+    ctm_result = onp.add(ctm_matA, ctm_matB)
     result = ctm_result.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
 

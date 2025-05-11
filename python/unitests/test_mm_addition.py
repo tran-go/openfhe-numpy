@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 from main_unittest import MainUnittest
 from main_unittest import load_ckks_params
 from main_unittest import generate_random_array
@@ -14,10 +14,10 @@ def fhe_matrix_addition(params, input):
     matrixA = np.array(input[0])
     matrixB = np.array(input[1])
 
-    ct_matrixA = fp.array(cc, matrixA, total_slots, public_key=keys.publicKey)
-    ct_matrixB = fp.array(cc, matrixB, total_slots, public_key=keys.publicKey)
+    ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=keys.publicKey)
+    ct_matrixB = onp.array(cc, matrixB, total_slots, public_key=keys.publicKey)
 
-    ct_sum = fp.add(ct_matrixA, ct_matrixB)
+    ct_sum = onp.add(ct_matrixA, ct_matrixB)
     result = ct_sum.decrypt(keys.secretKey)
 
     return result

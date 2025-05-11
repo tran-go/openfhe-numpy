@@ -2,7 +2,7 @@
 #include "openfhe.h"
 #include "utils.h"
 
-using namespace fhemat;
+using namespace openfhe_matrix;
 
 void AutomaticRescaleDemo(ScalingTechnique scalTech);
 void ManualRescaleDemo(ScalingTechnique scalTech);
@@ -111,7 +111,7 @@ void MatrixVectorProduct_CRC() {
     PrintVector(MulMatVec(inputMatrix, inputVector));
 
     // Perform encrypted mat-vector multiplication
-    auto ctProd = EvalMultMatVec(cc, sumColsKey, MatVecEncoding::MM_CRC, paddedRowCount, ctVec, ctMat);
+    auto ctProd = EvalMultMatVec(sumColsKey, MatVecEncoding::MM_CRC, paddedRowCount, ctVec, ctMat);
 
     // Decrypt result
     Plaintext ptResult;
@@ -140,38 +140,45 @@ void DemoMatrixProduct(bool verbose = true) {
         {3, 0, 2, 0},
     };
 
-    uint32_t nRows          = matA.size();
-    uint32_t nCols          = matA[0].size();
-    uint32_t paddedRowCount = NextPow2(nCols);
-    uint32_t multDepth      = 20;
-    int32_t batchSize       = (1 << 10) / 2;
-
-    std::vector<double> encMatA = EncodeMatrix<double>(matA, batchSize);
-    std::vector<double> encMatB = EncodeMatrix<double>(matB, batchSize);
-
     // Set CKKS encryption parameters
-    std::cout << "Initializing CryptoContext...\n";
-    CryptoContext<DCRTPoly> cc = GenerateCryptoContext(multDepth);
+    std::cout << "\nInitializing CryptoContext ...\n";
+    CryptoContext<DCRTPoly> cc = GenerateCryptoContext(20);
+    usint ringDim              = cc->GetRingDimension();
 
-    std::cout << "Generating key pair...\n";
+    std::cout << "\nGenerating key pair ...\n";
     auto keyPair = cc->KeyGen();
     cc->EvalMultKeyGen(keyPair.secretKey);
     cc->EvalSumKeyGen(keyPair.secretKey);
 
-    // Encrypt matrices
+    // Encrypt
+    auto nRows          = matA.size();
+    auto nCols          = matA[0].size();
+    auto paddedRowCount = NextPow2(nCols);
+    auto batchSize      = ringDim / 2;
+
+    std::vector<double> encMatA = EncodeMatrix<double>(matA, batchSize);
+    std::vector<double> encMatB = EncodeMatrix<double>(matB, batchSize);
+
+    std::cout << "\nMatrix Parameters ...\n";
+    std::cout << "nRows = " << nRows << std::endl;
+    std::cout << "nCols = " << nCols << std::endl;
+    std::cout << "paddedRowCount = " << paddedRowCount << std::endl;
+    std::cout << "batchSize = " << batchSize << std::endl;
+    std::cout << "encMatA = " << encMatA << std::endl;
+
     Plaintext ptMatA = cc->MakeCKKSPackedPlaintext(encMatA);
     Plaintext ptMatB = cc->MakeCKKSPackedPlaintext(encMatB);
     auto ctMatA      = cc->Encrypt(keyPair.publicKey, ptMatA);
     auto ctMatB      = cc->Encrypt(keyPair.publicKey, ptMatB);
 
     if (verbose) {
-        std::cout << "--- Plaintext Matrix-Matrix Product ---\n";
+        std::cout << "\n--- [Plaintext] Matrix Product Result ---\n";
         PrintMatrix(MulMats(matA, matB));
     }
 
     // Perform encrypted mat-mat multiplication
-    MulMatRotateKeyGen(cc, keyPair, paddedRowCount);
-    auto ctProduct = EvalMatMulSquare(cc, keyPair.publicKey, ctMatA, ctMatB, paddedRowCount);
+    EvalSquareMatMultRotateKeyGen(keyPair.secretKey, paddedRowCount);
+    auto ctProduct = EvalMatMulSquare(ctMatA, ctMatB, paddedRowCount);
 
     // Decrypt result
     Plaintext ptResult;
@@ -180,15 +187,15 @@ void DemoMatrixProduct(bool verbose = true) {
     std::vector<double> res = ptResult->GetRealPackedValue();
 
     if (verbose) {
-        std::cout << "--- Encrypted Matrix-Matrix Result ---\n";
+        std::cout << "\n--- [Ciphertext] Square Matrix Product Result ---\n";
         RoundVector(res);
         PrintVector(res);
     }
 
-    // Transpose the first encrypted mat
-    auto encryptedTranspose = EvalMatrixTranspose(cc, keyPair, ctMatA, paddedRowCount);
+    // Transpose the first encrypted matrix
+    auto encryptedTranspose = EvalTranspose(keyPair.secretKey, ctMatA, paddedRowCount);
     cc->Decrypt(keyPair.secretKey, encryptedTranspose, &ptResult);
-    // ptResult->SetLength(nCols * nRows);
+    ptResult->SetLength(nCols * nRows);
     auto resultVector = ptResult->GetRealPackedValue();
 
     if (verbose) {

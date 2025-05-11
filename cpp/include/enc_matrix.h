@@ -14,67 +14,67 @@ using namespace lbcrypto;
 //TODO: using references
 
 template <typename Element>
-void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize, LinTransType type, int32_t numRepeats = 0);
+void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t numCols, LinTransType type, int32_t numRepeats = 0);
 
 template <typename Element>
 void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t numRows, int32_t numCols);
 
 template <typename Element>
-void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t rowSize);
+void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t numCols);
 
 template <typename Element>
 Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
                                    MatVecEncoding encodeType,
-                                   int32_t rowSize,
+                                   int32_t numCols,
                                    const Ciphertext<Element>& ctVector,
                                    const Ciphertext<Element>& ctMatrix);
 
 template <typename Element>
 Ciphertext<Element> EvalLinTransSigma(PrivateKey<Element>& secretKey,
                                       const Ciphertext<Element>& ciphertext,
-                                      int32_t rowSize);
+                                      int32_t numCols);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t rowSize);
+Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t numCols);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t rowSize);
+Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t numCols);
 
 template <typename Element>
 Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
                                     const Ciphertext<Element>& ciphertext,
-                                    int32_t rowSize);
+                                    int32_t numCols);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats);
+Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t numCols, int32_t numRepeats);
 
 template <typename Element>
 Ciphertext<Element> EvalLinTransPhi(PrivateKey<Element>& secretKey,
                                     const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
+                                    int32_t numCols,
                                     int32_t numRepeats);
 
 template <typename Element>
 Ciphertext<Element> EvalLinTransPsi(PrivateKey<Element>& secretKey,
                                     const Ciphertext<Element>& ctVector,
-                                    int32_t rowSize,
+                                    int32_t numCols,
                                     int32_t numRepeats);
 
 template <typename Element>
-Ciphertext<Element> EvalLinTransPsi(const Ciphertext<Element>& ctVector, int32_t rowSize, int32_t numRepeats);
+Ciphertext<Element> EvalLinTransPsi(const Ciphertext<Element>& ctVector, int32_t numCols, int32_t numRepeats);
 
 template <typename Element>
 Ciphertext<Element> EvalMatMulSquare(const Ciphertext<Element>& matrixA,
                                      const Ciphertext<Element>& matrixB,
-                                     int32_t rowSize);
+                                     int32_t numCols);
 
 template <typename Element>
 Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
                                   const Ciphertext<Element>& ciphertext,
-                                  int32_t rowSize);
+                                  int32_t numCols);
 
 template <typename Element>
-Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t rowSize);
+Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t numCols);
 
 template <typename Element>
 Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,

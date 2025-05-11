@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import openfhe_numpy as fp
+import openfhe_numpy as onp
 
 from main_unittest import MainUnittest
 from main_unittest import load_ckks_params
@@ -16,13 +16,13 @@ def fhe_vector_dot(params, input):
     input0 = np.array(input[0])
     input1 = np.array(input[1])
     if input0.ndim == 1:
-        ct_input0 = fp.array(cc, input0, total_slots, 1, "C", public_key=keys.publicKey)
-        ct_input1 = fp.array(cc, input1, total_slots, 1, "C", public_key=keys.publicKey)
+        ct_input0 = onp.array(cc, input0, total_slots, 1, "C", public_key=keys.publicKey)
+        ct_input1 = onp.array(cc, input1, total_slots, 1, "C", public_key=keys.publicKey)
     else:
-        ct_input0 = fp.array(cc, input0, total_slots, public_key=keys.publicKey)
-        ct_input1 = fp.array(cc, input1, total_slots, public_key=keys.publicKey)
+        ct_input0 = onp.array(cc, input0, total_slots, public_key=keys.publicKey)
+        ct_input1 = onp.array(cc, input1, total_slots, public_key=keys.publicKey)
 
-    return fp.dot(ct_input0, ct_input1).decrypt(keys.secretKey)
+    return onp.dot(ct_input0, ct_input1).decrypt(keys.secretKey)
 
 
 if __name__ == "__main__":
