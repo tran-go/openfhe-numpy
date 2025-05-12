@@ -17,7 +17,7 @@ def fhe_matrix_vector_product(params, input):
     vector = np.array(input[1])
 
     ct_matrix = onp.array(cc, matrix, total_slots, public_key=public_key)
-    block_size = ct_matrix.rowsize
+    block_size = ct_matrix.ncols
     sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
 
     ct_vector = onp.array(cc, vector, total_slots, block_size, "C", public_key=public_key)

@@ -6,6 +6,7 @@ from openfhe_matrix import *
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
+from openfhe_numpy.config import MatrixOrder
 
 
 def gen_crypto_context(mult_depth):
@@ -72,15 +73,15 @@ def demo():
     ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
     print(ctm_matA)
 
-    print("\n********** HOMOMORPHIC MATRIX Accumulation **********")
+    print("\n********** HOMOMORPHIC cha Accumulation **********")
 
     # Perform matrix tranpose on ciphertexts
     print("11111111111111111111111111111111111")
-    onp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.rowsize)
+    onp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.ncols)
     print("222222222222222222222222222222222222222")
-    # onp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.rowsize)
+    # onp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.ncols)
     # print("333333333333333333333333333333333333333333333")
-    ctm_result = onp.add_accumulate(ctm_matA, 1)
+    ctm_result = onp.cumsum(ctm_matA, 0)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

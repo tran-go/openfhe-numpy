@@ -1,23 +1,23 @@
 import unittest
 import numpy as np
-
 import openfhe_numpy as onp
-
 from main_unittest import MainUnittest
 from main_unittest import load_ckks_params
 from main_unittest import generate_random_array
 from main_unittest import gen_crypto_context_from_params
 
 
-def fhe_vector_add(params, input):
+def fhe_addition(params, input):
     total_slots = params["ringDim"] // 2
     cc, keys = gen_crypto_context_from_params(params)
-    public_key = keys.publicKey
-    input0 = np.array(input[0])
-    input1 = np.array(input[1])
-    ct_input0 = onp.array(cc, input0, total_slots, block_size, "C", public_key=keys.publicKey)
-    ct_input1 = onp.array(cc, input1, total_slots, block_size, "C", public_key=keys.publicKey)
-    return onp.add(cta, ctb).decrypt(keys.secretKey)
+
+    ciphext1 = onp.array(cc, np.array(input[0]), total_slots, public_key=keys.publicKey)
+    ciphext2 = onp.array(cc, np.array(input[1]), total_slots, public_key=keys.publicKey)
+
+    ct_sum = onp.add(ciphext1, ciphext2)
+    result = ct_sum.decrypt(keys.secretKey)
+
+    return result
 
 
 if __name__ == "__main__":
@@ -27,13 +27,13 @@ if __name__ == "__main__":
 
     for param in ckks_param_list:
         for size in matrix_sizes:
-            input0 = generate_random_array(size, 1)
-            input1 = generate_random_array(size, 1)
-            expected = np.array(matrixA) + np.array(matrixB)
-            name = "TestSquareMatrixProduct"
+            A = generate_random_array(size, 1)
+            B = generate_random_array(size, 1)
+            expected = (np.array(A) + np.array(B)).tolist()
+            name = "TestMatrixAddition"
             test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
             test_method = MainUnittest.generate_test_case(
-                fhe_vector_add, name, test_name, param, [input0, input1], expected
+                fhe_addition, name, test_name, param, [A, B], expected
             )
             setattr(MainUnittest, test_name, test_method)
             test_counter += 1

@@ -82,12 +82,12 @@ def demo():
 
     # Encrypt both matrices
     ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
-    block_size = ct_matrix.rowsize
+    block_size = ct_matrix.ncols
     sumkey = onp.gen_sum_col_keys(cc, keys.secretKey, block_size)
     ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC Matrix Vector Product **********")
-    ct_result = onp.matvec(cc, keys, sumkey, ct_matrix, ct_vector, block_size)
+    ct_result = onp.matmul(ct_matrix, ct_vector)
     result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
     # Compare with plain result
     expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)

@@ -16,8 +16,8 @@ def fhe_matrix_transpose(params, input):
     public_key = keys.publicKey
     matrixA = np.array(input[0])
     ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
-    onp.gen_transpose_keys(cc, keys, ct_matrixA)
-    ct_result = onp.transpose(cc, public_key, ct_matrixA)
+    onp.gen_transpose_keys(keys.secretKey, ct_matrixA)
+    ct_result = onp.transpose(ct_matrixA)
     result = ct_result.decrypt(keys.secretKey)
     return result
 

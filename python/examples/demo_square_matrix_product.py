@@ -99,8 +99,8 @@ def demo():
     print("1. Matrix Multiplication...")
 
     # Perform matrix multiplication on ciphertexts
-    onp.gen_square_matrix_product(keys.secretKey, ctm_A.rowsize)
-    ctm_result = onp.square_matmul(ctm_A, ctm_B)
+    onp.gen_square_matrix_product(keys.secretKey, ctm_A.ncols)
+    ctm_result = onp.matmul(ctm_A, ctm_B)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

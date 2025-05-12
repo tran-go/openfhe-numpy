@@ -89,7 +89,7 @@ def demo():
     print("*" * 10, "MULTIPLICATION", "*" * 10)
 
     print("\n1.Matrix multiplication:")
-    ct_product = onp.square_matmul(ctm_a, ctm_b)
+    ct_product = onp.matmul(ctm_a, ctm_b)
     result = ct_product.decrypt(keys.secretKey)
     result = np.round(result, decimals=1)
     print(f"Expected: {a @ b}")
@@ -134,19 +134,19 @@ def demo():
     # expected = np.matmul(matI, aa)
     # print(f"Expected: {expected}")
 
-    # def gen_transpose_diag(total_slots, rowsize, i):
-    #     n = rowsize * rowsize
+    # def gen_transpose_diag(total_slots, ncols, i):
+    #     n = ncols * ncols
     #     diag = np.zeros(n)
 
     #     if i >= 0:
     #         for l in range(n):
-    #             for j in range(rowsize):
-    #                 if (l - i == (rowsize + 1) * j) and (j < rowsize - i):
+    #             for j in range(ncols):
+    #                 if (l - i == (ncols + 1) * j) and (j < ncols - i):
     #                     diag[i] = 1
     #     else:
     #         for l in range(n):
-    #             for j in range(rowsize):
-    #                 if l - i == (rowsize + 1) * j and -i <= j and j < rowsize:
+    #             for j in range(ncols):
+    #                 if l - i == (ncols + 1) * j and -i <= j and j < ncols:
     #                     diag[i] = 1
     #     return diag
 

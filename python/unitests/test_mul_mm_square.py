@@ -18,9 +18,9 @@ def fhe_square_matrix_product(params, input):
 
     ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
     ct_matrixB = onp.array(cc, matrixB, total_slots, public_key=public_key)
-    block_size = ct_matrixA.rowsize
-    onp.gen_square_matrix_product(cc, keys, block_size)
-    ct_result = onp.square_matmul(ct_matrixA, ct_matrixB)
+    block_size = ct_matrixA.ncols
+    onp.gen_square_matrix_product(keys.secretKey, block_size)
+    ct_result = onp.matmul(ct_matrixA, ct_matrixB)
     return ct_result.decrypt(keys.secretKey)
 
 

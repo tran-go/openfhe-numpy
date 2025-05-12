@@ -31,21 +31,21 @@ class ctarray(Ciphertext):
         original_shape,
         ndim,
         size,
-        rowsize,
+        ncols,
         order: int = MatrixOrder.ROW_MAJOR,
     ):
         super().__init__(data)
         # object.__setattr__(self, "data", data)
         # object.__setattr__(self, "original_shape", original_shape)
         # object.__setattr__(self, "ndim", ndim)
-        # object.__setattr__(self, "rowsize", rowsize)
-        # object.__setattr__(self, "nrows", size // rowsize)
+        # object.__setattr__(self, "ncols", ncols)
+        # object.__setattr__(self, "nrows", size // ncols)
         # object.__setattr__(self, "batch_size", size)
         # object.__setattr__(self, "order", order)
         self.original_shape = original_shape
         self.ndim = ndim
-        self.rowsize = rowsize
-        self.nrows = size // rowsize
+        self.ncols = ncols
+        self.nrows = size // ncols
         self.size = size
         self.order = order
 
@@ -61,7 +61,7 @@ class ctarray(Ciphertext):
     #         "data",
     #         "original_shape",
     #         "ndim",
-    #         "rowsize",
+    #         "ncols",
     #         "nrows",
     #         "batch_size",
     #         "encoding_size",
@@ -92,7 +92,7 @@ class ctarray(Ciphertext):
             self.original_shape,
             self.ndim,
             self.size,
-            self.rowsize,
+            self.ncols,
             self.order,
         )
 
@@ -148,16 +148,16 @@ def xarray(
     org_rows, org_cols, ndim = get_shape(data)
 
     if ndim == 2:
-        rowsize = next_power_of_two(org_cols)
-        packed_data = ravel_matrix(data, total_slots, rowsize, encoding_type)
+        ncols = next_power_of_two(org_cols)
+        packed_data = ravel_matrix(data, total_slots, ncols, encoding_type)
     else:
-        rowsize = batch_size
-        packed_data = ravel_vector(data, total_slots, rowsize, encoding_type)
+        ncols = batch_size
+        packed_data = ravel_vector(data, total_slots, ncols, encoding_type)
 
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
-        return PTArray(plaintext, (org_rows, org_cols), ndim, total_slots, rowsize, encoding_type)
+        return PTArray(plaintext, (org_rows, org_cols), ndim, total_slots, ncols, encoding_type)
 
     if public_key is None:
         raise ValueError("Public key must be provided for ciphertext encoding.")
@@ -166,7 +166,7 @@ def xarray(
     # print(type(ciphertext))
 
     print(ciphertext)
-    return ctarray(ciphertext, (org_rows, org_cols), ndim, total_slots, rowsize, encoding_type)
+    return ctarray(ciphertext, (org_rows, org_cols), ndim, total_slots, ncols, encoding_type)
 
 
 def demo():
