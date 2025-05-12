@@ -110,8 +110,6 @@ void DemoAccumulationOperations() {
         {4, 4, 4, 0, 4, 0, 0, 0},
     };
 
-    1 2 3 1 2 3 1 2 3 
-    1 3 6 7 9 12 13 15 18 
 
     // Set CKKS encryption parameters
     std::cout << "\nInitializing CryptoContext ...\n";
@@ -162,18 +160,20 @@ void DemoAccumulationOperations() {
     Debug(cc, keyPair, ctTmp, "ctTmp", 64);
     cc->EvalRotateKeyGen(keyPair.secretKey, {-1});
     
-    for (size_t i = 1; i < static_cast<size_t>(nCols); ++i) {
-        std::cout << "i = " << i << std::endl;
-        auto mask        = GenMaskSumCols(i, slots, nCols);
-        auto ptmask = cc->MakeCKKSPackedPlaintext(mask, ciphertext->GetScalingFactor(), 0, nullptr, slots);
+    // for (size_t i = 1; i < static_cast<size_t>(nCols); ++i) {
+    //     std::cout << "i = " << i << std::endl;
+    //     auto mask        = GenMaskSumCols(i, slots, nCols);
+    //     auto ptmask = cc->MakeCKKSPackedPlaintext(mask, ciphertext->GetScalingFactor(), 0, nullptr, slots);
 
-        auto rotated = cc->EvalRotate(ctTmp, -1);
-        Debug(cc, keyPair, rotated, "rotated ctTmp", 64);
-        auto maskedRotated = cc->EvalMult(rotated, ptmask);
-        Debug(cc, keyPair, maskedRotated, "maskedRotated", 64);
-        cc->EvalAddInPlace(ctTmp, maskedRotated);
-        Debug(cc, keyPair, ctTmp, "ctTmp", 64);
-    }
+    //     auto rotated = cc->EvalRotate(ctTmp, -1);
+    //     Debug(cc, keyPair, rotated, "rotated ctTmp", 64);
+    //     auto maskedRotated = cc->EvalMult(rotated, ptmask);
+    //     Debug(cc, keyPair, maskedRotated, "maskedRotated", 64);
+    //     cc->EvalAddInPlace(ctTmp, maskedRotated);
+    //     Debug(cc, keyPair, ctTmp, "ctTmp", 64);
+    // }
+
+    ctTmp = EvalAddAccumulateCols(ctTmp,nCols);
 
     // Decrypt the ciphertext to check the result
     Plaintext ptResult;
