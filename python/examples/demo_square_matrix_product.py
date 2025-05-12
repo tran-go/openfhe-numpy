@@ -1,31 +1,38 @@
-# Import OpenFHE and matrix utilities
 import numpy as np
-from openfhe import *
-from openfhe_matrix import *
 
-# Import OpenFHE NumPy-style interface
+from openfhe import (
+    CCParamsCKKSRNS,
+    GenCryptoContext,
+    PKESchemeFeature,
+    HEStd_NotSet,
+    FIXEDAUTO,
+    HYBRID,
+    UNIFORM_TERNARY,
+)
+
 import openfhe_numpy as onp
 from openfhe_numpy.utils import check_equality_matrix
 
 
-def gen_crypto_context(mult_depth, ring_dim=0):
+def gen_crypto_context(mult_depth: int, ring_dim: int = 0):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
 
     Parameters
     ----------
-    ring_dim : int
-        Ring dimension (must be power of two).
     mult_depth : int
         Maximum multiplicative depth for the ciphertext.
+    ring_dim : int, optional
+        Ring dimension (must be power of two). If 0, it's chosen by default.
 
     Returns
     -------
-    tuple
-        (CryptoContext, KeyPair)
+    Tuple[CryptoContext, KeyPair]
+        The generated crypto context and its associated key pair.
     """
     params = CCParamsCKKSRNS()
-    if ring_dim != 0:
+
+    if ring_dim > 0:
         params.SetRingDim(ring_dim)
         params.SetBatchSize(ring_dim // 2)
         params.SetSecurityLevel(HEStd_NotSet)
@@ -51,7 +58,7 @@ def gen_crypto_context(mult_depth, ring_dim=0):
 
 def demo():
     """
-    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
+    Run a demonstration of homomorphic matrix-matrix multiplication using OpenFHE-NumPy.
     """
     ring_dim = 2**12
     mult_depth = 4
@@ -59,7 +66,7 @@ def demo():
 
     cc, keys = gen_crypto_context(mult_depth, ring_dim)
 
-    # Sample input matrices (8x8)
+    # Sample 8×8 input matrices
     A = np.array(
         [
             [0, 7, 8, 10, 1, 2, 7, 6],
@@ -72,7 +79,6 @@ def demo():
             [5, 1, 10, 6, 2, 8, 6, 3],
         ]
     )
-
     B = np.array(
         [
             [7, 0, 1, 3, 5, 0, 1, 8],
@@ -89,8 +95,6 @@ def demo():
     print("Matrix A:\n", A)
     print("Matrix B:\n", B)
 
-    # todo: explain encoding information, techniques,
-
     # Encrypt both matrices
     ctm_A = onp.array(cc, A, total_slots, public_key=keys.publicKey)
     ctm_B = onp.array(cc, B, total_slots, public_key=keys.publicKey)
@@ -98,14 +102,14 @@ def demo():
     print("\n********** HOMOMORPHIC MULTIPLICATION **********")
     print("1. Matrix Multiplication...")
 
-    # Perform matrix multiplication on ciphertexts
+    # Generate rotation/sum keys for square matmul
     onp.gen_square_matrix_product(keys.secretKey, ctm_A.ncols)
     ctm_result = onp.matmul(ctm_A, ctm_B)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)
 
-    # Compare with plain result
+    # Compare with plaintext
     expected = A @ B
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")

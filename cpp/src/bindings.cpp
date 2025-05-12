@@ -13,13 +13,34 @@ void bind_matrix_funcs(py::module& m);
 void bind_ciphertext(py::module& m);
 void bind_metadata(py::module& m);
 
-PYBIND11_MODULE(openfhe_matrix, m) {
-    m.doc() = "Python bindings for OpenFHE-Matrix homomorphic operations";
+// PYBIND11_MODULE(matrix, m) {
+//     m.doc() = "Python bindings for OpenFHE-Matrix homomorphic operations";
+//     bind_enums_and_constants(m);
+//     bind_matrix_funcs(m);
+//     bind_ciphertext(m);
+//     // bind_metadata(m);
+// }
+
+
+PYBIND11_MODULE(openfhe_numpy, m) {
+    m.doc() = "openfhe_numpy C++ extension";
+
+    // bind FuncA as top-level Python function
     bind_enums_and_constants(m);
     bind_matrix_funcs(m);
     bind_ciphertext(m);
-    // bind_metadata(m);
 }
+// PYBIND11_MODULE(openfhe, m) {
+//     m.doc() = "OpenFHE Python core";
+
+//     // create a submodule named 'matrix'
+//     auto mat = m.def_submodule("matrix", "Python bindings for OpenFHE-Matrix");
+
+//     // bind C++ Func_A as openfhe.matrix.Func_A
+//     bind_enums_and_constants(mat);
+//     bind_matrix_funcs(mat);
+//     bind_ciphertext(mat);
+// }
 
 void bind_enums_and_constants(py::module& m) {
     // Linear Transformation Types

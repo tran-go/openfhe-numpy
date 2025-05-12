@@ -73,9 +73,7 @@ def demo():
     print("\n********** HOMOMORPHIC Accumulation by Columns**********")
 
     # Perform matrix sum accumulation on a ciphertext
-    onp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.ncols)
-    print("222222222222222222222222222222222222222")
-    # print("333333333333333333333333333333333333333333333")
+    onp.gen_accumulate_cols_key(keys.secretKey, ctm_matA.ncols)
     ctm_result = onp.cumsum(ctm_matA, 1)
 
     # Decrypt the result
