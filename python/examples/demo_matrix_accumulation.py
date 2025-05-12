@@ -1,12 +1,9 @@
 # Import OpenFHE and matrix utilities
 import numpy as np
 from openfhe import *
-from openfhe_matrix import *
 
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
-from openfhe_numpy.utils import check_equality_matrix
-from openfhe_numpy.config import MatrixOrder
 
 
 def gen_crypto_context(mult_depth):
@@ -48,7 +45,7 @@ def demo():
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
 
-    mult_depth = 4
+    mult_depth = 5
     cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
@@ -73,15 +70,13 @@ def demo():
     ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
     print(ctm_matA)
 
-    print("\n********** HOMOMORPHIC cha Accumulation **********")
+    print("\n********** HOMOMORPHIC Accumulation by Columns**********")
 
-    # Perform matrix tranpose on ciphertexts
-    print("11111111111111111111111111111111111")
+    # Perform matrix sum accumulation on a ciphertext
     onp.gen_accumulate_cols_key(cc, keys.secretKey, ctm_matA.ncols)
     print("222222222222222222222222222222222222222")
-    # onp.gen_sum_row_keys(cc, keys.secretKey, ctm_matA.ncols)
     # print("333333333333333333333333333333333333333333333")
-    ctm_result = onp.cumsum(ctm_matA, 0)
+    ctm_result = onp.cumsum(ctm_matA, 1)
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

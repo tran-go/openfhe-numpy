@@ -57,6 +57,17 @@ void bind_matrix_funcs(py::module& m) {
           py::arg("type"),
           py::arg("numRepeats") = 0);
 
+
+    m.def("EvalSumCumRowsKeyGen",
+          static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t)>(&EvalSumCumRowsKeyGen<DCRTPoly>),
+          py::arg("secretKey"),
+          py::arg("numCols"));
+
+    m.def("EvalSumCumColsKeyGen",
+          static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t)>(&EvalSumCumColsKeyGen<DCRTPoly>),
+          py::arg("secretKey"),
+          py::arg("numCols"));
+
     // EvalLinTransSigma
     m.def("EvalLinTransSigma",
           static_cast<Ciphertext<DCRTPoly> (*)(PrivateKey<DCRTPoly>&, const Ciphertext<DCRTPoly>&, int32_t)>(
@@ -126,39 +137,39 @@ void bind_matrix_funcs(py::module& m) {
               &EvalMultMatVec),
           "EvalMultMatVec with MatKeys<DCRTPoly>");
 
-    // EvalAddAccumulateRows
-    m.def("EvalAddAccumulateRows",
+    // EvalSumCumRows
+    m.def("EvalSumCumRows",
           static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t)>(
-              &EvalAddAccumulateRows<DCRTPoly>),
+              &EvalSumCumRows<DCRTPoly>),
           py::arg("ciphertext"),
           py::arg("numCols"),
           py::arg("numRows") = 0,
           py::arg("slots")   = 0,
           "Accumulate rows of a matrix ciphertext.");
 
-    // EvalAddAccumulateCols
-    m.def("EvalAddAccumulateCols",
+    // EvalSumCumCols
+    m.def("EvalSumCumCols",
           static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
-              &EvalAddAccumulateCols<DCRTPoly>),
+              &EvalSumCumCols<DCRTPoly>),
           py::arg("ciphertext"),
           py::arg("numCols"),
           py::arg("subringDim") = 0,
           "Accumulate cols of a matrix ciphertext.");
 
-    // EvalAddAccumulateRows
-    m.def("EvalSubAccumulateRows",
+    // EvalSumCumRows
+    m.def("EvalReduceCumRows",
           static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t)>(
-              &EvalAddAccumulateRows<DCRTPoly>),
+              &EvalSumCumRows<DCRTPoly>),
           py::arg("ciphertext"),
           py::arg("numCols"),
           py::arg("numRows") = 0,
           py::arg("slots")   = 0,
           "Accumulate rows of a matrix ciphertext.");
 
-    // EvalAddAccumulateCols
-    m.def("EvalSubAccumulateCols",
+    // EvalSumCumCols
+    m.def("EvalReduceCumCols",
           static_cast<Ciphertext<DCRTPoly> (*)(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t)>(
-              &EvalAddAccumulateCols<DCRTPoly>),
+              &EvalSumCumCols<DCRTPoly>),
           py::arg("ciphertext"),
           py::arg("numCols"),
           py::arg("subringDim") = 0,

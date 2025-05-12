@@ -142,48 +142,75 @@ void DemoAccumulationOperations() {
     std::cout << "encMatA size = " << encMatA.size() << std::endl;
     std::cout << "tmp size = " << tmp.size() << std::endl;
 
-    Plaintext ptMatA = cc->MakeCKKSPackedPlaintext(encMatA);
-    std::cout << "11111111111111111111111111111111 " << std::endl;
-    auto ciphertext = cc->Encrypt(keyPair.publicKey, ptMatA);
-
-    // Add the matrix by rows
-    std::cout << "============================== " << std::endl;
-    EvalAccumulationKeyGen(keyPair.secretKey, nRows, nCols);
-    std::cout << "============================ 222222222= " << std::endl;
-
     auto slots = batchSize;
 
-    // std::vector<std::complex<double>> mask = GenMaskSumCols(0, slots, nCols);
+    Plaintext ptMatA = cc->MakeCKKSPackedPlaintext(encMatA);
+    auto ciphertext = cc->Encrypt(keyPair.publicKey, ptMatA);
+    Plaintext ptResult;
 
-    auto ctTmp = ciphertext->Clone();
-
-    Debug(cc, keyPair, ctTmp, "ctTmp", 64);
-    cc->EvalRotateKeyGen(keyPair.secretKey, {-1});
-    
-    // for (size_t i = 1; i < static_cast<size_t>(nCols); ++i) {
-    //     std::cout << "i = " << i << std::endl;
-    //     auto mask        = GenMaskSumCols(i, slots, nCols);
-    //     auto ptmask = cc->MakeCKKSPackedPlaintext(mask, ciphertext->GetScalingFactor(), 0, nullptr, slots);
-
-    //     auto rotated = cc->EvalRotate(ctTmp, -1);
-    //     Debug(cc, keyPair, rotated, "rotated ctTmp", 64);
-    //     auto maskedRotated = cc->EvalMult(rotated, ptmask);
-    //     Debug(cc, keyPair, maskedRotated, "maskedRotated", 64);
-    //     cc->EvalAddInPlace(ctTmp, maskedRotated);
-    //     Debug(cc, keyPair, ctTmp, "ctTmp", 64);
-    // }
-
-    ctTmp = EvalAddAccumulateCols(ctTmp,nCols);
+    // Sum the matrix by rows
+    std::cout << "============================== " << std::endl;
+    EvalSumCumRowsKeyGen(keyPair.secretKey, nCols);
+    auto ctResult = EvalSumCumRows(ciphertext, nCols, nRows, slots);
+    std::cout << "============================ 222222222= " << std::endl;
 
     // Decrypt the ciphertext to check the result
-    Plaintext ptResult;
-    cc->Decrypt(keyPair.secretKey, ctTmp, &ptResult);
+    
+    cc->Decrypt(keyPair.secretKey, ctResult, &ptResult);
     ptResult->SetLength(nCols * nRows);
     auto resultVector = ptResult->GetRealPackedValue();
 
-    std::cout << "--- Encrypted Accumulation Matrix Result ---\n";
+    std::cout << "--- Encrypted Sum Accumulation on Rows ---\n";
     RoundVector(resultVector);
     PrintVector(resultVector);
+
+    // Sum the matrix by cols
+    std::cout << "============================== " << std::endl;
+    EvalSumCumColsKeyGen(keyPair.secretKey, nCols);
+    ctResult = EvalSumCumCols(ciphertext, nCols);
+    std::cout << "============================ 222222222= " << std::endl;
+
+    // Decrypt the ciphertext to check the result
+    cc->Decrypt(keyPair.secretKey, ctResult, &ptResult);
+    ptResult->SetLength(nCols * nRows);
+    resultVector = ptResult->GetRealPackedValue();
+
+    std::cout << "--- Encrypted Sum Accumulation on Cols ---\n";
+    RoundVector(resultVector);
+    PrintVector(resultVector);
+    
+
+    // // std::vector<std::complex<double>> mask = GenMaskSumCols(0, slots, nCols);
+
+    // auto ctTmp = ciphertext->Clone();
+
+    // Debug(cc, keyPair, ctTmp, "ctTmp", 64);
+    // cc->EvalRotateKeyGen(keyPair.secretKey, {-1});
+    
+    // // for (size_t i = 1; i < static_cast<size_t>(nCols); ++i) {
+    // //     std::cout << "i = " << i << std::endl;
+    // //     auto mask        = GenMaskSumCols(i, slots, nCols);
+    // //     auto ptmask = cc->MakeCKKSPackedPlaintext(mask, ciphertext->GetScalingFactor(), 0, nullptr, slots);
+
+    // //     auto rotated = cc->EvalRotate(ctTmp, -1);
+    // //     Debug(cc, keyPair, rotated, "rotated ctTmp", 64);
+    // //     auto maskedRotated = cc->EvalMult(rotated, ptmask);
+    // //     Debug(cc, keyPair, maskedRotated, "maskedRotated", 64);
+    // //     cc->EvalAddInPlace(ctTmp, maskedRotated);
+    // //     Debug(cc, keyPair, ctTmp, "ctTmp", 64);
+    // // }
+
+    // ctTmp = EvalSumCummCols(ctTmp,nCols);
+
+    // // Decrypt the ciphertext to check the result
+    // Plaintext ptResult;
+    // cc->Decrypt(keyPair.secretKey, ctTmp, &ptResult);
+    // ptResult->SetLength(nCols * nRows);
+    // auto resultVector = ptResult->GetRealPackedValue();
+
+    // std::cout << "--- Encrypted Accumulation Matrix Result ---\n";
+    // RoundVector(resultVector);
+    // PrintVector(resultVector);
 
     std::cout << "~~~ Demo Complete ~~~\n";
 }

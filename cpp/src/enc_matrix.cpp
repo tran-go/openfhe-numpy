@@ -109,14 +109,41 @@ void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t numCo
 }
 
 template <typename Element>
-void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t numRows, int32_t numCols) {
+void EvalSumCumRowsKeyGen(PrivateKey<Element>& secretKey, int32_t numCols) {
     auto cryptoContext = secretKey->GetCryptoContext();
-    std::vector<int32_t> indices;
+    // std::vector<int32_t> indices;
 
-    for (size_t i = 1; i < static_cast<size_t>(numRows); ++i) {
-        indices.push_back(-i * numCols);
-    }
-    cryptoContext->EvalRotateKeyGen(secretKey, indices);
+    // for (size_t i = 1; i < static_cast<size_t>(numRows); ++i) {
+    //     indices.push_back(-i * numCols);
+    // }
+    // cryptoContext->EvalRotateKeyGen(secretKey, indices);
+    //     std::vector<int32_t> indices;
+
+    // std::vector<int32_t> indices = [-1];
+    // for (size_t i = 1; i < static_cast<size_t>(numRows); ++i) {
+    //     indices.push_back(-i * numCols);
+    // }
+
+    cryptoContext->EvalRotateKeyGen(secretKey, {-numCols});
+}
+
+template <typename Element>
+void EvalSumCumColsKeyGen(PrivateKey<Element>& secretKey, int32_t numCols) {
+    auto cryptoContext = secretKey->GetCryptoContext();
+    // std::vector<int32_t> indices;
+
+    // for (size_t i = 1; i < static_cast<size_t>(numRows); ++i) {
+    //     indices.push_back(-i * numCols);
+    // }
+    // cryptoContext->EvalRotateKeyGen(secretKey, indices);
+    //     std::vector<int32_t> indices;
+
+    // std::vector<int32_t> indices = [-1];
+    // for (size_t i = 1; i < static_cast<size_t>(numRows); ++i) {
+    //     indices.push_back(-i * numCols);
+    // }
+
+    cryptoContext->EvalRotateKeyGen(secretKey, {-1});
 }
 
 /**
@@ -402,7 +429,7 @@ std::vector<std::complex<double>> GenMaskSumRows(int k, int slots, int numRows, 
 };
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalSumCumCols(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
@@ -428,7 +455,7 @@ Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
 };
 
 template <typename Element>
-Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalReduceCumCols(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
@@ -454,7 +481,7 @@ Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
 };
 
 template <class Element>
-Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalSumCumRows(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t numRows,
                                           uint32_t slots) {
@@ -487,7 +514,7 @@ Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
 };
 
 template <class Element>
-Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalReduceCumRows(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t numRows,
                                           uint32_t slots) {
@@ -499,10 +526,8 @@ Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
     const auto cc             = ciphertext->GetCryptoContext();
 
     if (numCols)
-    slots = (slots == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() / 4 : slots;
+        slots = (slots == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() / 4 : slots;
     numRows = (numRows == 0) ? slots / numCols : numRows;
-
-
 
     std::cout << numCols << " " << numRows << " " << slots;
 
@@ -532,7 +557,9 @@ template void EvalLinTransKeyGen(PrivateKey<DCRTPoly>& secretKey,
 
 template void EvalSquareMatMultRotateKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t numCols);
 
-template void EvalAccumulationKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t numRows, int32_t numCols);
+template void EvalSumCumColsKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t numCols);
+
+template void EvalSumCumRowsKeyGen(PrivateKey<DCRTPoly>& secretKey, int32_t numCols);
 
 template Ciphertext<DCRTPoly> EvalMultMatVec(MatKeys<DCRTPoly> evalKeys,
                                              MatVecEncoding encodeType,
@@ -578,11 +605,11 @@ template Ciphertext<DCRTPoly> EvalTranspose(PrivateKey<DCRTPoly>& secretKey,
                                             int32_t numCols);
 template Ciphertext<DCRTPoly> EvalTranspose(const Ciphertext<DCRTPoly>& ctMatrix, int32_t numCols);
 
-template Ciphertext<DCRTPoly> EvalAddAccumulateRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t);
+template Ciphertext<DCRTPoly> EvalSumCumRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t);
 
-template Ciphertext<DCRTPoly> EvalAddAccumulateCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
+template Ciphertext<DCRTPoly> EvalSumCumCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
 
-template Ciphertext<DCRTPoly> EvalSubAccumulateRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t);
+template Ciphertext<DCRTPoly> EvalReduceCumRows(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t, uint32_t);
 
-template Ciphertext<DCRTPoly> EvalSubAccumulateCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
+template Ciphertext<DCRTPoly> EvalReduceCumCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
 }  // namespace openfhe_matrix

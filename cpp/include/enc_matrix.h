@@ -17,10 +17,13 @@ template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t numCols, LinTransType type, int32_t numRepeats = 0);
 
 template <typename Element>
-void EvalAccumulationKeyGen(PrivateKey<Element>& secretKey, int32_t numRows, int32_t numCols);
+void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t numCols);
 
 template <typename Element>
-void EvalSquareMatMultRotateKeyGen(PrivateKey<Element>& secretKey, int32_t numCols);
+void EvalSumCumRowsKeyGen(PrivateKey<Element>& secretKey, int32_t numCols);
+
+template <typename Element>
+void EvalSumCumColsKeyGen(PrivateKey<Element>& secretKey, int32_t numCols);
 
 template <typename Element>
 Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
@@ -77,25 +80,25 @@ template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t numCols);
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateRows(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalSumCumRows(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t numRows = 0,
                                           uint32_t slots   = 0);
 
 template <typename Element>
-Ciphertext<Element> EvalAddAccumulateCols(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalSumCumCols(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t subringDim = 0);
 
 template <typename Element>
-Ciphertext<Element> EvalSubAccumulateRows(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalReduceCumRows(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t numRows = 0,
                                           uint32_t slots   = 0);
 
 template <typename Element>
-Ciphertext<Element> EvalSubAccumulateCols(const Ciphertext<Element>& ciphertext,
+Ciphertext<Element> EvalReduceCumCols(const Ciphertext<Element>& ciphertext,
                                           uint32_t numCols,
                                           uint32_t subringDim = 0);
-}
+}  // namespace openfhe_matrix
 #endif  // ENC_MATRIX_H
