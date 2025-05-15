@@ -1,12 +1,10 @@
 # Import OpenFHE and matrix utilities
 import numpy as np
 from openfhe import *
-from openfhe_matrix import *
-from openfhe_numpy import utils
+from openfhe_numpy.utils import utils
 
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
-from openfhe_numpy.utils import check_equality_matrix
 
 
 def gen_crypto_context(mult_depth, ring_dim=0):
@@ -94,7 +92,7 @@ def demo():
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = check_equality_matrix(result, expected)
+    is_match, error = utils.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

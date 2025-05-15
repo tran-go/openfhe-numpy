@@ -25,9 +25,9 @@ import numpy as np
 import openfhe
 from openfhe import *
 
-from . import _openfhe_numpy
-from .log import ONP_ERROR
-from .utils import is_power_of_two, next_power_of_two, MatrixOrder
+from .. import _openfhe_numpy  # Import from parent package
+from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.utils import is_power_of_two, next_power_of_two, MatrixOrder
 
 # -----------------------------------------------------------
 # Ultilities Imports
@@ -142,10 +142,15 @@ class FHETensor(BaseTensor[T], Generic[T]):
         self._ncols = ncols if is_power_of_two(ncols) else next_power_of_two(ncols)
         self._ndim = len(original_shape)
         self._order = order
+        self._dtype = self.__class__.__name__  # e.g., "CTArray", "BlockCTArray"
 
     ###
     ### Properties
     ###
+
+    @property
+    def dtype(self):
+        return self._dtype
 
     @property
     def data(self) -> T:
@@ -352,11 +357,11 @@ class FHETensor(BaseTensor[T], Generic[T]):
         else:
             ONP_ERROR("NOT_IMPLEMENTED")
 
-    def transpose(self) -> "CTArray":
-        if self.dtype == "CTArray":
+    def transpose(self) -> "FHETensor":
+        try:
             return self._transpose()
-        else:
-            ONP_ERROR("NOT_IMPLEMENTED")
+        except NotImplementedError:
+            ONP_ERROR("Transpose not implemented for {self.__class__.__name__}")
 
     def ensure_compatible_packing(self, other):
         """
@@ -421,9 +426,9 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     >>> decrypted = result.decrypt(keys.secretKey)
     """
 
-    @property
-    def dtype(self) -> Literal["CTArray"]:
-        return "CTArray"
+    # @property
+    # def dtype(self) -> Literal["CTArray"]:
+    #     return "CTArray"
 
     def decrypt(self, secret_key: openfhe.PrivateKey) -> np.ndarray:
         """Decrypt ciphertext using given secret key."""
@@ -671,9 +676,9 @@ class PTArray(FHETensor[openfhe.Plaintext]):
             self.order,
         )
 
-    @property
-    def dtype(self) -> Literal["PTArray"]:
-        return "PTArray"
+    # @property
+    # def dtype(self) -> Literal["PTArray"]:
+    #     return "PTArray"
 
     def decrypt(self, *args, **kwargs):
         raise NotImplementedError("Decrypt not implemented for plaintext")

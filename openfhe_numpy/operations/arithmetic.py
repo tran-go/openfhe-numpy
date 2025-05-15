@@ -4,7 +4,7 @@ import numpy as np
 
 from openfhe_numpy.tensor import FHETensor, CTArray, PTArray
 from openfhe_numpy.config import MatrixOrder
-from openfhe_numpy.log import ONP_ERROR, ONP_DEBUG
+from openfhe_numpy.utils.log import ONP_ERROR, ONP_DEBUG
 
 
 def add(a: Any, b: Any) -> Any:

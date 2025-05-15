@@ -1,6 +1,6 @@
 from openfhe_numpy.tensor import *
 from openfhe_numpy.config import MatrixOrder, DataType
-from openfhe_numpy import utils
+from openfhe_numpy.utils import utils
 import numpy as np
 import openfhe
 import copy
