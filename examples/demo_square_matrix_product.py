@@ -110,7 +110,7 @@ def demo():
     end_enc_vector = time.time()
     print(f"Vector encryption time: {(end_enc_vector - start_enc_vector) * 1000:.2f} ms")
 
-    print("\n********** HOMOMORPHIC Matrix Vector Product **********")
+    print("\n********** HOMOMORPHIC Matrix Matrix Product **********")
 
     # Perform homomorphic matrix-vector multiplication
     start_matmul = time.time()

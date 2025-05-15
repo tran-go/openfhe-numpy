@@ -4,6 +4,7 @@ import numpy as np
 from openfhe_numpy import _openfhe_numpy
 from .tensor import FHETensor
 from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils import utils
 
 
 class CTArray(FHETensor[openfhe.Ciphertext]):
@@ -26,7 +27,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
 
     tensor_priority = 10
 
-    def decrypt(self, secret_key: openfhe.PrivateKey) -> np.ndarray:
+    def decrypt(self, secret_key: openfhe.PrivateKey, format=False) -> np.ndarray:
         """Decrypt ciphertext using given secret key."""
         if secret_key is None:
             ONP_ERROR("Secret Key is missing!!!")
@@ -35,6 +36,9 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         if plaintext is None:
             ONP_ERROR("Decryption failed")
         plaintext.SetLength(self.batch_size)
+        if format:
+            plaintext = plaintext.GetRealPackedValue()
+            return utils.format(plaintext, self.ndim, self.original_shape, self.shape)
         return plaintext.GetRealPackedValue()
 
     def serialize(self) -> dict:

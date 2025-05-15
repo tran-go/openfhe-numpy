@@ -86,14 +86,15 @@ def demo():
     ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
 
     print("\n********** HOMOMORPHIC Matrix Vector Product **********")
-    ct_result = onp.matmul(ct_matrix, ct_vector)
-    result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
+    ct_result = ct_matrix @ ct_vector
+    print(ct_result)
+    result = ct_result.decrypt(keys.secretKey, True)
     # Compare with plain result
     expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = utils.check_equality_matrix(result, expected)
+    is_match, error = utils.check_equality_vector(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

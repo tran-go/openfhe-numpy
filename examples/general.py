@@ -1,7 +1,6 @@
 # import openfhe related libraries
 import numpy as np
 from openfhe import *
-from openfhe_matrix import *
 
 # import openfhe_numpy library
 import openfhe_numpy as onp

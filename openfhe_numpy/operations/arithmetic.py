@@ -153,23 +153,22 @@ def _eval_matvec_ct(lhs, rhs):
             ONP_ERROR(
                 f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]"
             )
-        if lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
-            sumkey = lhs.meta["eval_key_CRC"]
-            ciphertext = EvalMultMatVec(
+        if lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
+            sumkey = lhs.extra["eval_key_CRC"]
+            ciphertext = _openfhe_numpy.EvalMultMatVec(
                 sumkey,
-                MatVecEncoding.MM_CRC,
+                _openfhe_numpy.MatVecEncoding.MM_CRC,
                 lhs.ncols,
                 rhs.data,
                 lhs.data,
             )
             return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
 
-        elif lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
-            sumkey = lhs.meta["eval_key_RCR"]
-            ciphertext = EvalMultMatVec(
-                crypto_context,
+        elif lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
+            sumkey = lhs.extra["eval_key_RCR"]
+            ciphertext = _openfhe_numpy.EvalMultMatVec(
                 sumkey,
-                MatVecEncoding.MM_RCR,
+                _openfhe_numpy.MatVecEncoding.MM_RCR,
                 lhs.ncols,
                 rhs.data,
                 lhs.data,
@@ -193,7 +192,7 @@ def _matmul_ct(lhs, rhs):
             print(lhs.shape, rhs.shape)
             print(lhs.original_shape, rhs.original_shape)
             if rhs.ndim == 1:
-                return _eval_matvec_ct(rhs, lhs)
+                return _eval_matvec_ct(lhs, rhs)
             return lhs.clone(_openfhe_numpy.EvalMatMulSquare(lhs.data, rhs.data, lhs.ncols))
 
         else:
