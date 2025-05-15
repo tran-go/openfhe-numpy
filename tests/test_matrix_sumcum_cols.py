@@ -17,7 +17,7 @@ def fhe_matrix_sumcum(params, input):
     matrixA = np.array(input[0])
     ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
     onp.gen_accumulate_cols_key(keys.secretKey, ct_matrixA.ncols)
-    ct_result = onp.sum(ct_matrixA, 1)
+    ct_result = onp.cumsum(ct_matrixA, 1)
     result = ct_result.decrypt(keys.secretKey)
     return result
 

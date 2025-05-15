@@ -1,9 +1,35 @@
-from openfhe_numpy.tensor import *
-from openfhe_numpy.config import MatrixOrder, DataType
-from openfhe_numpy.utils import utils
 import numpy as np
 import openfhe
 import copy
+
+from .tensor import BaseTensor, FHETensor
+from .ptarray import PTArray
+from .ctarray import CTArray
+from .block_tensor import BlockFHETensor
+from .block_ctarray import BlockCTArray
+from openfhe_numpy.utils import utils
+from openfhe_numpy.config import MatrixOrder, DataType
+
+
+# TODO: constructor for block matrix
+def _get_block_dimensions(data, slots) -> tuple[int, int]:
+    pass
+    # org_rows, org_cols, ndim = utils.get_shape(data)
+    # nrows = next_power_of_two(org_rows)
+    # ncols = next_power_of_two(org_cols)
+
+    # if ndim == 1:
+    #     if ncols > slots:
+    #         nblocks = ncols // (slots // 2)
+
+    #     cell_rows = 1
+    #     cell_cols = slots // 2
+    # else:
+    #     if nrows > slots:
+    #         nblocks = nrows // (slots // 2)
+
+    #     cell_rows = slots // 2
+    #     cell_cols = ncols
 
 
 def array(
@@ -14,7 +40,7 @@ def array(
     order: int = MatrixOrder.ROW_MAJOR,
     type: str = DataType.CIPHERTEXT,
     public_key=None,
-) -> BaseTensor:
+) -> FHETensor:
     """
     Construct either a ciphertext (FHETensor) or plaintext (PTArray) from raw input data.
 

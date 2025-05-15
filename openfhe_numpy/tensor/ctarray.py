@@ -1,6 +1,11 @@
-# -----------------------------------------------------------
-# CTArray - Ciphertext Tensor
-# -----------------------------------------------------------
+import openfhe
+import io
+import numpy as np
+from openfhe_numpy import _openfhe_numpy
+from .tensor import FHETensor
+from openfhe_numpy.utils.log import ONP_ERROR
+
+
 class CTArray(FHETensor[openfhe.Ciphertext]):
     """
     Encrypted tensor class for OpenFHE ciphertexts.
@@ -19,9 +24,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     >>> decrypted = result.decrypt(keys.secretKey)
     """
 
-    @property
-    def dtype(self) -> Literal["CTArray"]:
-        return "CTArray"
+    tensor_priority = 10
 
     def decrypt(self, secret_key: openfhe.PrivateKey) -> np.ndarray:
         """Decrypt ciphertext using given secret key."""
@@ -29,6 +32,8 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
             ONP_ERROR("Secret Key is missing!!!")
         cc = self.data.GetCryptoContext()
         plaintext = cc.Decrypt(self.data, secret_key)
+        if plaintext is None:
+            ONP_ERROR("Decryption failed")
         plaintext.SetLength(self.batch_size)
         return plaintext.GetRealPackedValue()
 
@@ -36,7 +41,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         """Serialize ciphertext and metadata to dictionary."""
         stream = io.BytesIO()
         if not openfhe.Serialize(self.data, stream):
-            raise RuntimeError("Failed to serialize Ciphertext")
+            ONP_ERROR("Failed to serialize Ciphertext")
         return {
             "type": self.type,
             "original_shape": self.original_shape,
@@ -49,206 +54,219 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     @classmethod
     def deserialize(cls, obj: dict) -> "CTArray":
         """Deserialize from dictionary back to CTArray."""
+        required_keys = ["ciphertext", "original_shape", "batch_size", "ncols", "order"]
+        for key in required_keys:
+            if key not in obj:
+                ONP_ERROR(f"Missing required key '{key}' in serialized object")
+
         stream = io.BytesIO(bytes.fromhex(obj["ciphertext"]))
         ciphertext = openfhe.Ciphertext()
-        openfhe.Deserialize(ciphertext, stream)
+        if not openfhe.Deserialize(ciphertext, stream):
+            ONP_ERROR("Failed to deserialize ciphertext")
         return cls(
-            ciphertext, tuple(obj["original_shape"]), obj["batch_size"], obj["ncols"], obj["order"]
+            ciphertext,
+            tuple(obj["original_shape"]),
+            obj["batch_size"],
+            obj["ncols"],
+            obj["order"],
         )
 
     def __repr__(self) -> str:
         return f"CTArray(meta={self.meta})"
 
-    def _add(self, other) -> "CTArray":
-        """Element-wise addition with packing compatibility."""
-        other = self.ensure_compatible_packing(other)
+    # def _add(self, other) -> "CTArray":
+    #     """Element-wise addition with packing compatibility."""
+    #     other = self.ensure_compatible_packing(other)
 
-        if self.shape != other.shape:
-            ONP_ERROR("Shape does not match for element-wise addition")
-        crypto_context = self.data.GetCryptoContext()
-        ciphertext = crypto_context.EvalAdd(self.data, other.data)
-        return self.clone(ciphertext)
+    #     if self.shape != other.shape:
+    #         ONP_ERROR("Shape does not match for element-wise addition")
+    #     crypto_context = self.data.GetCryptoContext()
+    #     ciphertext = crypto_context.EvalAdd(self.data, other.data)
+    #     return self.clone(ciphertext)
 
-    def _add_scalar(self, scalar) -> "CTArray":
-        """Add scalar value to all elements."""
-        crypto_context = self.data.GetCryptoContext()
+    # def _add_scalar(self, scalar) -> "CTArray":
+    #     """Add scalar value to all elements."""
+    #     crypto_context = self.data.GetCryptoContext()
 
-        # Create plaintext encoding of scalar
-        plaintext = crypto_context.MakeCKKSPackedPlaintext([scalar] * self.batch_size)
+    #     # Create plaintext encoding of scalar
+    #     plaintext = crypto_context.MakeCKKSPackedPlaintext([scalar] * self.batch_size)
 
-        # Perform addition
-        result = crypto_context.EvalAdd(self.data, plaintext)
-        return self.clone(result)
+    #     # Perform addition
+    #     result = crypto_context.EvalAdd(self.data, plaintext)
+    #     return self.clone(result)
 
-    # Add these methods for consistency with _add_scalar:
+    # # Add these methods for consistency with _add_scalar:
 
-    def _sub_scalar(self, scalar) -> "CTArray":
-        """Subtract scalar value from all elements."""
-        # Implementation
+    # def _sub_scalar(self, scalar) -> "CTArray":
+    #     """Subtract scalar value from all elements."""
+    #     # Implementation
 
-    def _sub(self, other) -> "CTArray":
-        if self.shape != other.shape:
-            ONP_ERROR("Shape does not match for element-wise subtraction")
-        crypto_context = self.data.GetCryptoContext()
-        ciphertext = crypto_context.EvalSub(self.data, other.data)
-        return self.clone(ciphertext)
+    # def _sub(self, other) -> "CTArray":
+    #     if self.shape != other.shape:
+    #         ONP_ERROR("Shape does not match for element-wise subtraction")
+    #     crypto_context = self.data.GetCryptoContext()
+    #     ciphertext = crypto_context.EvalSub(self.data, other.data)
+    #     return self.clone(ciphertext)
 
-    def _multiply(self, other) -> "CTArray":
-        if self.shape != other.shape:
-            ONP_ERROR(f"Shape mismatch for multiplication: {self.shape} vs {other.shape}")
+    # def _multiply(self, other) -> "CTArray":
+    #     if self.shape != other.shape:
+    #         ONP_ERROR(f"Shape mismatch for multiplication: {self.shape} vs {other.shape}")
 
-        crypto_context = self.data.GetCryptoContext()
-        ciphertext = crypto_context.EvalMul(self.data, other.data)
-        return self.clone(ciphertext)
+    #     crypto_context = self.data.GetCryptoContext()
+    #     ciphertext = crypto_context.EvalMul(self.data, other.data)
+    #     return self.clone(ciphertext)
 
-    def _multiply_scalar(self, scalar) -> "CTArray":
-        """Multiply all elements by scalar."""
-        # Implementation
+    # def _multiply_scalar(self, scalar) -> "CTArray":
+    #     """Multiply all elements by scalar."""
+    #     # Implementation
 
-    def _matvec(self, other, sumkey) -> "CTArray":
-        crypto_context = self.data.GetCryptoContext()
+    # def _matvec(self, other, sumkey) -> "CTArray":
+    #     crypto_context = self.data.GetCryptoContext()
 
-        if not isinstance(other, FHETensor):
-            ONP_ERROR("NOT_IMPLEMENTED")
+    #     if not isinstance(other, FHETensor):
+    #         ONP_ERROR("NOT_IMPLEMENTED")
 
-        if self.ndim == 1 and other.ndim == 2:
-            tensor_matrix = other.clone()
-            tensor_vector = self.clone()
-        elif self.ndim == 2 and other.ndim == 1:
-            tensor_matrix = self.clone()
-            tensor_vector = other.clone()
-        else:
-            ONP_ERROR("NOT_IMPLEMENTED")
-        if tensor_matrix.original_shape[1] != tensor_vector.original_shape[0]:
-            ONP_ERROR(
-                f"Matrix dimension [{tensor_matrix.original_shape}] mismatch with vector dimension [{tensor_vector.shape}]"
-            )
-        if (
-            tensor_matrix.order == MatrixOrder.ROW_MAJOR
-            and tensor_vector.order == MatrixOrder.COL_MAJOR
-        ):
-            ciphertext = EvalMultMatVec(
-                sumkey,
-                MatVecEncoding.MM_CRC,
-                tensor_matrix.ncols,
-                tensor_vector.data,
-                tensor_matrix.data,
-            )
-            return CTArray(
-                ciphertext,
-                (tensor_matrix.original_shape[0], 1),
-                tensor_matrix.batch_size,
-                tensor_matrix.ncols,
-                MatrixOrder.COL_MAJOR,
-            )
+    #     if self.ndim == 1 and other.ndim == 2:
+    #         tensor_matrix = other.clone()
+    #         tensor_vector = self.clone()
+    #     elif self.ndim == 2 and other.ndim == 1:
+    #         tensor_matrix = self.clone()
+    #         tensor_vector = other.clone()
+    #     else:
+    #         ONP_ERROR("NOT_IMPLEMENTED")
+    #     if tensor_matrix.original_shape[1] != tensor_vector.original_shape[0]:
+    #         ONP_ERROR(
+    #             f"Matrix dimension [{tensor_matrix.original_shape}] mismatch with vector dimension [{tensor_vector.shape}]"
+    #         )
+    #     if (
+    #         tensor_matrix.order == MatrixOrder.ROW_MAJOR
+    #         and tensor_vector.order == MatrixOrder.COL_MAJOR
+    #     ):
+    #         ciphertext = EvalMultMatVec(
+    #             sumkey,
+    #             MatVecEncoding.MM_CRC,
+    #             tensor_matrix.ncols,
+    #             tensor_vector.data,
+    #             tensor_matrix.data,
+    #         )
+    #         return CTArray(
+    #             ciphertext,
+    #             (tensor_matrix.original_shape[0], 1),
+    #             tensor_matrix.batch_size,
+    #             tensor_matrix.ncols,
+    #             MatrixOrder.COL_MAJOR,
+    #         )
 
-        elif (
-            tensor_matrix.order == MatrixOrder.COL_MAJOR
-            and tensor_vector.order == MatrixOrder.ROW_MAJOR
-        ):
-            ct_product = EvalMultMatVec(
-                crypto_context,
-                sumkey,
-                MatVecEncoding.MM_RCR,
-                tensor_matrix.ncols,
-                tensor_vector.data,
-                tensor_matrix.data,
-            )
-            return CTArray(
-                ct_product,
-                (tensor_matrix.original_shape[0], 1),
-                tensor_matrix.batch_size,
-                tensor_matrix.ncols,
-                MatrixOrder.ROW_MAJOR,
-            )
-        else:
-            ONP_ERROR(
-                "Encoding styles of matrix and vector must be complementary (ROW_MAJOR/COL_MAJOR or vice versa)."
-            )
+    #     elif (
+    #         tensor_matrix.order == MatrixOrder.COL_MAJOR
+    #         and tensor_vector.order == MatrixOrder.ROW_MAJOR
+    #     ):
+    #         ct_product = EvalMultMatVec(
+    #             crypto_context,
+    #             sumkey,
+    #             MatVecEncoding.MM_RCR,
+    #             tensor_matrix.ncols,
+    #             tensor_vector.data,
+    #             tensor_matrix.data,
+    #         )
+    #         return CTArray(
+    #             ct_product,
+    #             (tensor_matrix.original_shape[0], 1),
+    #             tensor_matrix.batch_size,
+    #             tensor_matrix.ncols,
+    #             MatrixOrder.ROW_MAJOR,
+    #         )
+    #     else:
+    #         ONP_ERROR(
+    #             "Encoding styles of matrix and vector must be complementary (ROW_MAJOR/COL_MAJOR or vice versa)."
+    #         )
 
-    def _matmul(self, other: "CTArray") -> "CTArray":
-        if self.shape != other.shape:
-            if isinstance(other, FHETensor):
-                if other.ndim == 1:
-                    return self._matvec(other, self.ncols)
-                return self.clone(EvalMatMulSquare(self.data, other.data, self.ncols))
+    # def _matmul(self, other: "CTArray") -> "CTArray":
+    #     if self.shape != other.shape:
+    #         if isinstance(other, FHETensor):
+    #             if other.ndim == 1:
+    #                 return self._matvec(other, self.ncols)
+    #             return self.clone(EvalMatMulSquare(self.data, other.data, self.ncols))
 
-        else:
-            ONP_ERROR(
-                f"Matrix dimension mismatch for multiplication: {self.shape} and {other.shape}"
-            )
+    #     else:
+    #         ONP_ERROR(
+    #             f"Matrix dimension mismatch for multiplication: {self.shape} and {other.shape}"
+    #         )
 
-    def _dot(self, other: "CTArray") -> "CTArray":
-        if self.ndim == 1 and other.ndim == 1:
-            crypto_context = self.data.GetCryptoContext()
-            ciphertext = crypto_context.EvalInnerProduct(self.data, other.data, self.ncols)
-            return self.clone(ciphertext)
-        else:
-            return self._matmul(other)
+    # def _dot(self, other: "CTArray") -> "CTArray":
+    #     if self.ndim == 1 and other.ndim == 1:
+    #         crypto_context = self.data.GetCryptoContext()
+    #         ciphertext = crypto_context.EvalInnerProduct(self.data, other.data, self.ncols)
+    #         return self.clone(ciphertext)
+    #     else:
+    #         return self._matmul(other)
 
-    def _pow(self, exp: int) -> "CTArray":
-        """Exponentiate a matrix to power k using homomorphic multiplication."""
-        if not isinstance(exp, int):
-            ONP_ERROR(f"Exponent must be integer, got {type(exp).__name__}")
+    # def _pow(self, exp: int) -> "CTArray":
+    #     """Exponentiate a matrix to power k using homomorphic multiplication."""
+    #     if not isinstance(exp, int):
+    #         ONP_ERROR(f"Exponent must be integer, got {type(exp).__name__}")
 
-        if exp < 0:
-            ONP_ERROR("Negative exponent not supported in homomorphic encryption")
+    #     if exp < 0:
+    #         ONP_ERROR("Negative exponent not supported in homomorphic encryption")
 
-        if exp == 0:
-            # return algebra.eye(self))
-            pass
+    #     if exp == 0:
+    #         # return algebra.eye(self))
+    #         pass
 
-        if exp == 1:
-            return self.clone()
+    #     if exp == 1:
+    #         return self.clone()
 
-        # Binary exponentiation implementation
-        base = self.clone()
-        result = None
+    #     # Binary exponentiation implementation
+    #     base = self.clone()
+    #     result = None
 
-        while exp:
-            if exp & 1:
-                result = base if result is None else base @ result
-            base = base @ base
-            exp >>= 1
-        return result
+    #     while exp:
+    #         if exp & 1:
+    #             result = base if result is None else base @ result
+    #         base = base @ base
+    #         exp >>= 1
+    #     return result
 
-    def _sum(self, axis=0) -> "CTArray":
-        """
-        Compute the cumulative sum of tensor elements along a given axis.
+    # def _sum(self, axis=0) -> "CTArray":
+    #     """
+    #     Compute the cumulative sum of tensor elements along a given axis.
 
-        Parameters
-        ----------
-        axis : int, optional
-            Axis along which the cumulative sum is computed. Default is 0.
+    #     Parameters
+    #     ----------
+    #     axis : int, optional
+    #         Axis along which the cumulative sum is computed. Default is 0.
 
-        Returns
-        -------
-        CTArray
-            A new tensor with cumulative sums along the specified axis.
-        """
-        if axis == 0:
-            ciphertext = _openfhe_numpy.EvalSumCumRows(
-                self.data, self.ncols, self.original_shape[1]
-            )
-        else:
-            ciphertext = _openfhe_numpy.EvalSumCumCols(self.data, self.ncols)
-        return self.clone(ciphertext)
+    #     Returns
+    #     -------
+    #     CTArray
+    #         A new tensor with cumulative sums along the specified axis.
+    #     """
+    #     if axis == 0:
+    #         ciphertext = _openfhe_numpy.EvalSumCumRows(
+    #             self.data, self.ncols, self.original_shape[1]
+    #         )
+    #     else:
+    #         ciphertext = _openfhe_numpy.EvalSumCumCols(self.data, self.ncols)
+    #     return self.clone(ciphertext)
 
-    def _reduce(self, axis=0) -> "CTArray":
-        if axis == 0:
-            ciphertext = _openfhe_numpy.EvalReduceCumRows(
-                self.data, self.ncols, self.original_shape[1]
-            )
-        else:
-            ciphertext = _openfhe_numpy.EvalReduceCumCols(self.data, self.ncols)
-        return self.clone(ciphertext)
+    # def _reduce(self, axis=0) -> "CTArray":
+    #     if axis == 0:
+    #         ciphertext = _openfhe_numpy.EvalReduceCumRows(
+    #             self.data, self.ncols, self.original_shape[1]
+    #         )
+    #     else:
+    #         ciphertext = _openfhe_numpy.EvalReduceCumCols(self.data, self.ncols)
+    #     return self.clone(ciphertext)
 
     def _transpose(self) -> "CTArray":
+        """Transpose the encrypted matrix."""
+        from openfhe_numpy.utils.matlib import next_power_of_two
+
         ciphertext = _openfhe_numpy.EvalTranspose(self.data, self.ncols)
         shape = (self.original_shape[1], self.original_shape[0])
         ncols = next_power_of_two(shape[1])
         return CTArray(ciphertext, shape, self.batch_size, ncols, self.order)
 
-    def _trace(self) -> "CTArray":
-        """Sum along the main diagonal of a 2-D array:"""
-        ONP_ERROR("Trace operation not implemented for CTArray.")
+    # def _trace(self) -> "CTArray":
+    #     """Sum along the main diagonal of a 2-D array:"""
+    #     ONP_ERROR("Trace operation not implemented for CTArray.")

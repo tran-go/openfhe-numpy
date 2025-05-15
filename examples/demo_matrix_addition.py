@@ -1,4 +1,3 @@
-# Organize imports logically
 import time
 import numpy as np
 from openfhe import (
@@ -16,18 +15,7 @@ from openfhe_numpy.utils import check_equality_matrix
 def gen_crypto_context(mult_depth):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
-
-    Parameters
-    ----------
-    mult_depth : int
-        Maximum multiplicative depth for the ciphertext.
-
-    Returns
-    -------
-    tuple
-        (CryptoContext, KeyPair)
     """
-
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
@@ -52,41 +40,13 @@ def demo():
     """
     Run a demonstration of homomorphic matrix addition using OpenFHE-NumPy.
     """
-
     cc, keys = gen_crypto_context(4)
     ring_dim = cc.GetRingDimension()
     total_slots = ring_dim // 2
 
-    # Sample input matrices (8x8)
+    # Sample input matrices (4x4)
     matA = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]])
-
     matB = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]])
-
-    # matA = np.array(
-    #     [
-    #         [0, 7, 8, 10, 1, 2, 7, 6],
-    #         [0, 1, 1, 9, 7, 5, 1, 7],
-    #         [8, 8, 4, 5, 8, 2, 6, 1],
-    #         [1, 0, 0, 1, 10, 3, 1, 7],
-    #         [7, 8, 2, 5, 3, 2, 10, 9],
-    #         [0, 3, 4, 10, 10, 5, 2, 5],
-    #         [2, 5, 0, 2, 8, 8, 5, 9],
-    #         [5, 1, 10, 6, 2, 8, 6, 3],
-    #     ]
-    # )
-
-    # matB = np.array(
-    #     [
-    #         [7, 0, 1, 3, 5, 0, 1, 8],
-    #         [0, 5, 10, 3, 9, 0, 2, 10],
-    #         [10, 8, 9, 8, 4, 9, 8, 8],
-    #         [2, 9, 7, 9, 3, 8, 2, 8],
-    #         [2, 8, 2, 2, 10, 7, 6, 0],
-    #         [8, 7, 3, 0, 3, 10, 6, 5],
-    #         [6, 6, 5, 9, 10, 5, 4, 7],
-    #         [1, 4, 3, 4, 3, 9, 9, 4],
-    #     ]
-    # )
 
     print("Matrix A:\n", matA)
     print("Matrix B:\n", matB)
@@ -98,15 +58,21 @@ def demo():
     print("\n********** HOMOMORPHIC ADDITIONS **********")
     print("1. Matrix Additions...")
 
-    # Perform matrix additions on ciphertexts
-    ctm_result = onp.add(ctm_matA, ctm_matB)
-    # ctm_result = ctm_matA + ctm_matB
+    # Timing the homomorphic addition
+    start_add = time.time()
+    ctm_result = ctm_matA + ctm_matB
+    end_add = time.time()
+    print(f"Time for homomorphic addition: {end_add - start_add:.4f} seconds")
+
+    # Timing the decryption
+    start_dec = time.time()
     result = ctm_result.decrypt(keys.secretKey)
+    end_dec = time.time()
     result = np.round(result, decimals=1)
+    print(f"Time for decryption: {end_dec - start_dec:.4f} seconds")
 
     # Compare with plain result
     expected = matA + matB
-    # expected = np.add(matA, matB)
 
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")

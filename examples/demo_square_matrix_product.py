@@ -1,42 +1,43 @@
-import numpy as np
+"""
+Demo of matrix-vector product using homomorphic encryption with OpenFHE-NumPy.
+"""
 
+import time
+import numpy as np
 from openfhe import (
     CCParamsCKKSRNS,
     GenCryptoContext,
     PKESchemeFeature,
-    HEStd_NotSet,
     FIXEDAUTO,
     HYBRID,
     UNIFORM_TERNARY,
+    HEStd_NotSet,
 )
-
 import openfhe_numpy as onp
-from openfhe_numpy.utils import check_equality_matrix
+from openfhe_numpy.utils import utils
 
 
-def gen_crypto_context(mult_depth: int, ring_dim: int = 0):
+def gen_crypto_context(mult_depth, ring_dim=0):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
 
     Parameters
     ----------
+    ring_dim : int
+        Ring dimension (must be power of two).
     mult_depth : int
         Maximum multiplicative depth for the ciphertext.
-    ring_dim : int, optional
-        Ring dimension (must be power of two). If 0, it's chosen by default.
 
     Returns
     -------
-    Tuple[CryptoContext, KeyPair]
-        The generated crypto context and its associated key pair.
+    tuple
+        (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-
-    if ring_dim > 0:
+    if ring_dim != 0:
         params.SetRingDim(ring_dim)
         params.SetBatchSize(ring_dim // 2)
         params.SetSecurityLevel(HEStd_NotSet)
-
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
     params.SetFirstModSize(60)
@@ -58,15 +59,19 @@ def gen_crypto_context(mult_depth: int, ring_dim: int = 0):
 
 def demo():
     """
-    Run a demonstration of homomorphic matrix-matrix multiplication using OpenFHE-NumPy.
+    Run a demonstration of homomorphic matrix-vector multiplication using OpenFHE-NumPy.
     """
-    ring_dim = 2**12
+    ring_dim = 2**15
     mult_depth = 4
     total_slots = ring_dim // 2
 
+    # Initialize crypto context
+    start_setup = time.time()
     cc, keys = gen_crypto_context(mult_depth, ring_dim)
+    end_setup = time.time()
+    print(f"Crypto context setup time: {(end_setup - start_setup) * 1000:.2f} ms")
 
-    # Sample 8×8 input matrices
+    # Sample input matrices (8x8) and vector (8)
     A = np.array(
         [
             [0, 7, 8, 10, 1, 2, 7, 6],
@@ -79,42 +84,54 @@ def demo():
             [5, 1, 10, 6, 2, 8, 6, 3],
         ]
     )
-    B = np.array(
-        [
-            [7, 0, 1, 3, 5, 0, 1, 8],
-            [0, 5, 10, 3, 9, 0, 2, 10],
-            [10, 8, 9, 8, 4, 9, 8, 8],
-            [2, 9, 7, 9, 3, 8, 2, 8],
-            [2, 8, 2, 2, 10, 7, 6, 0],
-            [8, 7, 3, 0, 3, 10, 6, 5],
-            [6, 6, 5, 9, 10, 5, 4, 7],
-            [1, 4, 3, 4, 3, 9, 9, 4],
-        ]
-    )
+
+    b = np.array([7, 0, 1, 3, 5, 0, 1, 8])
 
     print("Matrix A:\n", A)
-    print("Matrix B:\n", B)
+    print("Vector b:\n", b)
 
-    # Encrypt both matrices
-    ctm_A = onp.array(cc, A, total_slots, public_key=keys.publicKey)
-    ctm_B = onp.array(cc, B, total_slots, public_key=keys.publicKey)
+    # Encrypt matrix
+    start_enc_matrix = time.time()
+    ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
+    end_enc_matrix = time.time()
+    print(f"Matrix encryption time: {(end_enc_matrix - start_enc_matrix) * 1000:.2f} ms")
 
-    print("\n********** HOMOMORPHIC MULTIPLICATION **********")
-    print("1. Matrix Multiplication...")
+    block_size = ct_matrix.ncols
 
-    # Generate rotation/sum keys for square matmul
-    onp.gen_square_matrix_product(keys.secretKey, ctm_A.ncols)
-    ctm_result = onp.matmul(ctm_A, ctm_B)
+    # Generate keys for sum operations
+    start_key_gen = time.time()
+    sumkey = onp.gen_sum_row_keys(cc, keys.secretKey, block_size)
+    end_key_gen = time.time()
+    print(f"Sum keys generation time: {(end_key_gen - start_key_gen) * 1000:.2f} ms")
 
-    # Decrypt the result
-    result = ctm_result.decrypt(keys.secretKey)
+    # Encrypt vector
+    start_enc_vector = time.time()
+    ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
+    end_enc_vector = time.time()
+    print(f"Vector encryption time: {(end_enc_vector - start_enc_vector) * 1000:.2f} ms")
 
-    # Compare with plaintext
-    expected = A @ B
+    print("\n********** HOMOMORPHIC Matrix Vector Product **********")
+
+    # Perform homomorphic matrix-vector multiplication
+    start_matmul = time.time()
+    ct_result = onp.matmul(ct_matrix, ct_vector)
+    end_matmul = time.time()
+    print(
+        f"Homomorphic matrix-vector multiplication time: {(end_matmul - start_matmul) * 1000:.2f} ms"
+    )
+
+    # Decrypt result
+    start_dec = time.time()
+    result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
+    end_dec = time.time()
+    print(f"Decryption time: {(end_dec - start_dec) * 1000:.2f} ms")
+
+    # Compare with plain result
+    expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = check_equality_matrix(result, expected)
+    is_match, error = utils.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

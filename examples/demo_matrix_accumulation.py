@@ -1,9 +1,15 @@
-# Import OpenFHE and matrix utilities
+import time
 import numpy as np
-from openfhe import *
-
-# Import OpenFHE NumPy-style interface
+from openfhe import (
+    CCParamsCKKSRNS,
+    GenCryptoContext,
+    PKESchemeFeature,
+    FIXEDAUTO,
+    HYBRID,
+    UNIFORM_TERNARY,
+)
 import openfhe_numpy as onp
+from openfhe_numpy.utils import check_equality_matrix
 
 
 def gen_crypto_context(mult_depth):
@@ -18,7 +24,7 @@ def gen_crypto_context(mult_depth):
     Returns
     -------
     tuple
-        (CryptoContext, KeyPair)
+        (CryptoContext, CCParamsCKKSRNS, KeyPair)
     """
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
@@ -42,10 +48,9 @@ def gen_crypto_context(mult_depth):
 
 def demo():
     """
-    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
+    Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
     """
-
-    mult_depth = 5
+    mult_depth = 7
     cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
@@ -70,17 +75,29 @@ def demo():
     ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
     print(ctm_matA)
 
-    print("\n********** HOMOMORPHIC Accumulation by Columns**********")
+    print("\n********** HOMOMORPHIC ACCUMULATION BY COLUMNS **********")
 
-    # Perform matrix sum accumulation on a ciphertext
+    # Timing the key generation for accumulation
+    start_keygen = time.time()
     onp.gen_accumulate_cols_key(keys.secretKey, ctm_matA.ncols)
-    ctm_result = onp.sum(ctm_matA, 1)
+    end_keygen = time.time()
+    print(f"Time for accumulation key generation: {(end_keygen - start_keygen) * 1000:.2f} ms")
 
-    # Decrypt the result
+    # Timing the homomorphic accumulation
+    start_acc = time.time()
+    ctm_result = onp.cumsum(ctm_matA, 1)
+    end_acc = time.time()
+    print(f"Time for homomorphic accumulation: {(end_acc - start_acc) * 1000:.2f} ms")
+
+    # Timing the decryption
+    start_dec = time.time()
     result = ctm_result.decrypt(keys.secretKey)
+    end_dec = time.time()
+    result = np.round(result, decimals=1)
+    print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
-    expected = matrix.T
+    expected = np.sum(matrix, axis=1)
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 

@@ -11,40 +11,27 @@ try:
 except ImportError:
     __version__ = "unknown"
 
-# Import from C++ extension module (explicit imports instead of wildcard)
+# Core imports that are always needed
 from ._openfhe_numpy import (
-    # Enums
     LinTransType,
     MatVecEncoding,
-    ArrayEncodingType,
-    # Key generation operations
-    EvalLinTransKeyGen,
-    EvalSumCumRowsKeyGen,
-    EvalSumCumColsKeyGen,
-    EvalSquareMatMultRotateKeyGen,
-    # Matrix transformation operations
-    EvalLinTransSigma,
-    EvalLinTransTau,
-    EvalLinTransPhi,
-    EvalLinTransPsi,
-    EvalTranspose,
-    EvalMatMulSquare,
-    EvalMultMatVec,
-    # Reduction operations
-    EvalSumCumRows,
-    EvalSumCumCols,
-    EvalReduceCumRows,
-    EvalReduceCumCols,
 )
 
 # Import tensor classes
-from .tensor.tensor import BaseTensor, FHETensor, PTArray, CTArray
-from .tensor.constructors import array
+from .tensor import (
+    BaseTensor,
+    FHETensor,
+    PTArray,
+    CTArray,
+    BlockFHETensor,
+    BlockCTArray,
+    array,
+)
 
-# Import configuration
-from .config import MatrixOrder, DataType
+# Import operations API
+from .operations.api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce
 
-# Import operations
+# Import crypto context utilities
 from .operations.crypto_context import (
     gen_sum_row_keys,
     gen_sum_col_keys,
@@ -52,58 +39,40 @@ from .operations.crypto_context import (
     gen_lintrans_keys,
     gen_transpose_keys,
     gen_square_matrix_product,
+    gen_accumulate_rows_key,
+    gen_accumulate_cols_key,  # <-- add this line
 )
 
-from .operations.arithmetic import (
-    add,
-    multiply,
-    dot,
-    matmul,
-    transpose,
-    power,
-    sum,
-    reduce,
-)
+# Import utility functions
+from .utils.utils import is_power_of_two, next_power_of_two, check_equality_matrix
 
-# Import specific utility functions rather than the module
-from .utils.utils import (
-    is_power_of_two,
-    next_power_of_two,
-    check_equality_matrix,
-)
-
-# Define public API
+# Define complete public API
 __all__ = [
-    # Core tensor classes
+    # Tensor classes
     "BaseTensor",
     "FHETensor",
     "PTArray",
     "CTArray",
-    # Constructor functions
+    "BlockFHETensor",
+    "BlockCTArray",
+    # Constructors
     "array",
-    # Enumerations
-    "LinTransType",
-    "MatVecEncoding",
-    "ArrayEncodingType",
-    "MatrixOrder",
-    "DataType",
-    # Matrix operations from C++ extension
-    "EvalLinTransSigma",
-    "EvalLinTransTau",
-    "EvalLinTransPhi",
-    "EvalLinTransPsi",
-    "EvalTranspose",
-    "EvalMatMulSquare",
-    "EvalMultMatVec",
-    # High-level operations
+    # Operations
     "add",
     "multiply",
     "dot",
     "matmul",
     "transpose",
     "power",
-    "sum",
-    "reduce",
+    "cumsum",
+    "cumreduce",
+    # Utilities
+    "is_power_of_two",
+    "next_power_of_two",
+    "check_equality_matrix",
+    # Core OpenFHE types
+    "LinTransType",
+    "MatVecEncoding",
     # Key generation utilities
     "gen_sum_row_keys",
     "gen_sum_col_keys",
@@ -111,10 +80,6 @@ __all__ = [
     "gen_lintrans_keys",
     "gen_transpose_keys",
     "gen_square_matrix_product",
-    # Utility functions
-    "is_power_of_two",
-    "next_power_of_two",
-    "check_equality_matrix",
-    # Version information
-    "__version__",
+    "gen_accumulate_rows_key",
+    "gen_accumulate_cols_key",
 ]

@@ -1,5 +1,6 @@
 # from openfhe import CryptoContext as _originCryptoContext
 import openfhe_numpy as onp
+from .. import _openfhe_numpy  # Import from parent package
 
 
 def gen_sum_row_keys(context, private_key, block_size=0):
@@ -17,11 +18,11 @@ def gen_sum_col_keys(context, sk, ncols=0):
 
 
 def gen_accumulate_rows_key(secretKey, ncols):
-    onp.EvalSumCumRowsKeyGen(secretKey, ncols)
+    _openfhe_numpy.EvalSumCumRowsKeyGen(secretKey, ncols)
 
 
 def gen_accumulate_cols_key(secretKey, ncols):
-    onp.EvalSumCumRowsKeyGen(secretKey, ncols)
+    _openfhe_numpy.EvalSumCumColsKeyGen(secretKey, ncols)
 
 
 def gen_rotation_keys(context, sk, rotation_indices):
@@ -29,12 +30,12 @@ def gen_rotation_keys(context, sk, rotation_indices):
 
 
 def gen_lintrans_keys(private_key, block_size, lintrans_type, repetitions=0):
-    onp.EvalLinTransKeyGen(private_key, block_size, lintrans_type, repetitions)
+    _openfhe_numpy.EvalLinTransKeyGen(private_key, block_size, lintrans_type, repetitions)
 
 
 def gen_square_matrix_product(private_key, block_size):
-    onp.EvalSquareMatMultRotateKeyGen(private_key, block_size)
+    _openfhe_numpy.EvalSquareMatMultRotateKeyGen(private_key, block_size)
 
 
 def gen_transpose_keys(private_key, ct_matrix):
-    onp.EvalLinTransKeyGen(private_key, ct_matrix.ncols, onp.LinTransType.TRANSPOSE)
+    _openfhe_numpy.EvalLinTransKeyGen(private_key, ct_matrix.ncols, onp.LinTransType.TRANSPOSE)
