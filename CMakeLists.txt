@@ -51,11 +51,11 @@ link_directories(${OpenFHE_LIBDIR})
 # Project Directory Structure
 # -----------------------------------------------------------------------------
 # Define key directories for the project
-set(OpenFHE_Numpy_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/src)       # C++ source files
-set(OpenFHE_Numpy_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/include)  # C++ header files
+set(OpenFHE_Numpy_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/core/src)       # C++ source files
+set(OpenFHE_Numpy_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/core/include)  # C++ header files
 set(OpenFHE_Numpy_BINDINGS ${OpenFHE_Numpy_SOURCES}/bindings.cpp)    # Python bindings
-set(OpenFHE_Numpy_PYTHON ${CMAKE_CURRENT_SOURCE_DIR}/python/src/openfhe_numpy) # Python source
-set(OpenFHE_Numpy_BUILD_PYTHON ${CMAKE_BINARY_DIR}/python/openfhe_numpy)       # Python build output
+set(OpenFHE_Numpy_PYTHON ${CMAKE_CURRENT_SOURCE_DIR}/openfhe_numpy)  # Python source
+set(OpenFHE_Numpy_BUILD_PYTHON ${CMAKE_BINARY_DIR}/openfhe_numpy)    # Python build output
 
 # Create the Python build output directory
 file(MAKE_DIRECTORY ${OpenFHE_Numpy_BUILD_PYTHON})
@@ -147,7 +147,7 @@ target_link_libraries(_openfhe_numpy PRIVATE
 
 # Generate version.py with Python package version info in the build directory
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/python/src/openfhe_numpy/version.py.in"
+    "${OpenFHE_Numpy_PYTHON}/version.py.in"
     "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
     @ONLY
 )
@@ -213,4 +213,54 @@ install(DIRECTORY "${OpenFHE_Numpy_INCLUDES}/"
     FILES_MATCHING PATTERN "*.h"
 )
 
-# The rest of your CMake file (examples and testing) stays the same...
+
+# -----------------------------------------------------------------------------
+# Examples Build Configuration
+# -----------------------------------------------------------------------------
+# Examples section with fixed linking
+if(BUILD_EXAMPLES)
+    # Create directory for example executables
+    set(EXAMPLE_OUTPUT_DIR ${CMAKE_BINARY_DIR}/examples)
+    file(MAKE_DIRECTORY ${EXAMPLE_OUTPUT_DIR})
+    
+    # Find the exact OpenFHE library files needed
+    find_library(OPENFHE_CORE_LIB OPENFHEcore PATHS ${OpenFHE_LIBDIR} REQUIRED)
+    find_library(OPENFHE_PKE_LIB OPENFHEpke PATHS ${OpenFHE_LIBDIR} REQUIRED)
+    find_library(OPENFHE_BINFHE_LIB OPENFHEbinfhe PATHS ${OpenFHE_LIBDIR} REQUIRED)
+
+    # Find and build all example files
+    file(GLOB EXAMPLES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/examples/*.cpp)
+    foreach(ex IN LISTS EXAMPLES)
+        # Get example name without extension
+        get_filename_component(name ${ex} NAME_WE)
+        
+        # Read file content to check for main function
+        file(READ ${ex} FILE_CONTENT)
+        if(NOT FILE_CONTENT MATCHES "^\\s*//")
+            # Create executable if file isn't completely commented out
+            add_executable(${name} ${ex})
+            
+            # Link directly against library files in correct order
+            target_link_libraries(${name} PRIVATE 
+                openfhe_core
+                ${OPENFHE_PKE_LIB}
+                ${OPENFHE_CORE_LIB}
+                ${OPENFHE_BINFHE_LIB}
+            )
+            
+            # Set output directory for example
+            set_target_properties(${name} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY ${EXAMPLE_OUTPUT_DIR}
+            )
+        endif()
+    endforeach()
+endif()
+
+# -----------------------------------------------------------------------------
+# Testing Configuration
+# -----------------------------------------------------------------------------
+if(BUILD_TESTING)
+    enable_testing()
+    # Add test directory or specific test executables here
+    # add_subdirectory(test)
+endif()
