@@ -229,7 +229,7 @@ if(BUILD_EXAMPLES)
     find_library(OPENFHE_BINFHE_LIB OPENFHEbinfhe PATHS ${OpenFHE_LIBDIR} REQUIRED)
 
     # Find and build all example files
-    file(GLOB EXAMPLES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/examples/*.cpp)
+    file(GLOB EXAMPLES ${CMAKE_CURRENT_SOURCE_DIR}/core/examples/*.cpp)
     foreach(ex IN LISTS EXAMPLES)
         # Get example name without extension
         get_filename_component(name ${ex} NAME_WE)
@@ -256,11 +256,11 @@ if(BUILD_EXAMPLES)
     endforeach()
 endif()
 
-# -----------------------------------------------------------------------------
-# Testing Configuration
-# -----------------------------------------------------------------------------
-if(BUILD_TESTING)
-    enable_testing()
-    # Add test directory or specific test executables here
-    # add_subdirectory(test)
-endif()
+# # -----------------------------------------------------------------------------
+# # Testing Configuration
+# # -----------------------------------------------------------------------------
+# if(BUILD_TESTING)
+#     enable_testing()
+#     # Add test directory or specific test executables here
+#     # add_subdirectory(test)
+# endif()
