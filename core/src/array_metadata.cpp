@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================
 
-#include "openfhe_numpy/array_metadata.h"
+#include "openfhe_numpy/internal/array_metadata.h"
 using namespace lbcrypto;
 
 namespace openfhe_numpy {

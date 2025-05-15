@@ -17,9 +17,9 @@ uint32_t NextPow2(uint32_t x) {
     return pow(2, ceil(log(double(x)) / log(2.0)));
 };
 
-uint32_t IsPow2(uint32_t x) {
-    return sqrt(x)*sqrt(x) == x; 
-};
+bool IsPow2(uint32_t x) {
+    return x && !(x & (x - 1)); 
+}
 
 
 void Debug(CryptoContext<DCRTPoly> cc, KeyPair<DCRTPoly> keys, Ciphertext<DCRTPoly> ct, std::string msg, int length) {
@@ -37,7 +37,7 @@ void Debug(CryptoContext<DCRTPoly> cc, KeyPair<DCRTPoly> keys, Ciphertext<DCRTPo
 Compute diagonals for the permutation matrix Sigma.
 B[i,j] = A[i, i +j]
 */
-std::vector<double> GenSigmaDiag(int32_t numCols, int32_t k) {
+std::vector<double> GenSigmaDiag(std::size_t numCols, int32_t k) {
     int32_t n = numCols * numCols;
     std::vector<double> diag(n, 0);
 
@@ -66,12 +66,12 @@ B[i,j] = A[i + j,i]
 u_[d.k][k + d*i] = 1 for all 0 <= i < d
 */
 
-std::vector<double> GenTauDiag(int32_t totalSlots, int32_t numCols, int32_t k) {
-    int32_t n = numCols * numCols;
+std::vector<double> GenTauDiag(std::size_t totalSlots, std::size_t numCols, int32_t k) {
+    std::size_t n = numCols * numCols;
     std::vector<double> diag(totalSlots, 0);
 
-    for (auto t = 0; t < totalSlots / n; t++) {
-        for (auto i = 0; i < numCols; i++) {
+    for (std::size_t t = 0; t < totalSlots / n; t++) {
+        for (std::size_t i = 0; i < numCols; i++) {
             diag[(t * n) + k + numCols * i] = 1;
         }
     }
@@ -85,17 +85,17 @@ std::vector<double> GenTauDiag(int32_t totalSlots, int32_t numCols, int32_t k) {
  *Type = 0 correspond for the k-th diagonal, and type = 1 is for the (k-d)-th
  *diagonal
  */
-std::vector<double> GenPhiDiag(int32_t numCols, int32_t k, int type) {
-    int32_t n = numCols * numCols;
+std::vector<double> GenPhiDiag(std::size_t numCols, int32_t k, int type) {
+    std::size_t n = numCols * numCols;
     std::vector<double> diag(n, 0);
 
     if (type == 0) {
-        for (int32_t i = 0; i < n; i++)
+        for (std::size_t i = 0; i < n; i++)
             if ((i % numCols >= 0) and ((i % numCols) < numCols - k))
                 diag[i] = 1;
         return diag;
     }
-    for (int32_t i = 0; i < n; i++)
+    for (std::size_t i = 0; i < n; i++)
         if ((i % numCols >= numCols - k) and (i % numCols < numCols)) {
             diag[i] = 1;
         }
@@ -107,14 +107,14 @@ std::vector<double> GenPhiDiag(int32_t numCols, int32_t k, int type) {
  *Compute diagonals for the permutation Psi (W).
  *B[i,j] = A[i+1,j]
  */
-std::vector<double> GenPsiDiag(int32_t numCols, int32_t k) {
-    int32_t n = numCols * numCols;
+std::vector<double> GenPsiDiag(std::size_t numCols, int32_t k) {
+    std::size_t n = numCols * numCols;
     std::vector<double> diag(n, 1);
     return diag;
 }
 
-std::vector<double> GenTransposeDiag(int32_t totalSlots, int32_t numCols, int32_t i) {
-    int32_t n = numCols * numCols;
+std::vector<double> GenTransposeDiag(std::size_t totalSlots, std::size_t numCols, int32_t i) {
+    std::size_t n = numCols * numCols;
     std::vector<double> diag(totalSlots, 0);
     for (auto t = 0; t < totalSlots / n; t++) {
         if (i >= 0) {

@@ -207,11 +207,14 @@ install(TARGETS openfhe_core
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 
-# Install C++ header files
+# Install C++ header files except helper.h
 install(DIRECTORY "${OpenFHE_Numpy_INCLUDES}/"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h"
-)
+    PATTERN "internal/*" EXCLUDE)
+#     PATTERN "*helper.h" EXCLUDE
+#     PATTERN "*array_metadata.h" EXCLUDE
+# )
 
 
 # -----------------------------------------------------------------------------

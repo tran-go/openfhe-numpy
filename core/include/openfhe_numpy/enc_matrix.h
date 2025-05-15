@@ -2,7 +2,7 @@
 #define ENC_MATRIX_H
 
 #include "openfhe_numpy/config.h"
-#include "openfhe_numpy/helper.h"
+#include "openfhe_numpy/internal/helper.h"
 #include "openfhe_numpy/utils.h"
 
 #define ENC_MATRIX_API

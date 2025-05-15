@@ -17,6 +17,15 @@ using namespace lbcrypto;
 **/
 
 std::vector<int32_t> GenLinTransIndices(int32_t numCols, LinTransType type, int32_t numRepeats = 0) {
+    if (numCols < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
+
+    if (numCols > std::numeric_limits<int32_t>::max() / 2 ||  // conservative upper bound
+        numRepeats < 0 || numRepeats > std::numeric_limits<int32_t>::max() / 2) {
+        OPENFHE_THROW("numCols or numRepeats too large");
+    }
+
     std::vector<int32_t> rotationIndices;
 
     switch (type) {
@@ -151,6 +160,9 @@ Ciphertext<Element> EvalMultMatVec(MatKeys<Element> evalKeys,
                                    int32_t numCols,
                                    const Ciphertext<Element>& ctVector,
                                    const Ciphertext<Element>& ctMatrix) {
+    if (numCols < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
     Ciphertext<Element> ctProduct;
     auto cryptoContext = ctVector->GetCryptoContext();
     auto multiplied    = cryptoContext->EvalMult(ctMatrix, ctVector);
@@ -198,7 +210,10 @@ Ciphertext<Element> EvalLinTransSigma(PrivateKey<Element>& secretKey,
  */
 template <typename Element>
 Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int32_t numCols) {
-    // int32_t d= numCols * numCols;
+    if (numCols < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
+
     auto cryptoContext = ciphertext->GetCryptoContext();
     bool flag          = true;
     Ciphertext<Element> ctResult;
@@ -234,7 +249,9 @@ Ciphertext<Element> EvalLinTransSigma(const Ciphertext<Element>& ciphertext, int
 */
 template <typename Element>
 Ciphertext<Element> EvalLinTransTau(const Ciphertext<Element>& ctVector, int32_t numCols) {
-    // int32_t permMatrixSize = numCols * numCols;
+    if (numCols < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
     auto cryptoContext = ctVector->GetCryptoContext();
     bool flag          = true;
     Ciphertext<Element> ctResult;
@@ -277,7 +294,9 @@ Ciphertext<Element> EvalLinTransTau(PrivateKey<Element>& secretKey,
 */
 template <typename Element>
 Ciphertext<Element> EvalLinTransPhi(const Ciphertext<Element>& ctVector, int32_t numCols, int32_t numRepeats) {
-    // auto permMatrixSize = numCols * numCols;
+    if (numCols < 0 or numRepeats < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
     auto cryptoContext = ctVector->GetCryptoContext();
     bool flag          = true;
     Ciphertext<Element> ctResult;
@@ -328,6 +347,9 @@ Ciphertext<Element> EvalLinTransPsi(PrivateKey<Element>& secretKey,
 }
 template <typename Element>
 Ciphertext<Element> EvalLinTransPsi(const Ciphertext<Element>& ctVector, int32_t numCols, int32_t numRepeats) {
+    if (numCols < 0 or numRepeats < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
     auto cryptoContext = ctVector->GetCryptoContext();
     return cryptoContext->EvalRotate(ctVector, numCols * numRepeats);
 }
@@ -344,6 +366,9 @@ template <typename Element>
 Ciphertext<Element> EvalMatMulSquare(const Ciphertext<Element>& matrixA,
                                      const Ciphertext<Element>& matrixB,
                                      int32_t numCols) {
+    if (numCols < 0) {
+        OPENFHE_THROW("numCols must be positive");
+    }
     auto cryptoContext               = matrixA->GetCryptoContext();
     Ciphertext<Element> transformedA = EvalLinTransSigma(matrixA, numCols);
     Ciphertext<Element> transformedB = EvalLinTransTau(matrixB, numCols);
@@ -375,7 +400,9 @@ Ciphertext<Element> EvalTranspose(PrivateKey<Element>& secretKey,
 template <typename Element>
 Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t numCols) {
     try {
-        // int32_t totalElements = numCols * numCols;
+        if (numCols < 0) {
+            OPENFHE_THROW("numCols must be positive");
+        }
         auto cryptoContext = ciphertext->GetCryptoContext();
         uint32_t slots     = cryptoContext->GetEncodingParams()->GetBatchSize();
         bool flag          = true;
@@ -405,6 +432,9 @@ Ciphertext<Element> EvalTranspose(const Ciphertext<Element>& ciphertext, int32_t
 // EvalSumAccumulate
 // -------------------------------------------------------------
 std::vector<std::complex<double>> GenMaskSumCols(int k, int slots, int numCols) {
+    if (numCols < 0 or slots < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
     auto n = (int)(slots / numCols);
 
     std::vector<std::complex<double>> result(slots, 0);
@@ -416,6 +446,9 @@ std::vector<std::complex<double>> GenMaskSumCols(int k, int slots, int numCols) 
 };
 
 std::vector<std::complex<double>> GenMaskSumRows(int k, int slots, int numRows, int numCols) {
+    if (numCols < 0 or slots < 0 or numRows < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
     auto blockSize = numCols * numRows;
     auto n         = slots / blockSize;
     std::vector<std::complex<double>> mask(slots, 0);
@@ -442,6 +475,10 @@ template <typename Element>
 Ciphertext<Element> EvalSumCumCols(const Ciphertext<Element>& ciphertext, uint32_t numCols, uint32_t subringDim) {
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
         OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
+
+    if (numCols < 0 or subringDim < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
 
     const auto cryptoParams = ciphertext->GetCryptoParameters();
     const auto cc           = ciphertext->GetCryptoContext();
@@ -477,6 +514,9 @@ Ciphertext<Element> EvalReduceCumCols(const Ciphertext<Element>& ciphertext, uin
     const auto cryptoParams = ciphertext->GetCryptoParameters();
     const auto cc           = ciphertext->GetCryptoContext();
 
+    if (numCols < 0 or subringDim < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
     subringDim = (subringDim == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() / 4 : subringDim;
 
     std::vector<std::complex<double>> mask = GenMaskSumCols(0, subringDim, numCols);
@@ -501,13 +541,14 @@ Ciphertext<Element> EvalSumCumRows(const Ciphertext<Element>& ciphertext,
     if (ciphertext->GetEncodingType() != CKKS_PACKED_ENCODING)
         OPENFHE_THROW("Matrix summation of row-vectors is only supported for CKKS packed encoding.");
 
+    if (numCols < 0 or slots < 0 or numRows < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
     const auto cryptoParams   = ciphertext->GetCryptoParameters();
     const auto encodingParams = cryptoParams->GetEncodingParams();
     const auto cc             = ciphertext->GetCryptoContext();
 
     slots = (slots == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() / 4 : slots;
-
-    std::cout << numCols << " " << numRows << " " << slots;
 
     if (numRows * numCols > slots)
         OPENFHE_THROW("The size of the matrix is bigger than the total slots.");
@@ -537,7 +578,9 @@ Ciphertext<Element> EvalReduceCumRows(const Ciphertext<Element>& ciphertext,
     const auto cryptoParams   = ciphertext->GetCryptoParameters();
     const auto encodingParams = cryptoParams->GetEncodingParams();
     const auto cc             = ciphertext->GetCryptoContext();
-
+    if (numCols < 0 or slots < 0 or numRows < 0) {
+        OPENFHE_THROW("parameters must be positive");
+    }
     if (numCols)
         slots = (slots == 0) ? cryptoParams->GetElementParams()->GetCyclotomicOrder() / 4 : slots;
     numRows = (numRows == 0) ? slots / numCols : numRows;
@@ -626,4 +669,3 @@ template Ciphertext<DCRTPoly> EvalReduceCumRows(const Ciphertext<DCRTPoly>&, uin
 
 template Ciphertext<DCRTPoly> EvalReduceCumCols(const Ciphertext<DCRTPoly>&, uint32_t, uint32_t);
 }  // namespace openfhe_numpy
-

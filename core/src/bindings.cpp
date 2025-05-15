@@ -1,8 +1,7 @@
 #include <pybind11/pybind11.h>
 // #include <pybind11/enum.h>
 #include "openfhe_numpy/enc_matrix.h"
-#include "openfhe_numpy/config.h"
-#include "openfhe_numpy/array_metadata.h"
+// #include "openfhe_numpy/array_metadata.h"
 
 using namespace openfhe_numpy;
 using namespace lbcrypto;
@@ -14,8 +13,6 @@ void bind_ciphertext(py::module& m);
 void bind_metadata(py::module& m);
 
 PYBIND11_MODULE(_openfhe_numpy, m) {
-    // Note module name _openfhe_numpy (with underscore)
-    // to indicate it's private implementation
     m.doc() = "OpenFHE-Numpy C++ extension";
 
     // Version info comes from CMake-generated config.h
