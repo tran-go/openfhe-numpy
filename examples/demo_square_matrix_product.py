@@ -85,50 +85,57 @@ def demo():
         ]
     )
 
-    b = np.array([7, 0, 1, 3, 5, 0, 1, 8])
+    B = np.array(
+        [
+            [0, 7, 8, 10, 1, 2, 7, 6],
+            [0, 1, 1, 9, 7, 5, 1, 7],
+            [8, 8, 4, 5, 8, 2, 6, 1],
+            [1, 0, 0, 1, 10, 3, 1, 7],
+            [7, 8, 2, 5, 3, 2, 10, 9],
+            [0, 3, 4, 10, 10, 5, 2, 5],
+            [2, 5, 0, 2, 8, 8, 5, 9],
+            [5, 1, 10, 6, 2, 8, 6, 3],
+        ]
+    )
 
     print("Matrix A:\n", A)
-    print("Vector b:\n", b)
+    print("Matrix B:\n", B)
 
     # Encrypt matrix
     start_enc_matrix = time.time()
-    ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
-    end_enc_matrix = time.time()
-    print(f"Matrix encryption time: {(end_enc_matrix - start_enc_matrix) * 1000:.2f} ms")
+    ctm_matA = onp.array(cc, A, total_slots, public_key=keys.publicKey)
+    ctm_matB = onp.array(cc, B, total_slots, public_key=keys.publicKey)
 
-    block_size = ct_matrix.ncols
+    enc_time = time.time()
+    print(f"Matrix [2] encryption time: {(enc_time - start_enc_matrix) * 1000:.2f} ms")
+
+    ncols = ctm_matA.ncols
 
     # Generate keys for sum operations
     start_key_gen = time.time()
-    sumkey = onp.sum_row_keys(cc, keys.secretKey, block_size)
+    onp.EvalSquareMatMultRotateKeyGen(keys.secretKey, ctm_matA.ncols)
     end_key_gen = time.time()
     print(f"Sum keys generation time: {(end_key_gen - start_key_gen) * 1000:.2f} ms")
-
-    # Encrypt vector
-    start_enc_vector = time.time()
-    ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
-    end_enc_vector = time.time()
-    print(f"Vector encryption time: {(end_enc_vector - start_enc_vector) * 1000:.2f} ms")
 
     print("\n********** HOMOMORPHIC Matrix Matrix Product **********")
 
     # Perform homomorphic matrix-vector multiplication
     start_matmul = time.time()
-    ct_result = onp.matmul(ct_matrix, ct_vector)
+    ct_result = ctm_matA @ ctm_matB
     end_matmul = time.time()
     print(
-        f"Homomorphic matrix-vector multiplication time: {(end_matmul - start_matmul) * 1000:.2f} ms"
+        f"Homomorphic matrix-matrix multiplication time: {(end_matmul - start_matmul) * 1000:.2f} ms"
     )
 
     # Decrypt result
     start_dec = time.time()
-    result = ct_result.decrypt(cc, sk=keys.secretKey, isFormat=False)
+    result = ct_result.decrypt(keys.secretKey, True)
     end_dec = time.time()
     print(f"Decryption time: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
-    expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)
-    print(f"\nExpected:\n{expected}")
+    expected = A @ B
+    print(f"\nExpected:\n{A @ B}")
     print(f"\nDecrypted Result:\n{result}")
 
     is_match, error = utils.check_equality_matrix(result, expected)

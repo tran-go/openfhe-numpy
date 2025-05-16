@@ -89,11 +89,11 @@ def demo():
     expected = utils.pack_vec_row_wise((A @ b), ncols, total_slots)
 
     print(f"\nExpected:\n{A @ b}")
-    print(f"\nPacked Expected:\n{expected}")
-    print(f"\nDecrypted Result:\n{result}")
+    print(f"\nPacked Expected:\n{expected[:32]}")
+    print(f"\nDecrypted Result:\n{result[:32]}")
 
-    # is_match, error = utils.check_equality_vector(result, expected)
-    # print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
+    is_match, error = utils.check_equality_vector(result[:32], expected[:32])
+    print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 
 if __name__ == "__main__":
