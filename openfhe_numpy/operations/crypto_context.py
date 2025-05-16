@@ -50,7 +50,7 @@ def sum_row_keys(context, secret_key, ncols=0):
     return context.EvalSumRowsKeyGen(secret_key, None, ncols)
 
 
-def gen_sum_col_keys(context, secret_key, ncols=0):
+def sum_col_keys(context, secret_key, ncols=0):
     """
     Generate keys for summing columns in a matrix.
 
@@ -63,20 +63,16 @@ def gen_sum_col_keys(context, secret_key, ncols=0):
     ncols : int, optional
         Number of columns in the matrix, by default 0
     """
-    import numpy as np
+    # import numpy as np
 
-    # indices = []
-    # for i in range(ncols):
-    #     indices.append(i * ncols)
-    #     indices.append(-i * ncols)
+    # base = np.arange(ncols) * ncols
+    # indices = np.empty(2 * ncols, dtype=base.dtype)
+    # indices[0::2] = base
+    # indices[1::2] = -base
 
-    base = np.arange(ncols) * ncols
-    indices = np.empty(2 * ncols, dtype=base.dtype)
-    indices[0::2] = base
-    indices[1::2] = -base
-
-    indices = [x for i in range(ncols) for x in (i * ncols, -i * ncols)]
-    context.EvalRotateKeyGen(secret_key, indices)
+    # indices = [x for i in range(ncols) for x in (i * ncols, -i * ncols)]
+    # context.EvalRotateKeyGen(secret_key, indices)
+    return context.EvalSumColsKeyGen(secret_key)
 
 
 def gen_accumulate_rows_key(secret_key, ncols):

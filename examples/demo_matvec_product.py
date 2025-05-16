@@ -7,14 +7,12 @@ from openfhe_numpy.utils import utils
 import openfhe_numpy as onp
 
 
-def gen_crypto_context(mult_depth, ring_dim=0):
+def gen_crypto_context(mult_depth):
     """
     Generate a CryptoContext and key pair for CKKS encryption.
 
     Parameters
     ----------
-    ring_dim : int
-        Ring dimension (must be power of two).
     mult_depth : int
         Maximum multiplicative depth for the ciphertext.
 
@@ -24,10 +22,6 @@ def gen_crypto_context(mult_depth, ring_dim=0):
         (CryptoContext, KeyPair)
     """
     params = CCParamsCKKSRNS()
-    if ring_dim != 0:
-        params.SetRingDim(ring_dim)
-        params.SetBatchSize(ring_dim // 2)
-        params.SetSecurityLevel(HEStd_NotSet)
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
     params.SetFirstModSize(60)
@@ -44,18 +38,20 @@ def gen_crypto_context(mult_depth, ring_dim=0):
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
 
-    return cc, keys
+    return cc, params, keys
 
 
 def demo():
     """
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
-    ring_dim = 2**15
-    mult_depth = 5
-    total_slots = ring_dim // 2
+    mult_depth = 10
+    cc, params, keys = gen_crypto_context(mult_depth)
 
-    cc, keys = gen_crypto_context(mult_depth, ring_dim)
+    total_slots = cc.GetRingDimension() // 2
+    print("\n****** CRYPTO PARAMETERS ******")
+    print(f"Total Slots: {total_slots}")
+    print("*******************************")
 
     # Sample input matrices (8x8)
     A = np.array(
@@ -75,27 +71,29 @@ def demo():
         [7, 0, 1, 3, 5, 0, 1, 8],
     )
 
+    print("\nInput")
     print("Matrix A:\n", A)
     print("Vector b:\n", b)
 
     # Encrypt both matrices
-    ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
-    block_size = ct_matrix.ncols
-    sumkey = onp.sum_row_keys(cc, keys.secretKey, block_size)
-    ct_matrix.extra["eval_key_RCR"] = sumkey
-    ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
+    ctm_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
+    ncols = ctm_matrix.ncols
+    sumkey = onp.sum_col_keys(cc, keys.secretKey)
+    ctm_matrix.extra["colkey"] = sumkey
+    ctv_vector = onp.array(cc, b, total_slots, ncols, "C", public_key=keys.publicKey)
 
-    print("\n********** HOMOMORPHIC Matrix Vector Product **********")
-    ct_result = ct_matrix @ ct_vector
-    print(ct_result)
-    result = ct_result.decrypt(keys.secretKey, True)
-    # Compare with plain result
-    expected = utils.pack_vec_row_wise((A @ b), block_size, total_slots)
-    print(f"\nExpected:\n{expected}")
+    print("\n********** Homomorphic Matrix Vector Product **********")
+    ctv_result = ctm_matrix @ ctv_vector
+
+    result = ctv_result.decrypt(keys.secretKey, True)
+    expected = utils.pack_vec_row_wise((A @ b), ncols, total_slots)
+
+    print(f"\nExpected:\n{A @ b}")
+    print(f"\nPacked Expected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = utils.check_equality_vector(result, expected)
-    print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
+    # is_match, error = utils.check_equality_vector(result, expected)
+    # print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 
 if __name__ == "__main__":

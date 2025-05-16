@@ -49,7 +49,7 @@ from .operations.matrix_api import add, multiply, dot, matmul, transpose, power,
 # Import crypto context utilities
 from .operations.crypto_context import (
     sum_row_keys,
-    gen_sum_col_keys,
+    sum_col_keys,
     gen_rotation_keys,
     gen_lintrans_keys,
     gen_transpose_keys,
@@ -103,7 +103,7 @@ __all__ = [
     "EvalSumCumCols",
     # Key generation utilities
     "sum_row_keys",
-    "gen_sum_col_keys",
+    "sum_col_keys",
     "gen_rotation_keys",
     "gen_lintrans_keys",
     "gen_transpose_keys",

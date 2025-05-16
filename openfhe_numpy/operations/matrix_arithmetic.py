@@ -153,8 +153,8 @@ def _eval_matvec_ct(lhs, rhs):
             ONP_ERROR(
                 f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]"
             )
-        if lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
-            sumkey = lhs.extra["eval_key_CRC"]
+        if lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
+            sumkey = lhs.extra["colkey"]
             ciphertext = _openfhe_numpy.EvalMultMatVec(
                 sumkey,
                 _openfhe_numpy.MatVecEncoding.MM_CRC,
@@ -164,8 +164,8 @@ def _eval_matvec_ct(lhs, rhs):
             )
             return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
 
-        elif lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
-            sumkey = lhs.extra["eval_key_RCR"]
+        elif lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
+            sumkey = lhs.extra["rowkey"]
             ciphertext = _openfhe_numpy.EvalMultMatVec(
                 sumkey,
                 _openfhe_numpy.MatVecEncoding.MM_RCR,
@@ -188,9 +188,6 @@ def _matmul_ct(lhs, rhs):
     """Internal function to evaluate matrix multiplication."""
     if lhs.is_encrypted and rhs.is_encrypted:
         if lhs.shape == rhs.shape:
-            print(lhs.ndim, rhs.ndim)
-            print(lhs.shape, rhs.shape)
-            print(lhs.original_shape, rhs.original_shape)
             if rhs.ndim == 1:
                 return _eval_matvec_ct(lhs, rhs)
             return lhs.clone(_openfhe_numpy.EvalMatMulSquare(lhs.data, rhs.data, lhs.ncols))

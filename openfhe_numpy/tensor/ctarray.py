@@ -27,19 +27,22 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
 
     tensor_priority = 10
 
-    def decrypt(self, secret_key: openfhe.PrivateKey, format=False) -> np.ndarray:
+    def decrypt(self, secret_key: openfhe.PrivateKey, is_format=False) -> np.ndarray:
         """Decrypt ciphertext using given secret key."""
+
         if secret_key is None:
             ONP_ERROR("Secret Key is missing!!!")
         cc = self.data.GetCryptoContext()
         plaintext = cc.Decrypt(self.data, secret_key)
+
         if plaintext is None:
             ONP_ERROR("Decryption failed")
         plaintext.SetLength(self.batch_size)
-        if format:
-            plaintext = plaintext.GetRealPackedValue()
+        plaintext = plaintext.GetRealPackedValue()
+        # print(plaintext[:64])
+        if is_format:
             return utils.format(plaintext, self.ndim, self.original_shape, self.shape)
-        return plaintext.GetRealPackedValue()
+        return plaintext
 
     def serialize(self) -> dict:
         """Serialize ciphertext and metadata to dictionary."""

@@ -101,6 +101,7 @@ def array(
     """
     if package is None:
         package = pack(data, slots, ncols, order)
+
     packed_data = package["data"]
     org_rows = package["original_shape"][0]
     org_cols = package["original_shape"][1]
@@ -109,11 +110,6 @@ def array(
     ncols = package["ncols"]
     order = package["order"]
 
-    print("==================================")
-    print("packed_data = ", packed_data[:128])
-    print("slots = ", slots)
-    print("ncols = ", ncols)
-    print("==================================")
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:

@@ -1,5 +1,6 @@
 from typing import Any
 from numpy.typing import ArrayLike
+from .dispatch import tensor_function_api
 
 
 @tensor_function_api("add", binary=True)

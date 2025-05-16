@@ -16,7 +16,7 @@ from .matrix_api import (
 # Import crypto context utilities
 from .crypto_context import (
     sum_row_keys,
-    gen_sum_col_keys,
+    sum_col_keys,
     gen_rotation_keys,
     gen_lintrans_keys,
     gen_transpose_keys,
@@ -38,7 +38,7 @@ __all__ = [
     "cumreduce",
     # Key generation utilities
     "sum_row_keys",
-    "gen_sum_col_keys",
+    "sum_col_keys",
     "gen_rotation_keys",
     "gen_lintrans_keys",
     "gen_transpose_keys",
