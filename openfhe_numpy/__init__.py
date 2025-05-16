@@ -44,7 +44,7 @@ from .tensor import (
 )
 
 # Import operations API
-from .operations.api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce
+from .operations.matrix_api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce
 
 # Import crypto context utilities
 from .operations.crypto_context import (

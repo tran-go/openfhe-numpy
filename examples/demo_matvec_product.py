@@ -52,7 +52,7 @@ def demo():
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
     ring_dim = 2**15
-    mult_depth = 4
+    mult_depth = 5
     total_slots = ring_dim // 2
 
     cc, keys = gen_crypto_context(mult_depth, ring_dim)

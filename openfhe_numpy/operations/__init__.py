@@ -1,8 +1,8 @@
 """Operations for homomorphic encryption tensors."""
 
 # Import arithmetic operations
-from .arithmetic import *
-from .api import (
+from .matrix_arithmetic import *
+from .matrix_api import (
     add,
     multiply,
     dot,

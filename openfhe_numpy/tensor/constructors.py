@@ -56,7 +56,7 @@ def pack(
             packed_data = ravel_vector(data, slots, ncols, order)
 
     return {
-        "packed_data": packed_data,
+        "data": packed_data,
         "original_shape": (org_rows, org_cols),
         "ndim": ndim,
         "batch_size": slots,
@@ -72,7 +72,7 @@ def array(
     ncols: int = 0,
     order: int = MatrixOrder.ROW_MAJOR,
     type: str = DataType.CIPHERTEXT,
-    packed_data=None,
+    package=None,
     public_key=None,
 ) -> FHETensor:
     """
@@ -99,14 +99,15 @@ def array(
     -------
     FHETensor Object
     """
-    if packed_data is None:
-        packed_data = pack(data, slots, ncols, order)
-    org_rows = packed_data["original_shape"][0]
-    org_cols = packed_data["original_shape"][1]
-    ndim = packed_data["ndim"]
-    slots = packed_data["slots"]
-    ncols = packed_data["ncols"]
-    order = packed_data["order"]
+    if package is None:
+        package = pack(data, slots, ncols, order)
+    packed_data = package["data"]
+    org_rows = package["original_shape"][0]
+    org_cols = package["original_shape"][1]
+    ndim = package["ndim"]
+    slots = package["batch_size"]
+    ncols = package["ncols"]
+    order = package["order"]
 
     print("==================================")
     print("packed_data = ", packed_data[:128])
