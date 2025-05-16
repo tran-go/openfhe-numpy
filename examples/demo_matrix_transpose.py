@@ -78,7 +78,7 @@ def demo():
     ctm_result = onp.transpose(ctm_matA)
 
     # Decrypt the result
-    result = ctm_result.decrypt(keys.secretKey)
+    result = ctm_result.decrypt(keys.secretKey, format=True)
 
     # Compare with plain result
     expected = matrix.T

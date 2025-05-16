@@ -25,6 +25,8 @@ using namespace lbcrypto;
 //TODO: Change from const Ciphertext to ConstCiphertext
 //TODO: using references
 
+std::size_t MulDepthAccumulation(std::size_t numRows, std::size_t numCols, bool isSumRows);
+
 template <typename Element>
 void EvalLinTransKeyGen(PrivateKey<Element>& secretKey, int32_t numCols, LinTransType type, int32_t numRepeats = 0);
 

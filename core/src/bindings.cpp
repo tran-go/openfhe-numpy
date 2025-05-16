@@ -65,6 +65,15 @@ void bind_enums_and_constants(py::module& m) {
 }
 
 void bind_matrix_funcs(py::module& m) {
+    // MulDepthAccumulation
+    m.def("MulDepthAccumulation",
+          &MulDepthAccumulation,
+          py::arg("numRows"),
+          py::arg("numCols"),
+          py::arg("isSumRows"),
+          "Compute the CKKS multiplicative-depth needed to sum over a "
+          "numRows x numCols matrix, optionally summing rows.");
+
     // EvalLinTransKeyGen
     m.def("EvalLinTransKeyGen",
           static_cast<void (*)(PrivateKey<DCRTPoly>&, int32_t, LinTransType, int32_t)>(&EvalLinTransKeyGen<DCRTPoly>),

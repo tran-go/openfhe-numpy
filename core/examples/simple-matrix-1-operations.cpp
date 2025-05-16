@@ -20,11 +20,14 @@ using namespace lbcrypto;
 CryptoContext<DCRTPoly> GenerateCryptoContext(uint32_t multDepth, uint32_t batchSize = 0) {
     // Create parameter object with security level
     CCParams<CryptoContextCKKSRNS> parameters;
-    parameters.SetSecurityLevel(lbcrypto::HEStd_NotSet);
-    parameters.SetRingDim(1 << 12);
-    parameters.SetBatchSize(1 << 11);
+    parameters.SetScalingModSize(59);
+    parameters.SetFirstModSize(60);
     parameters.SetMultiplicativeDepth(multDepth);
-    parameters.SetScalingModSize(50);  // 50-bit scaling factor
+
+    parameters.SetScalingTechnique(FIXEDAUTO);
+    parameters.SetKeySwitchTechnique(HYBRID);
+    parameters.SetSecretKeyDist(UNIFORM_TERNARY);
+
 
     // Generate the context
     CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
@@ -45,10 +48,14 @@ void DemoAccumulationOperations() {
 
     // Define test matrix - can be modified for different test cases
     std::vector<std::vector<double>> matA = {
-        {1, 1, 1, 0, 1, 0, 0, 0},
-        {2, 2, 2, 0, 2, 0, 0, 0},
-        {3, 3, 3, 0, 3, 0, 0, 0},
-        {4, 4, 4, 0, 4, 0, 0, 0},
+        {0, 7, 8, 10, 1, 2, 7, 6},
+        {0, 1, 1, 9, 7, 5, 1, 7},
+        {8, 8, 4, 5, 8, 2, 6, 1},
+        {1, 0, 0, 1, 10, 3, 1, 7},
+        {7, 8, 2, 5, 3, 2, 10, 9},
+        {0, 3, 4, 10, 10, 5, 2, 5},
+        {2, 5, 0, 2, 8, 8, 5, 9},
+        {5, 1, 10, 6, 2, 8, 6, 3},
     };
 
     // Initialize crypto system
@@ -177,11 +184,22 @@ void DemoMatrixTranspose() {
     std::cout << "\n=== DEMO: Matrix Transpose Operation ===\n";
 
     // Define test matrix
+    // std::vector<std::vector<double>> matA = {
+    //     {1, 1, 1, 0},
+    //     {2, 2, 2, 0},
+    //     {3, 3, 3, 0},
+    //     {4, 4, 4, 0},
+    // };
+
     std::vector<std::vector<double>> matA = {
-        {1, 1, 1, 0},
-        {2, 2, 2, 0},
-        {3, 3, 3, 0},
-        {4, 4, 4, 0},
+        {0, 7, 8, 10, 1, 2, 7, 6},
+        {0, 1, 1, 9, 7, 5, 1, 7},
+        {8, 8, 4, 5, 8, 2, 6, 1},
+        {1, 0, 0, 1, 10, 3, 1, 7},
+        {7, 8, 2, 5, 3, 2, 10, 9},
+        {0, 3, 4, 10, 10, 5, 2, 5},
+        {2, 5, 0, 2, 8, 8, 5, 9},
+        {5, 1, 10, 6, 2, 8, 6, 3},
     };
 
     // Initialize crypto system
@@ -233,11 +251,10 @@ void DemoMatrixTranspose() {
 
     TimeVar t;
 
-
     // Perform homomorphic transpose
     TIC(t);
     auto encryptedTranspose = EvalTranspose(keyPair.secretKey, ctMatA, paddedCols);
-    double timeEval = TOC(t);
+    double timeEval         = TOC(t);
 
     // Decrypt and display results
     Plaintext ptResult;

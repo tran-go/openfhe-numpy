@@ -291,7 +291,7 @@ def pow_block_ct(a, exp):
 # ------------------------------------------------------------------------------
 # Cumulative Sum Operations
 # ------------------------------------------------------------------------------
-def _sumcum_ct(tensor, axis=0, keepdims=False):
+def _sumcum_ct(tensor, axis=0, keepdims=True):
     """
     Compute the cumulative sum of tensor elements along a given axis.
 
@@ -306,7 +306,6 @@ def _sumcum_ct(tensor, axis=0, keepdims=False):
     """
     if axis not in (0, 1):
         ONP_ERROR("Axis must be 0 or 1 for cumulative sum operation")
-
     if axis == 0:
         ciphertext = _openfhe_numpy.EvalSumCumRows(
             tensor.data, tensor.ncols, tensor.original_shape[1]
@@ -316,14 +315,14 @@ def _sumcum_ct(tensor, axis=0, keepdims=False):
     return tensor.clone(ciphertext)
 
 
-@register_tensor_function("cumsum", [("CTArray", "int"), ("CTArray", "int", "bool")])
-def sumcum_ct(a, axis=0, keepdims=False):
+@register_tensor_function("cumsum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
+def sumcum_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a tensor along specified axis."""
     return _sumcum_ct(a, axis, keepdims)
 
 
 @register_tensor_function("cumsum", [("BlockCTArray", "int"), ("BlockCTArray", "int", "bool")])
-def sumcum_block_ct(a, axis=0, keepdims=False):
+def sumcum_block_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a block tensor along specified axis."""
     raise NotImplementedError("BlockPTArray cumulative not implemented yet.")
 

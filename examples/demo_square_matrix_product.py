@@ -100,7 +100,7 @@ def demo():
 
     # Generate keys for sum operations
     start_key_gen = time.time()
-    sumkey = onp.gen_sum_row_keys(cc, keys.secretKey, block_size)
+    sumkey = onp.sum_row_keys(cc, keys.secretKey, block_size)
     end_key_gen = time.time()
     print(f"Sum keys generation time: {(end_key_gen - start_key_gen) * 1000:.2f} ms")
 

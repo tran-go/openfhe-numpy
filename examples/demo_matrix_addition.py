@@ -66,7 +66,7 @@ def demo():
 
     # Timing the decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey)
+    result = ctm_result.decrypt(keys.secretKey, True)
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Time for decryption: {end_dec - start_dec:.4f} seconds")

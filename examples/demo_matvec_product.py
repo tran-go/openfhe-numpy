@@ -81,7 +81,7 @@ def demo():
     # Encrypt both matrices
     ct_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
     block_size = ct_matrix.ncols
-    sumkey = onp.gen_sum_row_keys(cc, keys.secretKey, block_size)
+    sumkey = onp.sum_row_keys(cc, keys.secretKey, block_size)
     ct_matrix.extra["eval_key_RCR"] = sumkey
     ct_vector = onp.array(cc, b, total_slots, block_size, "C", public_key=keys.publicKey)
 

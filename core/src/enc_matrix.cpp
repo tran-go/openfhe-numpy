@@ -462,6 +462,14 @@ std::vector<std::complex<double>> GenMaskSumRows(int k, int slots, int numRows, 
     return mask;
 };
 
+std::size_t MulDepthAccumulation(std::size_t numRows, std::size_t numCols, bool isSumRows) {
+    if (isSumRows) {
+        return numRows;
+    }
+    else
+        return numCols;
+};
+
 /**
  * @brief Reduces the cumulative sum of rows in a ciphertext matrix.
  * @param ciphertext The input ciphertext matrix.

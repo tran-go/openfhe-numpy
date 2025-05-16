@@ -15,12 +15,12 @@ from .api import (
 
 # Import crypto context utilities
 from .crypto_context import (
-    gen_sum_row_keys,
+    sum_row_keys,
     gen_sum_col_keys,
     gen_rotation_keys,
     gen_lintrans_keys,
     gen_transpose_keys,
-    gen_square_matrix_product,
+    gen_square_matmult_key,
     gen_accumulate_rows_key,
     gen_accumulate_cols_key,
 )
@@ -37,12 +37,12 @@ __all__ = [
     "cumsum",
     "cumreduce",
     # Key generation utilities
-    "gen_sum_row_keys",
+    "sum_row_keys",
     "gen_sum_col_keys",
     "gen_rotation_keys",
     "gen_lintrans_keys",
     "gen_transpose_keys",
-    "gen_square_matrix_product",
+    "gen_square_matmult_key",
     "gen_accumulate_rows_key",
     "gen_accumulate_cols_key",
 ]

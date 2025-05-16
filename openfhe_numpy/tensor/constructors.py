@@ -82,6 +82,11 @@ def array(
             if ncols == 0:
                 ncols = 1
             packed_data = ravel_vector(data, slots, ncols, order)
+    print("==================================")
+    print("packed_data = ", packed_data[:128])
+    print("slots = ", slots)
+    print("ncols = ", ncols)
+    print("==================================")
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
