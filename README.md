@@ -136,8 +136,8 @@ tensor_product = tensor_A @ tensor_A  # Matrix multiplication
 tensor_sum = onp.add(tensor_A, tensor_A)  # Element-wise addition
 
 # Decrypt results
-decrypted_product = tensor_product.decrypt(keys.secretKey, is_format = True)
-decrypted_sum = tensor_sum.decrypt(keys.secretKey, is_format = True)
+decrypted_product = tensor_product.decrypt(keys.secretKey, format_type = True)
+decrypted_sum = tensor_sum.decrypt(keys.secretKey, format_type = True)
 
 print("Result of A @ A:")
 print(decrypted_product)
@@ -189,6 +189,8 @@ Contributions to OpenFHE-NumPy are welcome! Please see our contributing guidelin
 ## License
 
 OpenFHE-NumPy is licensed under the BSD 3-Clause License. See the LICENSE file for details.
+
+## License
 
 ---
 
