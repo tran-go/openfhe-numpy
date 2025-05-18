@@ -1,7 +1,8 @@
 import sys
 import numpy as np
-from openfhe_numpy.matlib import *
+from openfhe_numpy.utils.matlib import *
 from openfhe_numpy.config import *
+from openfhe_numpy.utils.log import ONP_ERROR, ONP_DEBUG, ONP_WARNING
 
 
 def format(array, ndim, original_shape, new_shape):
@@ -16,17 +17,17 @@ def format(array, ndim, original_shape, new_shape):
     original_shape : tuple
         Original shape of the matrix before flattening.
     new_shape : tuple
-        Intermediate reshaping dimensions.
+        Reshaping dimensions.
 
     Returns
     -------
     ndarray
         Reshaped matrix with original dimensions.
     """
-    reshaped_matrix = np.reshape(array, new_shape)
+    reshaped = np.reshape(array, new_shape)
     if ndim == 2:
-        return reshaped_matrix[: original_shape[0], : original_shape[1]]
-    return reshaped_matrix[0]
+        return reshaped[: original_shape[0], : original_shape[1]]
+    return np.array(reshaped.flatten()[: original_shape[0]])
 
 
 def get_shape(data):
@@ -44,7 +45,7 @@ def get_shape(data):
 
     Raises
     ------
-    ValueError
+    ONP_ERROR
         If input is neither list, tuple, nor ndarray.
     """
     if isinstance(data, (list, tuple)):
@@ -58,7 +59,7 @@ def get_shape(data):
             return data.shape[0], 0, 1
         return data.shape[0], data.shape[1], 2
 
-    raise ValueError("Invalid data type provided. Must be list, tuple, or ndarray.")
+    ONP_ERROR("Invalid data type provided. Must be list, tuple, or ndarray.")
 
 
 def rotate_vector(vec, k):
@@ -92,10 +93,10 @@ def pack_vec_row_wise(v, block_size, num_slots):
     assert is_power_of_two(block_size)
     assert is_power_of_two(num_slots)
     if num_slots < n:
-        sys.exit("ERROR ::: [row_wise_vector] vector is longer than total   slots")
+        ONP_ERROR("ERROR ::: [row_wise_vector] vector is longer than total   slots")
     if num_slots == n:
         if num_slots // block_size > 1:
-            sys.exit("ERROR ::: [row_wise_vector] vector is too longer, can't duplicate")
+            ONP_ERROR("ERROR ::: [row_wise_vector] vector is too longer, can't duplicate")
         return v
 
     # print data
@@ -124,11 +125,11 @@ def pack_vec_col_wise(v, block_size, num_slots):
     assert is_power_of_two(block_size)
     assert is_power_of_two(num_slots)
     if block_size < n:
-        sys.exit(
+        ONP_ERROR(
             f"ERROR ::: [col_wise_vector] vector of size ({n}) is longer than size of a slot ({block_size})"
         )
     if num_slots < n:
-        sys.exit("ERROR ::: [col_wise_vector] vector is longer than total slots")
+        ONP_ERROR("ERROR ::: [col_wise_vector] vector is longer than total slots")
     if num_slots == n:
         return v
 
@@ -229,7 +230,7 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
 
     Raises
     ------
-    ValueError
+    ONP_ERROR
         If ncols or total_slots are not powers of two, or total_slots is insufficient.
     """
 
@@ -237,15 +238,15 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
     ncols = next_power_of_two(ncols)
 
     if not is_power_of_two(total_slots):
-        raise ValueError(f"total_slots [{total_slots}] must be a power of two")
+        ONP_ERROR(f"total_slots [{total_slots}] must be a power of two")
     if total_slots % ncols != 0:
-        raise ValueError("total_slots must be divisible by ncols")
+        ONP_ERROR("total_slots must be divisible by ncols")
 
     padded_cols = next_power_of_two(rows) if pad_cols else rows
     required_size = padded_cols * ncols
 
     if total_slots < required_size:
-        raise ValueError("Total slots insufficient for the given matrix and padding.")
+        ONP_ERROR("Total slots insufficient for the given matrix and padding.")
 
     flat_array = np.zeros(total_slots)
 
@@ -260,42 +261,6 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
         index += (padded_cols - rows) * ncols
 
     return flat_array
-
-
-# def pack_mat_row_wise(matrix, ncols, total_slots, reps=0, debug=0):
-#     """
-#     Packing Matrix M using row-wise
-#     [[1 2 3] -> [1 2 3 0 4 5 6 0 7 8 9 0]
-#     [4 5 6]
-#     [7 8 9]]
-#     """
-#     assert is_power_of_two(ncols)
-#     assert is_power_of_two(total_slots)
-#     assert total_slots % ncols == 0
-#     n, m = len(matrix), len(matrix[0])
-#     col_size = len(matrix)
-#     if reps > 0:
-#         col_size = next_power_of_two(col_size)
-#     size = col_size * ncols
-
-#     if total_slots < size:
-#         Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
-
-#     flat = np.zeros(total_slots)
-
-#     k = 0
-#     for t in range(total_slots // size):
-#         for i in range(n):
-#             for j in range(m):
-#                 flat[k] = matrix[i][j]
-#                 k += 1
-#             for j in range(m, ncols):
-#                 k += 1
-
-#         for i in range(n, col_size):
-#             k += 1
-
-#     return flat
 
 
 def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):
@@ -328,7 +293,9 @@ def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):
         )
 
     if num_slots < cols * rows:
-        Exception("encrypt_matrix ::: Matrix is too big compared with num_slots")
+        ONP_ERROR(
+            f"encrypt_matrix ::: Matrix [{rows} x {cols}]is too big compared with num_slots [{num_slots}]"
+        )
 
     packed = np.zeros(num_slots)
     k = 0  # index into vector to write

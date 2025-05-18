@@ -6,30 +6,29 @@ import openfhe_numpy as onp
 from tests.test_imports import *
 
 
-def fhe_matrix_sumcum_rows(params, input):
-    """Execute matrix row summation with suppressed output."""
+def fhe_matrix_addition(params, input):
+    """Execute matrix addition with suppressed output."""
     total_slots = params["ringDim"] // 2
 
     with suppress_stdout():
         cc, keys = get_cached_crypto_context(params)
-        public_key = keys.publicKey
         matrixA = np.array(input[0])
-        ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
-        nrows = ct_matrixA.original_shape[0]
-        onp.gen_accumulate_rows_key(keys.secretKey, ct_matrixA.ncols, nrows)
-        ct_result = onp.cumsum(ct_matrixA, 0)
-        result = ct_result.decrypt(keys.secretKey)
+        matrixB = np.array(input[1])
+        ctm_A = onp.array(cc, matrixA, total_slots, public_key=keys.publicKey)
+        ctm_B = onp.array(cc, matrixB, total_slots, public_key=keys.publicKey)
+        ctm_sum = onp.add(ctm_A, ctm_B)
+        result = ctm_sum.decrypt(keys.secretKey, True)
 
     return result
 
 
 # Create test class to be discoverable for module running
-class TestMatrixSumCumRows(MainUnittest):
-    """Test class for matrix row summation operations."""
+class TestMatrixAddition(MainUnittest):
+    """Test class for matrix addition operations."""
 
     @classmethod
     def _generate_test_cases(cls):
-        """Generate test cases for matrix row summation."""
+        """Generate test cases for matrix addition."""
         ckks_param_list = load_ckks_params()
         matrix_sizes = [2, 3, 8, 16]
         test_counter = 1
@@ -37,21 +36,22 @@ class TestMatrixSumCumRows(MainUnittest):
         for param in ckks_param_list:
             for size in matrix_sizes:
                 A = generate_random_array(size)
-                expected = np.sum(A, axis=0)
-                name = "TestMatrixSumCumRows"
+                B = generate_random_array(size)
+                expected = np.array(A) + np.array(B)
+                name = "TestMatrixAddition"
                 test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
                 test_method = MainUnittest.generate_test_case(
-                    fhe_matrix_sumcum_rows, name, test_name, param, [A], expected
+                    fhe_matrix_addition, name, test_name, param, [A, B], expected
                 )
-                # Add to TestMatrixSumCumRows class for module discovery
+                # Add to TestMatrixAddition class for module discovery
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
 if __name__ == "__main__":
     # Generate test cases and run with summary
-    TestMatrixSumCumRows.setUpClass()
-    TestMatrixSumCumRows.run_test_summary("Matrix Sum of Rows")
+    TestMatrixAddition.setUpClass()
+    TestMatrixAddition.run_test_summary("Matrix Addition")
 else:
     # For module-based execution, generate test cases immediately
-    TestMatrixSumCumRows.setUpClass()
+    TestMatrixAddition.setUpClass()

@@ -209,7 +209,7 @@ def _dot(lhs, rhs):
     """Internal function to evaluate dot product."""
     if lhs.ndim == 1 and rhs.ndim == 1:
         crypto_context = lhs.data.GetCryptoContext()
-        ciphertext = crypto_context.EvalInnerProduct(lhs.data, rhs.data, lhs.ncols)
+        ciphertext = crypto_context.EvalInnerProduct(lhs.data, rhs.data, lhs.original_shape[0])
         return lhs.clone(ciphertext)
     else:
         return lhs._matmul(rhs)

@@ -11,10 +11,16 @@ import importlib
 import sys
 
 # Version information
+# try:
+#     from .version import __version__
+# except ImportError:
+#     __version__ = "unknown"
+
 try:
     from .version import __version__
 except ImportError:
-    __version__ = "unknown"
+    from ._version import __version__
+
 
 # Core imports that are always needed
 from ._openfhe_numpy import (
@@ -59,10 +65,18 @@ from .operations.crypto_context import (
 )
 
 # Import utility functions
-from .utils.utils import is_power_of_two, next_power_of_two, check_equality_matrix
+from .utils.utils import (
+    is_power_of_two,
+    next_power_of_two,
+    check_equality_matrix,
+    pack_vec_row_wise,
+)
 
 # Import log functions
 from .utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
+
+# Import matlib functions
+from .utils.matlib import next_power_of_two, EPSILON
 
 # Define complete public API
 __all__ = [
@@ -88,6 +102,7 @@ __all__ = [
     "is_power_of_two",
     "next_power_of_two",
     "check_equality_matrix",
+    "pack_vec_row_wise",
     # Core OpenFHE types
     "LinTransType",
     "MatVecEncoding",
@@ -115,6 +130,9 @@ __all__ = [
     "ONP_DEBUG",
     "ONP_ERROR",
     "ONPNotImplementedError",
+    # constants
+    "EPSILON",
+    "next_power_of_two",
 ]
 
 

@@ -27,22 +27,69 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
 
     tensor_priority = 10
 
-    def decrypt(self, secret_key: openfhe.PrivateKey, is_format=False) -> np.ndarray:
-        """Decrypt ciphertext using given secret key."""
+    def decrypt(
+        self, secret_key: openfhe.PrivateKey, format_type="raw", **format_options
+    ) -> np.ndarray:
+        """Decrypt ciphertext using given secret key with flexible formatting options.
+
+        Parameters
+        ----------
+        secret_key : openfhe.PrivateKey
+            Secret key used for decryption
+        format_type : str, optional
+            Formatting option to apply:
+            - "raw": Return raw decrypted data without reshaping
+            - "reshape": Reshape to original dimensions
+            - "round": Reshape and round values to integers
+            - "auto": Auto-detect best format based on data (default)
+        format_options : dict
+            Additional formatting options:
+            - precision: int, number of decimal places for rounding
+            - dtype: numpy dtype for output array
+            - new_shape: tuple (min, max) to clip values
+
+        Returns
+        -------
+        np.ndarray
+            Decrypted data with requested formatting applied
+        """
 
         if secret_key is None:
             ONP_ERROR("Secret Key is missing!!!")
+
         cc = self.data.GetCryptoContext()
         plaintext = cc.Decrypt(self.data, secret_key)
 
         if plaintext is None:
             ONP_ERROR("Decryption failed")
+
         plaintext.SetLength(self.batch_size)
-        plaintext = plaintext.GetRealPackedValue()
-        # print(plaintext[:64])
-        if is_format:
-            return utils.format(plaintext, self.ndim, self.original_shape, self.shape)
-        return plaintext
+        result = plaintext.GetRealPackedValue()
+
+        if format_type == "raw":
+            return result
+
+        if "reshape" in format_type:
+            if "new_shape" in format_options:
+                new_shape = format_options["new_shape"]
+                if isinstance(new_shape, int):
+                    result = result.reshape(new_shape)
+                elif isinstance(new_shape, tuple) and len(new_shape) == 1:
+                    result = result[: new_shape[0]]
+                else:
+                    result = np.reshape(result, new_shape)
+            else:
+                result = utils.format(result, self.ndim, self.original_shape, self.shape)
+
+        if "round" in format_type:
+            precision = format_options.get("precision", 0)
+            result = np.round(result, precision)
+
+        if "clip_range" in format_options:
+            min_val, max_val = format_options["clip_range"]
+            result = np.clip(result, min_val, max_val)
+
+        return result
 
     def serialize(self) -> dict:
         """Serialize ciphertext and metadata to dictionary."""

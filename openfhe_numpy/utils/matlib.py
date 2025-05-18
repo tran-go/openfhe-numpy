@@ -116,12 +116,21 @@ def check_equality_matrix(a, b, eps=EPSILON):
     """
     a = np.array(a)
     b = np.array(b)
+
+    error, is_equal = 0, True
+
+    # if a.shape != b.shape:
+    #    rows = min(a)
     if a.ndim == 1:
-        rows, cols = len(a), 0
-    else:
-        rows, cols = len(a), len(a[0])
-    error = 0
-    is_equal = True
+        for i in range(len(a)):
+            f, e = check_single_equality(a[i], b[i], eps)
+            error += 2
+            if not f:
+                is_equal = False
+        return is_equal, error
+
+    rows, cols = len(a), len(a[0])
+
     for i in range(rows):
         for j in range(cols):
             f, e = check_single_equality(a[i][j], b[i][j], eps)

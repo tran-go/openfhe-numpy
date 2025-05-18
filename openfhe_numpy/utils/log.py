@@ -74,8 +74,8 @@ class InvalidAxisError(ONPError):
 class ONPNotImplementedError(ONPError):
     """Raised when a feature is not implemented."""
 
-    def __init__(self, feature: str = "This feature"):
-        super().__init__(f"{feature} is not implemented.")
+    def __init__(self, message: str = "This feature is not implemented."):
+        super().__init__(f"{message}")
 
 
 # Logging helpers
@@ -90,23 +90,23 @@ def _format_log(level: str, message: str, stack_level=2) -> str:
 def _log(level: str, message: str, stack_level=2) -> None:
     formatted_message = _format_log(level, message, stack_level)
     logger = get_logger()
-    if level == "ERROR":
+    if level == "ONP_ERROR":
         logger.error(formatted_message)
-    elif level == "DEBUG" and FP_ENABLE_DEBUG:
+    elif level == "ONP_DEBUG" and FP_ENABLE_DEBUG:
         logger.debug(formatted_message)
-    elif level == "WARNING":
+    elif level == "ONP_WARNING":
         logger.warning(formatted_message)
 
 
 # Public log APIs
 def ONP_ERROR(message: str) -> None:
-    _log("ERROR", message)
+    _log("ONP_ERROR", message)
     raise ONPError(message)
 
 
 def ONP_DEBUG(message: str) -> None:
-    _log("DEBUG", message)
+    _log("ONP_DEBUG", message)
 
 
 def ONP_WARNING(message: str) -> None:
-    _log("WARNING", message)
+    _log("ONP_WARNING", message)

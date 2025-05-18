@@ -99,7 +99,7 @@ def array(
     -------
     FHETensor Object
     """
-    print(package)
+
     if package is None:
         package = pack(data, slots, ncols, order)
 
@@ -110,9 +110,6 @@ def array(
     slots = package["batch_size"]
     ncols = package["ncols"]
     order = package["order"]
-
-    print(packed_data)
-    print(len(packed_data), package["original_shape"], ndim, slots, ncols, order)
 
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 

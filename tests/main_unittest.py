@@ -8,23 +8,57 @@ with different parameter sets and input configurations.
 # Standard library imports
 import csv
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from contextlib import contextmanager
 
 # Third-party imports
 import numpy as np
 import unittest
 
 # Local imports
-from openfhe import CCParamsCKKSRNS, GenCryptoContext, PKESchemeFeature
+from openfhe import (
+    CCParamsCKKSRNS,
+    GenCryptoContext,
+    PKESchemeFeature,
+    UNIFORM_TERNARY,
+    FIXEDAUTO,
+    FLEXIBLEAUTOEXT,
+    FLEXIBLEAUTO,
+    FIXEDMANUAL,
+    HYBRID,
+    BV,
+    HEStd_128_classic,
+    HEStd_192_classic,
+    HEStd_256_classic,
+    HEStd_NotSet,
+)
 import openfhe_numpy as onp
 
 
-# Constants
-PARAMS_CSV = "ckks_params.csv"
-LOG_DIR = Path("logs")
-DEBUG_LOG_DIR = Path("debug_logs")
+#  absolute paths
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+PARAMS_CSV = os.path.join(TESTS_DIR, "ckks_params.csv")
+# PARAMS_CSV = os.path.join(TESTS_DIR, "ckks_params_high_depth.csv")
+LOG_DIR = Path(os.path.join(TESTS_DIR, "logs"))
+DEBUG_LOG_DIR = Path(os.path.join(TESTS_DIR, "debug_logs"))
+
+# Cache
+_crypto_context_cache = {}
+
+
+@contextmanager
+def suppress_stdout():
+    """Context manager to suppress stdout temporarily."""
+    original_stdout = sys.stdout
+    sys.stdout = open(os.devnull, "w")
+    try:
+        yield
+    finally:
+        sys.stdout.close()
+        sys.stdout = original_stdout
 
 
 def generate_random_array(
@@ -113,6 +147,33 @@ def gen_crypto_context_from_params(p: Dict[str, Any]) -> Tuple[Any, Any]:
     Tuple[Any, Any]
         CryptoContext and keys
     """
+    # params = p.copy()
+
+    # # Check for HYBRID key switching compatibility
+    # if params["ksTech"] == "HYBRID":
+    #     estimated_towers = params["multiplicativeDepth"] + 1
+    #     original = params["numLargeDigits"]
+    #     found_compatible = False
+
+    #     # If towers can't be distributed evenly, fix the configuration
+    #     if estimated_towers % params["numLargeDigits"] != 0:
+    #         # Try common divisors
+    #         for candidate in [1, 2, 4]:
+    #             if estimated_towers % candidate == 0:
+    #                 params["numLargeDigits"] = candidate
+    #                 print(
+    #                     f"[info] Adjusted numLargeDigits from {original} to {candidate} for compatibility with HYBRID (towers={estimated_towers})"
+    #                 )
+    #                 found_compatible = True
+    #                 break
+
+    #         # If no compatible value found, switch to BV technique
+    #         if not found_compatible:
+    #             print(
+    #                 f"[warn] HYBRID key switching incompatible with {estimated_towers} towers and {original} digits. Switching to BV."
+    #             )
+    #             params["ksTech"] = "BV"
+
     parameters = CCParamsCKKSRNS()
     parameters.SetRingDim(p["ringDim"])
     parameters.SetMultiplicativeDepth(p["multiplicativeDepth"])
@@ -138,6 +199,31 @@ def gen_crypto_context_from_params(p: Dict[str, Any]) -> Tuple[Any, Any]:
     cc.EvalSumKeyGen(keys.secretKey)
 
     return cc, keys
+
+
+def get_cached_crypto_context(params):
+    """Get or create a crypto context for the given parameters.
+
+    Parameters
+    ----------
+    params : Dict[str, Any]
+        Parameter dictionary for crypto context
+
+    Returns
+    -------
+    Tuple[Any, Any]
+        Cached or newly created crypto context and keys
+    """
+    # Create a hashable key from the parameters dictionary
+    param_key = frozenset(params.items())
+
+    if param_key not in _crypto_context_cache:
+        # Cache miss - create a new context
+        with suppress_stdout():
+            cc, keys = gen_crypto_context_from_params(params)
+            _crypto_context_cache[param_key] = (cc, keys)
+
+    return _crypto_context_cache[param_key]
 
 
 def write_test_failure(
@@ -231,6 +317,55 @@ class MainUnittest(unittest.TestCase):
     """Base class for OpenFHE-NumPy tests with dynamic test generation."""
 
     @classmethod
+    def setUpClass(cls):
+        """Set up test parameters once before all tests.
+
+        This method ensures test cases are generated when the test class is used.
+        Each subclass must implement _generate_test_cases() method.
+        """
+        if not hasattr(cls, "_test_cases_generated"):
+            if not hasattr(cls, "_generate_test_cases"):
+                raise NotImplementedError(
+                    f"Test class {cls.__name__} must implement _generate_test_cases()"
+                )
+            cls._generate_test_cases()
+            cls._test_cases_generated = True
+
+    @classmethod
+    def run_test_summary(cls, test_name=""):
+        """Run tests with matrix output suppressed and print summary."""
+        from datetime import datetime
+
+        print(f"Running {test_name} tests...")
+        start_time = datetime.now()
+
+        # Execute tests with suppressed output
+        with suppress_stdout():
+            suite = unittest.defaultTestLoader.loadTestsFromTestCase(cls)
+            result = unittest.TextTestRunner(verbosity=0).run(suite)
+
+        duration = datetime.now() - start_time
+
+        # Print clean summary
+        print("\n" + "=" * 50)
+        print(f"{test_name} Test Summary:")
+        print(f"  Total tests:  {result.testsRun}")
+        print(f"  Passed:       {result.testsRun - len(result.failures) - len(result.errors)}")
+        print(f"  Failed:       {len(result.failures)}")
+        print(f"  Errors:       {len(result.errors)}")
+        print(f"  Duration:     {duration.total_seconds():.2f} seconds")
+        print("=" * 50)
+
+        if len(result.failures) > 0 or len(result.errors) > 0:
+            print("\nFailed tests:")
+            for test, _ in result.failures:
+                print(f"  - {test.id()}")
+            for test, _ in result.errors:
+                print(f"  - {test.id()} (ERROR)")
+
+        return 0 if result.wasSuccessful() else 1
+
+    @classmethod
     def generate_test_case(
         cls,
         func_name: Callable,
@@ -239,7 +374,7 @@ class MainUnittest(unittest.TestCase):
         params: Dict[str, Any],
         input_data: List[np.ndarray],
         expected: np.ndarray,
-        eps: float = onp.matlib.EPSILON,
+        eps: float = onp.EPSILON,
     ) -> Callable:
         """
         Generate a test case function.
@@ -268,20 +403,40 @@ class MainUnittest(unittest.TestCase):
         """
 
         def test(self):
-            result = func_name(params, input_data)
-            flag, error_size = onp.matlib.check_equality_matrix(result, expected, eps)
+            try:
+                with suppress_stdout():  # Suppress matrix output during test
+                    result = func_name(params, input_data)
+                    flag, error_size = onp.check_equality_matrix(result, expected, eps)
 
-            log_test_result(name, test_name, input_data, expected, result, error_size, passed=flag)
-
-            if not flag:
-                write_test_failure(
-                    test_name, input_data, expected, result, onp.matlib.FHEErrorCodes.ERROR_MATCHING
+                log_test_result(
+                    name, test_name, input_data, expected, result, error_size, passed=flag
                 )
-                raise AssertionError(f"Matrix equality failed with error {error_size}")
+
+                if not flag:
+                    write_test_failure(test_name, input_data, expected, result, onp.ERROR_MATCHING)
+                    raise AssertionError(f"Matrix equality failed with error {error_size}")
+            except Exception as e:
+                # Log exceptions to help with debugging
+                DEBUG_LOG_DIR.mkdir(exist_ok=True)
+                error_log_path = DEBUG_LOG_DIR / f"{test_name}_exception.log"
+
+                with open(error_log_path, "w") as f:
+                    f.write(f"Test Name: {test_name}\n\n")
+                    f.write("Input:\n")
+                    for i, x in enumerate(input_data):
+                        f.write(f"Input {i}:\n")
+                        f.write(np.array2string(np.array(x), separator=", ") + "\n\n")
+                    f.write("Expected Result:\n")
+                    f.write(np.array2string(np.array(expected), separator=", ") + "\n\n")
+                    f.write("Exception:\n")
+                    f.write(f"{type(e).__name__}: {str(e)}\n")
+
+                    # Include traceback information
+                    import traceback
+
+                    f.write("\nTraceback:\n")
+                    f.write(traceback.format_exc())
+                # Re-raise the exception
+                raise
 
         return test
-
-
-# Add standard test runner
-if __name__ == "__main__":
-    unittest.main()

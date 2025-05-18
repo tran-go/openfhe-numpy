@@ -1,48 +1,64 @@
-import unittest
+# At the top of each test file
 import numpy as np
-
 import openfhe_numpy as onp
 
-from main_unittest import MainUnittest
-from main_unittest import load_ckks_params
-from main_unittest import generate_random_array
-from main_unittest import gen_crypto_context_from_params
+# Single import line replaces all the try/except logic
+from tests.test_imports import *
 
 
 def fhe_vector_dot(params, input):
+    """Execute vector dot product with suppressed output."""
     total_slots = params["ringDim"] // 2
-    cc, keys = gen_crypto_context_from_params(params)
-    public_key = keys.publicKey
-    input0 = np.array(input[0])
-    input1 = np.array(input[1])
-    if input0.ndim == 1:
-        ct_input0 = onp.array(cc, input0, total_slots, 1, "C", public_key=keys.publicKey)
-        ct_input1 = onp.array(cc, input1, total_slots, 1, "C", public_key=keys.publicKey)
-    else:
-        ct_input0 = onp.array(cc, input0, total_slots, public_key=keys.publicKey)
-        ct_input1 = onp.array(cc, input1, total_slots, public_key=keys.publicKey)
 
-    return onp.dot(ct_input0, ct_input1).decrypt(keys.secretKey)
+    with suppress_stdout():
+        cc, keys = get_cached_crypto_context(params)
+        public_key = keys.publicKey
+        input_a = np.array(input[0])
+        input_b = np.array(input[1])
+        if input_a.ndim == 1:
+            ctm_input_a = onp.array(cc, input_a, total_slots, public_key=keys.publicKey)
+            ctm_input_b = onp.array(cc, input_b, total_slots, public_key=keys.publicKey)
+        else:
+            ctm_input_a = onp.array(cc, input_a, total_slots, public_key=keys.publicKey)
+            ctm_input_b = onp.array(cc, input_b, total_slots, public_key=keys.publicKey)
+
+        ctm_dot = onp.dot(ctm_input_a, ctm_input_b)
+        result = ctm_dot.decrypt(keys.secretKey, format_type="reshape", new_shape=(1,))
+
+    return result
+
+
+# Create test class to be discoverable for module running
+class TestVectorInnerProduct(MainUnittest):
+    """Test class for vector inner product operations."""
+
+    @classmethod
+    def _generate_test_cases(cls):
+        """Generate test cases for vector inner product."""
+        ckks_param_list = load_ckks_params()
+        vector_sizes = [2, 3, 8, 16]
+        dims = [1, 2]  # Fixed variable name
+        test_counter = 1
+
+        for param in ckks_param_list:
+            for size in vector_sizes:
+                input_a = generate_random_array(size, 1)
+                input_b = generate_random_array(size, 1)
+                expected = np.dot(input_a, input_b)
+                name = "TestVectorInnerProduct"
+                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_method = MainUnittest.generate_test_case(
+                    fhe_vector_dot, name, test_name, param, [input_a, input_b], [expected]
+                )
+                # Add to TestVectorInnerProduct class for module discovery
+                setattr(cls, test_name, test_method)
+                test_counter += 1
 
 
 if __name__ == "__main__":
-    ckks_param_list = load_ckks_params()
-    matrix_sizes = [2, 3, 8, 16]
-    dim = [1, 2]
-    test_counter = 1
-
-    for param in ckks_param_list:
-        for size in matrix_sizes:
-            for d in dims:
-                input0 = generate_random_array(size, d)
-                input1 = generate_random_array(size, d)
-                expected = np.dot(input0, input1)
-                name = "TestSquareMatrixProduct"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
-                test_method = MainUnittest.generate_test_case(
-                    fhe_vector_dot, name, test_name, param, [input0, input1], expected
-                )
-                setattr(MainUnittest, test_name, test_method)
-                test_counter += 1
-
-    unittest.main(argv=[""], exit=False)
+    # Generate test cases and run with summary
+    TestVectorInnerProduct.setUpClass()
+    TestVectorInnerProduct.run_test_summary("Vector Inner Product")
+else:
+    # For module-based execution, generate test cases immediately
+    TestVectorInnerProduct.setUpClass()
