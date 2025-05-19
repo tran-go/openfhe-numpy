@@ -6,6 +6,19 @@ from openfhe_numpy.config import FormatType
 from typing import Union
 
 
+# def format_vector(
+#     data: np.ndarray,
+#     format_type: Union[FormatType, str],
+#     tensor_ndim: int,
+#     original_shape: tuple,
+#     tensor_shape: tuple,
+# ):
+#     if tensor_ndim != 1:
+#         ONP_ERROR("The input is not a vector")
+
+#     if format_type == FormatType.ORGINI
+
+
 def format_array(
     data: np.ndarray,
     format_type: Union[FormatType, str],

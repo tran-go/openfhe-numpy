@@ -26,7 +26,6 @@ def fhe_matrix_sumcum_cols(original_params, input):
 
         if params["multiplicativeDepth"] < len(matrix[0]):
             params["multiplicativeDepth"] = len(matrix[0]) + 1
-        print("\n***********depth = ", params["multiplicativeDepth"])
 
         # Use gen_crypto_context for consistency with new framework
         cc, keys = gen_crypto_context(params)

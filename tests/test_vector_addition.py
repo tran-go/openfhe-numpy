@@ -25,7 +25,7 @@ def fhe_addition(params, input):
         tensor2 = onp.array(cc, vector2, total_slots, public_key=keys.publicKey)
 
         tensor_sum = onp.add(tensor1, tensor2)
-        result = tensor_sum.decrypt(keys.secretKey, format_type=True)
+        result = tensor_sum.decrypt(keys.secretKey, format_type="reshape")
 
     return result
 

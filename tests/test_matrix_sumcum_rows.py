@@ -26,7 +26,7 @@ def fhe_matrix_sumcum_rows(params, input):
         nrows = ct_matrixA.original_shape[0]
 
         # Generate accumulation keys
-        onp.gen_accumulate_rows_key(keys.secretKey, ct_matrixA.ncols, nrows)
+        onp.gen_accumulate_rows_key(keys.secretKey, ct_matrixA.ncols)
 
         # Perform row-wise cumulative sum
         ct_result = onp.cumsum(ct_matrixA, axis=0)

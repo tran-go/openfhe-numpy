@@ -6,6 +6,7 @@ from openfhe import (
     PKESchemeFeature,
     HEStd_NotSet,
     FIXEDAUTO,
+    FIXEDMANUAL,
     HYBRID,
     UNIFORM_TERNARY,
 )
@@ -26,21 +27,35 @@ def gen_crypto_context(mult_depth):
     tuple
         (CryptoContext, CCParamsCKKSRNS, KeyPair)
     """
-    ringdim = 2**14
+    ptModulus = 0
+    digitSize = 0
+    standardDeviation = 3.19
+    secretKeyDist = UNIFORM_TERNARY
+    maxRelinSkDeg = 2
+    ksTech = HYBRID
+    scalTech = FIXEDMANUAL
+    firstModSize = 60
+    batchSize = 512
+    numLargeDigits = 3
+    multiplicativeDepth = 9
+    scalingModSize = 59
+    securityLevel = HEStd_NotSet
+    ringDim = 1024
+
     p = CCParamsCKKSRNS()
     p.SetRingDim(ringdim)
-    p.SetMultiplicativeDepth(9)
-    p.SetScalingModSize(59)
-    p.SetBatchSize(ringdim // 2)
-    p.SetFirstModSize(60)
-    p.SetStandardDeviation(3.19)
-    p.SetSecretKeyDist(UNIFORM_TERNARY)
-    p.SetScalingTechnique(FIXEDAUTO)
-    p.SetKeySwitchTechnique(HYBRID)
-    p.SetSecurityLevel(HEStd_NotSet)
-    p.SetNumLargeDigits(3)
-    p.SetMaxRelinSkDeg(2)
-    p.SetDigitSize(0)
+    p.SetMultiplicativeDepth(multiplicativeDepth)
+    p.SetScalingModSize(scalingModSize)
+    p.SetBatchSize(batchSize)
+    p.SetFirstModSize(firstModSize)
+    p.SetStandardDeviation(standardDeviation)
+    p.SetSecretKeyDist(secretKeyDist)
+    p.SetScalingTechnique(scalTech)
+    p.SetKeySwitchTechnique(ksTech)
+    p.SetSecurityLevel(securityLevel)
+    p.SetNumLargeDigits(numLargeDigits)
+    p.SetMaxRelinSkDeg(maxRelinSkDeg)
+    p.SetDigitSize(digitSize)
     cc = GenCryptoContext(p)
 
     for feature in [
@@ -63,8 +78,7 @@ def demo():
     cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
-    matrix = np.array([[4.22637588, 0.1400861], [6.62002035, 9.45225182]])
-
+    matrix = np.array([[8.43884633, 9.13095135], [1.82624548, 1.7901978]])
     print("Matrix:\n", matrix)
     slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
 

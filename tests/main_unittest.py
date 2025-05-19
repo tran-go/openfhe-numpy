@@ -38,7 +38,7 @@ import openfhe_numpy as onp
 # Globals and Paths
 # ===============================
 TESTS_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-PARAMS_CSV = TESTS_DIR / "ckks_params.csv"
+PARAMS_CSV = TESTS_DIR / "ckks_params_mul.csv"
 LOG_DIR = TESTS_DIR / "logs"
 DEBUG_LOG_DIR = TESTS_DIR / "debug_logs"
 _crypto_context_cache = {}
@@ -175,7 +175,7 @@ def format_test_data(
     lines = [f"Test Name: {test_name}\n"]
     if params:
         lines.append("CKKS Parameters:")
-        lines += [f"  {k}: {v}" for k, v in params.items()]
+        lines += [f"  {k} = {v}" for k, v in params.items()]
         lines.append("")
     if status:
         lines.append(f"Status: {status}")
@@ -217,13 +217,14 @@ def log_test_result(name, test_name, input_data, expected, result, error_size, p
         f.write(f"--- {datetime.now().isoformat()} ---\n{content}\n\n")
 
 
-def log_exception(test_name, params, input_data, expected, error):
+def log_exception(test_name, params, input_data, expected, result, error):
     """Log detailed exception to debug file."""
     ensure_dirs()
     content = format_test_data(
         test_name=test_name,
         params=params,
         input_data=input_data,
+        result=result,
         expected=expected,
         error_info=error,
     )
@@ -292,7 +293,7 @@ class MainUnittest(unittest.TestCase):
                 if not flag:
                     raise AssertionError(f"Matrix mismatch with error {error_size}")
             except Exception as e:
-                log_exception(test_name, params, input_data, expected, e)
+                log_exception(test_name, params, input_data, expected, result, e)
                 raise
 
         return test
