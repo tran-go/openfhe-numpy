@@ -2,10 +2,18 @@
 #define HELPER_H
 
 #include "../config.h"
+#include <iostream>
+#include <vector>
 
 // Internal helper functions - NOT part of the public API
 // Do not use directly in client code
 
+/**
+ * @brief Check if a number is a power of two
+ */
+inline bool IsPowerOfTwo(uint32_t x) {
+    return x > 0 && (x & (x - 1)) == 0;
+}
 /*
 Displaying the 2D vector
 */
@@ -24,7 +32,7 @@ Displaying the 1D vector
 
 template <typename Element>
 inline void PrintVector(const std::vector<Element> vec) {
-    std::cout.precision(2);
+    std::cout << std::fixed << std::setprecision(2);
     for (uint32_t i = 0; i < vec.size(); i++) {
         std::cout << vec[i] << " ";
     }
@@ -146,7 +154,7 @@ inline std::vector<std::vector<double>> RandMatrix(const int nrows,
 };
 
 template <class Element>
-std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const long total_slots) {
+inline std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const long total_slots) {
     uint32_t n = mat.size();
     uint32_t m = mat[0].size();
 
@@ -166,26 +174,146 @@ std::vector<Element> EncodeMatrix(std::vector<std::vector<Element>> mat, const l
     return vec;
 }
 
-// template <class Element>
-// std::vector<Element> EncodeVector(std::vector<std::vector<Element>> mat, const long total_slots) {
-//     uint32_t n = mat.size();
-//     uint32_t m = mat[0].size();
+/**
+ * @brief Clone a vector to fill num_slots by repeating each element block_size times
+ * 
+ * @param v Input vector to be packed
+ * @param block_size Size of each block (must be power of two)
+ * @param num_slots Total number of slots to fill (must be power of two)
+ * @return std::vector<double> Packed vector
+ * 
+ * Example: For v=[1,2,3], block_size=4, num_slots=12
+ * Result: [1,1,1,1, 2,2,2,2, 3,3,3,3]
+ */
+template <class Element>
+inline std::vector<Element> PackVecRowWise(const std::vector<Element>& v,
+                                           std::size_t block_size,
+                                           std::size_t num_slots) {
+    // Check input parameters
+    size_t n = v.size();
 
-//     uint32_t size   = n * m;
-//     uint32_t blocks = total_slots / size;
+    // Check power of two constraints
+    if (!IsPowerOfTwo(block_size)) {
+        throw std::invalid_argument("BlockSize must be a power of two");
+    }
 
-//     std::vector<Element> vec(total_slots, 0);
-//     long k = 0;
-//     for (uint32_t t = 0; t < blocks; ++t) {
-//         for (uint32_t i = 0; i < n; ++i) {
-//             for (uint32_t j = 0; j < m; ++j) {
-//                 vec[k] = mat[i][j];
-//                 k += 1;
-//             }
-//         }
-//     }
-//     return vec;
-// }
+    if (!IsPowerOfTwo(num_slots)) {
+        throw std::invalid_argument("NumSlots must be a power of two");
+    }
 
+    // Check size constraints
+    if (num_slots < n) {
+        throw std::runtime_error("ERROR ::: [row_wise_vector] vector is longer than total slots");
+    }
+
+    if (num_slots == n) {
+        if (num_slots / block_size > 1) {
+            throw std::runtime_error("ERROR ::: [row_wise_vector] vector is too long, can't duplicate");
+        }
+        return v;
+    }
+
+    if (num_slots % block_size != 0)
+        throw std::runtime_error("ERROR ::: num_slots % block_size");
+
+    // Calculate blocks and available space
+    uint32_t total_blocks = num_slots / block_size;
+    uint32_t free_slots   = num_slots - n * block_size;
+
+    // Create and fill packed vector
+    std::vector<Element> packed(num_slots, 0.0);
+    size_t k = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < block_size; j++) {
+            packed[k] = v[i];
+            k++;
+        }
+    }
+
+    return packed;
+}
+
+
+/**
+ * @brief Clone a vector to fill num_slots by repeating elements column-wise
+ * 
+ * For example: For v=[1,2,3], block_size=4, num_slots=12
+ * Result: [1,2,3,0, 1,2,3,0, 1,2,3,0]
+ * 
+ * @param v Input vector to be packed
+ * @param block_size Size of each block (must be power of two)
+ * @param num_slots Total number of slots to fill (must be power of two)
+ * @return std::vector<T> Packed vector
+ */
+template <typename T>
+inline std::vector<T> PackVecColWise(const std::vector<T>& v, 
+                                   std::size_t block_size, 
+                                   std::size_t num_slots) {
+    // Check input parameters
+    std::size_t n = v.size();
+    
+    // Check power of two constraints
+    if (!IsPowerOfTwo(block_size)) {
+        throw std::invalid_argument("BlockSize must be a power of two");
+    }
+    
+    if (!IsPowerOfTwo(num_slots)) {
+        throw std::invalid_argument("NumSlots must be a power of two");
+    }
+    
+    // Check size constraints
+    if (block_size < n) {
+        throw std::runtime_error(
+            "ERROR ::: [col_wise_vector] vector of size (" + 
+            std::to_string(n) + 
+            ") is longer than size of a slot (" + 
+            std::to_string(block_size) + ")"
+        );
+    }
+    
+    if (num_slots < n) {
+        throw std::runtime_error("ERROR ::: [col_wise_vector] vector is longer than total slots");
+    }
+    
+    if (num_slots == n) {
+        return v;
+    }
+    
+    // Create and fill packed vector
+    std::vector<T> packed(num_slots, 0);
+    
+    // Calculate blocks
+    if (num_slots % block_size != 0)
+        throw std::runtime_error("ERROR ::: num_slots % block_size");
+        
+    std::size_t total_blocks = num_slots / block_size;
+    std::size_t free_slots = num_slots - n * total_blocks;
+    
+    // Pack the vector column-wise
+    std::size_t k = 0;  // index into vector to write
+    for (std::size_t i = 0; i < total_blocks; ++i) {
+        for (std::size_t j = 0; j < n; ++j) {
+            packed[k] = v[j];
+            ++k;
+        }
+        k += block_size - n;  // Skip remaining slots in the block
+    }
+    
+    return packed;
+}
+template <class Element>
+inline void print_range(const std::vector<Element>& v,
+                        std::size_t start,
+                        std::size_t end)  
+{
+    if (start > end || end > v.size()) {
+        std::cerr << "Invalid range\n";
+        return;
+    }
+    for (std::size_t i = start; i < end; ++i) {
+        std::cout << v[i] << (i + 1 < end ? ' ' : '\n');
+    }
+}
 
 #endif  // HELPER_H
