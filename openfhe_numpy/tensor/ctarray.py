@@ -28,7 +28,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     tensor_priority = 10
 
     def decrypt(
-        self, secret_key: openfhe.PrivateKey, format_type="raw", **format_options
+        self, secret_key: openfhe.PrivateKey, format_type: str = "raw", **format_options
     ) -> np.ndarray:
         """Decrypt ciphertext using given secret key with flexible formatting options.
 
@@ -66,30 +66,10 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         plaintext.SetLength(self.batch_size)
         result = plaintext.GetRealPackedValue()
 
-        if format_type == "raw":
-            return result
-
-        if "reshape" in format_type:
-            if "new_shape" in format_options:
-                new_shape = format_options["new_shape"]
-                if isinstance(new_shape, int):
-                    result = result.reshape(new_shape)
-                elif isinstance(new_shape, tuple) and len(new_shape) == 1:
-                    result = result[: new_shape[0]]
-                else:
-                    result = np.reshape(result, new_shape)
-            else:
-                result = utils.format(result, self.ndim, self.original_shape, self.shape)
-
-        if "round" in format_type:
-            precision = format_options.get("precision", 0)
-            result = np.round(result, precision)
-
-        if "clip_range" in format_options:
-            min_val, max_val = format_options["clip_range"]
-            result = np.clip(result, min_val, max_val)
-
-        return result
+        # Define valid format types
+        return utils.format_array(
+            result, format_type, self.ndim, self.original_shape, self.shape, **format_options
+        )
 
     def serialize(self) -> dict:
         """Serialize ciphertext and metadata to dictionary."""

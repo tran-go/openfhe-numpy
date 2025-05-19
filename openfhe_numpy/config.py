@@ -20,3 +20,16 @@ class MatrixOrder:
 class DataType:
     PLAINTEXT = "P"
     CIPHERTEXT = "C"
+
+
+# Numerical constants
+EPSILON = 1e-8
+EPSILON_HIGH = 1e-4
+
+
+# default format result
+class FormatType(Enum):
+    RAW = "raw"
+    RESHAPE = "reshape"
+    ROUND = "round"
+    AUTO = "auto"

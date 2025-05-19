@@ -1,154 +1,124 @@
 """
 OpenFHE-NumPy: A NumPy-inspired framework for homomorphic encryption operations.
 
-This module provides a familiar NumPy-like interface for performing homomorphic
-encryption operations using the OpenFHE library.
+This module provides a NumPy-style API for homomorphic encryption using OpenFHE.
+
+Example:
+    ```python
+    from openfhe_numpy import array, add
+    ct = array([1, 2, 3])
+    result = add(ct, ct)
+    ```
 """
 
-# openfhe_numpy / __init__.py
-
 import importlib
-import sys
+import warnings
+from importlib.metadata import version, PackageNotFoundError
+from typing import Any, List, Dict
 
 # Version information
-# try:
-#     from .version import __version__
-# except ImportError:
-#     __version__ = "unknown"
-
 try:
-    from .version import __version__
-except ImportError:
-    from ._version import __version__
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    __version__ = "0.0.0"  # Development version (package metadata not found)
+    warnings.warn(
+        f"Using fallback version {__version__}; metadata for package '{__name__}' not found.",
+        UserWarning,
+        stacklevel=2,
+    )
 
-
-# Core imports that are always needed
-from ._openfhe_numpy import (
-    LinTransType,
-    MatVecEncoding,
-    MulDepthAccumulation,
-    EvalLinTransKeyGen,
-    EvalSquareMatMultRotateKeyGen,
-    EvalSumCumRowsKeyGen,
-    EvalSumCumColsKeyGen,
-    EvalMultMatVec,
-    EvalMatMulSquare,
-    EvalTranspose,
-    EvalSumCumRows,
-    EvalSumCumCols,
-)
-
-# Import tensor classes
-from .tensor import (
-    BaseTensor,
-    FHETensor,
-    PTArray,
-    CTArray,
-    BlockFHETensor,
-    BlockCTArray,
-    array,
-)
-
-# Import operations API
-from .operations.matrix_api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce
-
-# Import crypto context utilities
-from .operations.crypto_context import (
-    sum_row_keys,
-    sum_col_keys,
-    gen_rotation_keys,
-    gen_lintrans_keys,
-    gen_transpose_keys,
-    gen_square_matmult_key,
-    gen_accumulate_rows_key,
-    gen_accumulate_cols_key,  # <-- add this line
-)
-
-# Import utility functions
-from .utils.utils import (
-    is_power_of_two,
-    next_power_of_two,
-    check_equality_matrix,
-    pack_vec_row_wise,
-)
-
-# Import log functions
-from .utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
-
-# Import matlib functions
-from .utils.matlib import next_power_of_two, EPSILON
-
-# Define complete public API
-__all__ = [
+# Mapping of public names to their defining submodule
+_export_map: Dict[str, str] = {
     # Tensor classes
-    "BaseTensor",
-    "FHETensor",
-    "PTArray",
-    "CTArray",
-    "BlockFHETensor",
-    "BlockCTArray",
-    # Constructors
-    "array",
-    # Operations
-    "add",
-    "multiply",
-    "dot",
-    "matmul",
-    "transpose",
-    "power",
-    "cumsum",
-    "cumreduce",
-    # Utilities
-    "is_power_of_two",
-    "next_power_of_two",
-    "check_equality_matrix",
-    "pack_vec_row_wise",
-    # Core OpenFHE types
-    "LinTransType",
-    "MatVecEncoding",
-    "MulDepthAccumulation",
-    "EvalLinTransKeyGen",
-    "EvalSquareMatMultRotateKeyGen",
-    "EvalSumCumRowsKeyGen",
-    "EvalSumCumColsKeyGen",
-    "EvalMultMatVec",
-    "EvalMatMulSquare",
-    "EvalTranspose",
-    "EvalSumCumRows",
-    "EvalSumCumCols",
-    # Key generation utilities
-    "sum_row_keys",
-    "sum_col_keys",
-    "gen_rotation_keys",
-    "gen_lintrans_keys",
-    "gen_transpose_keys",
-    "gen_square_matmult_key",
-    "gen_accumulate_rows_key",
-    "gen_accumulate_cols_key",
-    # log
-    "ONP_WARNING",
-    "ONP_DEBUG",
-    "ONP_ERROR",
-    "ONPNotImplementedError",
-    # constants
-    "EPSILON",
-    "next_power_of_two",
-]
+    "BaseTensor": "tensor",
+    "FHETensor": "tensor",
+    "PTArray": "tensor",
+    "CTArray": "tensor",
+    "BlockFHETensor": "tensor",
+    "BlockCTArray": "tensor",
+    "array": "tensor",
+    # Matrix operations
+    "add": "operations.matrix_api",
+    "multiply": "operations.matrix_api",
+    "dot": "operations.matrix_api",
+    "matmul": "operations.matrix_api",
+    "transpose": "operations.matrix_api",
+    "power": "operations.matrix_api",
+    "cumsum": "operations.matrix_api",
+    "cumreduce": "operations.matrix_api",
+    # Crypto context utilities
+    "sum_row_keys": "operations.crypto_context",
+    "sum_col_keys": "operations.crypto_context",
+    "gen_rotation_keys": "operations.crypto_context",
+    "gen_lintrans_keys": "operations.crypto_context",
+    "gen_transpose_keys": "operations.crypto_context",
+    "gen_square_matmult_key": "operations.crypto_context",
+    "gen_accumulate_rows_key": "operations.crypto_context",
+    "gen_accumulate_cols_key": "operations.crypto_context",
+    # OpenFHE core types
+    "LinTransType": "_openfhe_numpy",
+    "MatVecEncoding": "_openfhe_numpy",
+    "MulDepthAccumulation": "_openfhe_numpy",
+    "EvalLinTransKeyGen": "_openfhe_numpy",
+    "EvalSquareMatMultRotateKeyGen": "_openfhe_numpy",
+    "EvalSumCumRowsKeyGen": "_openfhe_numpy",
+    "EvalSumCumColsKeyGen": "_openfhe_numpy",
+    "EvalMultMatVec": "_openfhe_numpy",
+    "EvalMatMulSquare": "_openfhe_numpy",
+    "EvalTranspose": "_openfhe_numpy",
+    "EvalSumCumRows": "_openfhe_numpy",
+    "EvalSumCumCols": "_openfhe_numpy",
+    # Utility functions
+    "is_power_of_two": "utils.utils",
+    "next_power_of_two": "utils.utils",
+    "check_equality_matrix": "utils.utils",
+    "pack_vec_row_wise": "utils.utils",
+    # Constants and types
+    "MatrixOrder": "config",
+    "DataType": "config",
+    "EPSILON": "config",
+    "EPSILON_HIGH": "config",
+    "FormatType": "config",
+    # Logging
+    "ONP_WARNING": "utils.log",
+    "ONP_DEBUG": "utils.log",
+    "ONP_ERROR": "utils.log",
+    "ONPNotImplementedError": "utils.log",
+}
+
+# Public API names driven from _export_map
+__all__: List[str] = sorted(_export_map.keys())
+
+# Sanity check (only in debug mode) to catch mismatches
+if __debug__:
+    assert set(__all__) == set(_export_map), (
+        f"API mismatch between __all__ and _export_map: {set(__all__) ^ set(_export_map)}"
+    )
+
+# Module cache to avoid repeated imports
+# Thread-safe under CPython's import lock
+_module_cache: Dict[str, Any] = {}
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     """
-    Lazy-loads submodules on first attribute access.
+    Lazy-load public symbols from submodules on first access.
+    Raises a detailed AttributeError listing valid exports.
     """
-    if name in ("tensor", "operations", "utils", "logs"):
-        module = importlib.import_module(f"{__name__}.{name}")
-        globals()[name] = module
-        return module
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name not in _export_map:
+        raise AttributeError(
+            f"{__name__!r} has no attribute {name!r}. Valid exports are: {', '.join(__all__)}"
+        )
+    module_path = _export_map[name]
+    if module_path not in _module_cache:
+        _module_cache[module_path] = importlib.import_module(f"{__name__}.{module_path}")
+    value = getattr(_module_cache[module_path], name)
+    globals()[name] = value
+    return value
 
 
-def __dir__():
+def __dir__() -> List[str]:
     """
-    Ensures dir() and IDE completions include both submodules and re-exported names.
+    Include standard dunder names and public API names sorted alphabetically.
     """
-    return sorted(list(globals().keys()) + __all__)
+    return sorted(__all__ + [d for d in globals() if d.startswith("__")])

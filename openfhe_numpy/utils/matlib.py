@@ -1,9 +1,6 @@
 import math
 import numpy as np
-
-# Tolerances for numerical comparison
-EPSILON = 1e-8
-EPSILON_HIGH = 1e-4
+from openfhe_numpy.config import EPSILON, EPSILON_HIGH
 
 
 def next_power_of_two(x):
@@ -38,14 +35,6 @@ def is_power_of_two(x):
         True if x is a power of two, False otherwise.
     """
     return (x & (x - 1) == 0) and x != 0
-
-
-class ErrorCodes:
-    """Standard error identifiers for FHE matrix operations."""
-
-    ERROR_MATRIX_SHAPE = "Matrix shapes do not match"
-    ERROR_KEYGEN = "Key generation failed"
-    ERROR_MATCHING = "Values do not match"
 
 
 def check_single_equality(a, b, eps=EPSILON):
