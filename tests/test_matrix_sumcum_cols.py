@@ -1,105 +1,88 @@
-"""
-TestMatrixSumCumCols:
-Column-wise cumulative sum FHE tests for OpenFHE-NumPy.
-"""
-
-# Standard library imports
-import argparse
-import os
-import sys
-from typing import Any, Dict, List
-
-# Third-party imports
 import numpy as np
-
-# Local/OpenFHE imports
 import openfhe_numpy as onp
+
+# Import directly from main_unittest - aligned with new framework
 from tests.main_unittest import (
-    MainUnittest,
     generate_random_array,
     gen_crypto_context,
     load_ckks_params,
     suppress_stdout,
+    MainUnittest,
 )
 
-# Module-level logger is used internally by the framework
+"""
+Note: Column-wise cumulative sum requires sufficient multiplicative 
+depth and ring dimension to accommodate the computational complexity.
+Small ring dimensions (<4096) may result in high approximation errors.
+"""
 
 
-def fhe_matrix_sumcum_cols(
-    original_params: Dict[str, Any],
-    inputs: List[np.ndarray],
-) -> np.ndarray:
-    """Execute matrix column summation with minimal stdout noise."""
+def fhe_matrix_sumcum_cols(original_params, input):
+    """Execute matrix column summation with suppressed output."""
     params = original_params.copy()
-    matrix = inputs[0]
 
-    # Ensure sufficient multiplicative depth
-    if params["multiplicativeDepth"] < matrix.shape[1]:
-        params["multiplicativeDepth"] = matrix.shape[1] + 1
+    with suppress_stdout(False):
+        matrix = np.array(input[0])
 
-    # Suppress verbose context creation
-    with suppress_stdout(True):
+        if params["multiplicativeDepth"] < len(matrix[0]):
+            params["multiplicativeDepth"] = len(matrix[0]) + 1
+        print("\n***********depth = ", params["multiplicativeDepth"])
+
+        # Use gen_crypto_context for consistency with new framework
         cc, keys = gen_crypto_context(params)
 
-    total_slots = params["ringDim"] // 2
-    ctm_matrix = onp.array(cc, matrix, total_slots, public_key=keys.publicKey)
-    onp.gen_accumulate_cols_key(keys.secretKey, ctm_matrix.ncols)
+        total_slots = params["ringDim"] // 2
 
-    # Perform the column-wise cumulative sum
-    ctm_result = onp.cumsum(ctm_matrix, axis=1, inplace=True)
-    return ctm_result.decrypt(keys.secretKey, format_type="reshape")
+        public_key = keys.publicKey
+        ctm_matrix = onp.array(cc, matrix, total_slots, public_key=public_key)
+
+        onp.gen_accumulate_cols_key(keys.secretKey, ctm_matrix.ncols)
+        ctm_result = onp.cumsum(ctm_matrix, 1, True)
+        result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+
+    return result
 
 
 class TestMatrixSumCumCols(MainUnittest):
-    """Test suite for homomorphic column-wise cumulative sum."""
-
-    # Force test case generation at import time
-    _test_cases_generated = False
-
-    @classmethod
-    def setUpClass(cls):
-        """Ensure tests are generated before discovery."""
-        super().setUpClass()
-        if not cls._test_cases_generated:
-            cls._generate_test_cases()
-            cls._test_cases_generated = True
+    """Test class for matrix column summation operations."""
 
     @classmethod
     def _generate_test_cases(cls):
-        ckks_params = load_ckks_params()
+        """Generate test cases for matrix column summation."""
+        ckks_param_list = load_ckks_params()
         matrix_sizes = [2, 3, 8, 16]
         test_counter = 1
 
-        for params in ckks_params:
+        for param in ckks_param_list:
             for size in matrix_sizes:
-                # Generate random test matrix and expected result
+                # Generate random test matrix
                 A = generate_random_array(size)
+
+                # Calculate expected result directly
                 expected = np.cumsum(A, axis=1)
 
+                # Create test name with descriptive format
                 name = "TestMatrixSumCumCols"
-                test_name = f"test_sumcum_cols_{test_counter}_ring_{params['ringDim']}_size_{size}"
+                test_name = f"test_sumcum_cols_{test_counter}_ring_{param['ringDim']}_size_{size}"
 
-                # Create the test method dynamically
-                test_method = cls.generate_test_case(
-                    func=fhe_matrix_sumcum_cols,
-                    name=name,
-                    test_name=test_name,
-                    params=params,
-                    input_data=[A],
-                    expected=expected,
-                    debug=False,  # set True to see context creation logs
+                # Generate the test case with debug output
+                test_method = MainUnittest.generate_test_case(
+                    fhe_matrix_sumcum_cols,
+                    name,
+                    test_name,
+                    param,
+                    [A],
+                    expected,
+                    debug=True,
                 )
 
+                # Register the test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run TestMatrixSumCumCols only")
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
-    args = parser.parse_args()
+TestMatrixSumCumCols._generate_test_cases()
 
-    name = os.path.basename(__file__)
-    sys.exit(
-        TestMatrixSumCumCols.run_test_summary("Matrix Cumulative Sum Columns", debug=args.debug)
-    )
+
+if __name__ == "__main__":
+    TestMatrixSumCumCols.run_test_summary("Matrix Cumulative Sum Columns", debug=True)
