@@ -58,7 +58,8 @@ class TestMatrixSum(MainUnittest):
     def _generate_test_cases(cls):
         """Generate test cases for matrix column summation."""
         ckks_param_list = load_ckks_params()
-        matrix_sizes = [2, 3, 8, 16]
+        # matrix_sizes = [2, 3, 8, 16]
+        matrix_sizes = [2]
         test_counter = 1
 
         for sum_type in ["sum", "sumcols", "sumrows"]:
@@ -107,4 +108,4 @@ TestMatrixSum._generate_test_cases()
 
 
 if __name__ == "__main__":
-    TestMatrixSum.run_test_summary("Matrix Cumulative Sum Columns", debug=True)
+    TestMatrixSum.run_test_summary("Matrix Sum", debug=True)

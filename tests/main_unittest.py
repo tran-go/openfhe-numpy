@@ -38,7 +38,7 @@ import openfhe_numpy as onp
 # Globals and Paths
 # ===============================
 TESTS_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-PARAMS_CSV = TESTS_DIR / "ckks_params_mul.csv"
+PARAMS_CSV = TESTS_DIR / "ckks_params_auto.csv"
 LOG_DIR = TESTS_DIR / "logs"
 DEBUG_LOG_DIR = TESTS_DIR / "debug_logs"
 _crypto_context_cache = {}
