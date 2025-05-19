@@ -12,7 +12,7 @@ if parent_dir not in sys.path:
 from tests.main_unittest import MainUnittest, suppress_stdout
 from tests.main_unittest import load_ckks_params
 from tests.main_unittest import generate_random_array
-from tests.main_unittest import gen_crypto_context_from_params
+from tests.main_unittest import gen_crypto_context
 from tests.main_unittest import get_cached_crypto_context
 
 # Easy to add new imports as needed

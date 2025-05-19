@@ -1,9 +1,14 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Import directly from main_unittest - aligned with new framework
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 """
 Note: Column-wise cumulative sum requires sufficient multiplicative 
@@ -19,7 +24,7 @@ def fhe_matrix_sumcum_cols(original_params, input):
     if params["ringDim"] <= 4096:
         return np.cumsum(np.array(input[0]), axis=1)
 
-    with suppress_stdout():
+    with suppress_stdout(False):
         matrix = np.array(input[0])
 
         params["multiplicativeDepth"] = len(matrix[0]) + 1  # or however deep you need
@@ -29,7 +34,10 @@ def fhe_matrix_sumcum_cols(original_params, input):
                 # Either fix numLargeDigits or switch to BV
                 params["ksTech"] = "BV"  # Safest option
 
-        cc, keys = gen_crypto_context_from_params(params)
+        print("***********depth = ", params["multiplicativeDepth"])
+
+        # Use gen_crypto_context for consistency with new framework
+        cc, keys = gen_crypto_context(params)
 
         total_slots = params["ringDim"] // 2
 
@@ -43,7 +51,6 @@ def fhe_matrix_sumcum_cols(original_params, input):
     return result
 
 
-# Create test class to be discoverable for module running
 class TestMatrixSumCumCols(MainUnittest):
     """Test class for matrix column summation operations."""
 
@@ -51,28 +58,39 @@ class TestMatrixSumCumCols(MainUnittest):
     def _generate_test_cases(cls):
         """Generate test cases for matrix column summation."""
         ckks_param_list = load_ckks_params()
-        # matrix_sizes = [2, 3, 8, 16]
-        matrix_sizes = [2]
+        matrix_sizes = [2, 3, 8, 16]
         test_counter = 1
 
         for param in ckks_param_list:
             for size in matrix_sizes:
+                # Generate random test matrix
                 A = generate_random_array(size)
+
+                # Calculate expected result directly
                 expected = np.cumsum(A, axis=1)
+
+                # Create test name with descriptive format
                 name = "TestMatrixSumCumCols"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_sumcum_cols_{test_counter}_ring_{param['ringDim']}_size_{size}"
+
+                # Generate the test case with debug output
                 test_method = MainUnittest.generate_test_case(
-                    fhe_matrix_sumcum_cols, name, test_name, param, [A], expected
+                    fhe_matrix_sumcum_cols,
+                    name,
+                    test_name,
+                    param,
+                    [A],
+                    expected,
+                    debug=True,
                 )
-                # Add to TestMatrixSumCumCols class for module discovery
+
+                # Register the test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestMatrixSumCumCols._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestMatrixSumCumCols.setUpClass()
-    TestMatrixSumCumCols.run_test_summary("Matrix Sum of Columns")
-else:
-    # For module-based execution, generate test cases immediately
-    TestMatrixSumCumCols.setUpClass()
+    TestMatrixSumCumCols.run_test_summary("Matrix Cumulative Sum Columns", debug=True)

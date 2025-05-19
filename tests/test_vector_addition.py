@@ -1,26 +1,35 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_addition(params, input):
-    """Execute vector addition with suppressed output."""
+    """Execute vector addition with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
-        tensor1 = onp.array(cc, np.array(input[0]), total_slots, public_key=keys.publicKey)
-        tensor2 = onp.array(cc, np.array(input[1]), total_slots, public_key=keys.publicKey)
+    with suppress_stdout(False):  # Allow output for debugging
+        cc, keys = gen_crypto_context(params)
+
+        vector1 = np.array(input[0])
+        vector2 = np.array(input[1])
+
+        tensor1 = onp.array(cc, vector1, total_slots, public_key=keys.publicKey)
+        tensor2 = onp.array(cc, vector2, total_slots, public_key=keys.publicKey)
+
         tensor_sum = onp.add(tensor1, tensor2)
-        result = tensor_sum.decrypt(keys.secretKey, True)
+        result = tensor_sum.decrypt(keys.secretKey, format_type=True)
 
     return result
 
 
-# Create test class to be discoverable for module running
 class TestVectorAddition(MainUnittest):
     """Test class for vector addition operations."""
 
@@ -33,23 +42,29 @@ class TestVectorAddition(MainUnittest):
 
         for param in ckks_param_list:
             for size in vector_sizes:
+                # Generate random test vectors
                 A = generate_random_array(rows=size, cols=1)
                 B = generate_random_array(rows=size, cols=1)
+
+                # Calculate expected result
                 expected = np.array(A) + np.array(B)
+
+                # Create test with descriptive name
                 name = "TestVectorAddition"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_vector_add_{test_counter}_ring_{param['ringDim']}_size_{size}"
+
+                # Generate test case with debug output
                 test_method = MainUnittest.generate_test_case(
-                    fhe_addition, name, test_name, param, [A, B], expected
+                    fhe_addition, name, test_name, param, [A, B], expected, debug=True
                 )
-                # Add to TestVectorAddition class for module discovery
+
+                # Register test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestVectorAddition._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestVectorAddition.setUpClass()
-    TestVectorAddition.run_test_summary("Vector Addition")
-else:
-    # For module-based execution, generate test cases immediately
-    TestVectorAddition.setUpClass()
+    TestVectorAddition.run_test_summary("Vector Addition", debug=True)

@@ -1,29 +1,41 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_matrix_transpose(params, input):
-    """Execute matrix transpose with suppressed output."""
+    """Execute matrix transpose with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
-        cc.Get
+    with suppress_stdout(False):  # Allow output for debugging
+        cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
+
         matrixA = np.array(input[0])
+
+        # Encrypt matrix
         ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
+
+        # Generate transpose keys
         onp.gen_transpose_keys(keys.secretKey, ct_matrixA)
+
+        # Perform transpose operation
         ct_result = onp.transpose(ct_matrixA)
-        result = ct_result.decrypt(keys.secretKey, True)
+
+        # Decrypt result
+        result = ct_result.decrypt(keys.secretKey, format_type=True)
 
     return result
 
 
-# Create test class to be discoverable for module running
 class TestMatrixTranspose(MainUnittest):
     """Test class for matrix transpose operations."""
 
@@ -36,22 +48,28 @@ class TestMatrixTranspose(MainUnittest):
 
         for param in ckks_param_list:
             for size in matrix_sizes:
+                # Generate random test matrix
                 A = generate_random_array(size)
+
+                # Calculate expected result
                 expected = A.T
+
+                # Create test with descriptive name
                 name = "TestMatrixTranspose"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_transpose_{test_counter}_ring_{param['ringDim']}_size_{size}"
+
+                # Generate test case with debug output
                 test_method = MainUnittest.generate_test_case(
-                    fhe_matrix_transpose, name, test_name, param, [A], expected
+                    fhe_matrix_transpose, name, test_name, param, [A], expected, debug=True
                 )
-                # Add to TestMatrixTranspose class for module discovery
+
+                # Register test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestMatrixTranspose._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestMatrixTranspose.setUpClass()
-    TestMatrixTranspose.run_test_summary("Matrix Transpose")
-else:
-    # For module-based execution, generate test cases immediately
-    TestMatrixTranspose.setUpClass()
+    TestMatrixTranspose.run_test_summary("Matrix Transpose", debug=True)

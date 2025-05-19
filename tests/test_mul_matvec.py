@@ -1,37 +1,47 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_matrix_vector_product(params, input):
-    """Execute matrix-vector product with suppressed output."""
+    """Execute matrix-vector product with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
+    with suppress_stdout(False):  # Allow output for debugging
+        cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
+
         matrix = np.array(input[0])
         vector = np.array(input[1])
 
+        # Encrypt the matrix
         ctm_matrix = onp.array(cc, matrix, total_slots, public_key=keys.publicKey)
         ncols = ctm_matrix.ncols
+
+        # Generate column sum keys
         sumkey = onp.sum_col_keys(cc, keys.secretKey)
         ctm_matrix.extra["colkey"] = sumkey
 
+        # Encrypt the vector in column-major format
         ctv_vector = onp.array(cc, vector, total_slots, ncols, "C", public_key=keys.publicKey)
 
+        # Perform matrix-vector multiplication
         ctv_result = ctm_matrix @ ctv_vector
 
-        # todo: write return format
+        # Decrypt result
         result = ctv_result.decrypt(keys.secretKey, format_type="re")
 
     return result
 
 
-# Create test class to be discoverable for module running
 class TestMatrixVectorProduct(MainUnittest):
     """Test class for matrix-vector product operations."""
 
@@ -44,26 +54,32 @@ class TestMatrixVectorProduct(MainUnittest):
 
         for param in ckks_param_list:
             for size in matrix_sizes:
+                # Generate random test data
                 A = generate_random_array(size)
                 b = generate_random_array(size, 1)
-                # expected = np.matmul(np.array(A), np.array(b)).tolist()
-                size = onp.next_power_of_two(size)
-                expected = onp.pack_vec_row_wise((A @ b), size, total_slots)
 
+                # Calculate expected result
+                size = onp.next_power_of_two(size)
+                expected = onp.pack_vec_row_wise((A @ b), size, param["ringDim"] // 2)
+
+                # Create test with descriptive name
                 name = "TestMatrixVectorProduct"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
-                test_method = MainUnittest.generate_test_case(
-                    fhe_matrix_vector_product, name, test_name, param, [A, b], expected
+                test_name = (
+                    f"test_matvec_product_{test_counter}_ring_{param['ringDim']}_size_{size}"
                 )
-                # Add to TestMatrixVectorProduct class for module discovery
+
+                # Generate test case with debug output
+                test_method = MainUnittest.generate_test_case(
+                    fhe_matrix_vector_product, name, test_name, param, [A, b], expected, debug=True
+                )
+
+                # Register test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestMatrixVectorProduct._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestMatrixVectorProduct.setUpClass()
-    TestMatrixVectorProduct.run_test_summary("Matrix-Vector Product")
-else:
-    # For module-based execution, generate test cases immediately
-    TestMatrixVectorProduct.setUpClass()
+    TestMatrixVectorProduct.run_test_summary("Matrix-Vector Product", debug=True)

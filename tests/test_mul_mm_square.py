@@ -1,33 +1,42 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_square_matrix_product(params, input):
-    """Execute square matrix product with suppressed output."""
+    """Execute square matrix product with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
+    with suppress_stdout(False):  # Allow output for debugging
+        cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
+
         A = np.array(input[0])
         B = np.array(input[1])
+
         ctm_matA = onp.array(cc, A, total_slots, public_key=keys.publicKey)
         ctm_matB = onp.array(cc, B, total_slots, public_key=keys.publicKey)
-        ncols = ctm_matA.ncols
 
+        # Generate rotation keys for matrix multiplication
         onp.EvalSquareMatMultRotateKeyGen(keys.secretKey, ctm_matA.ncols)
+
+        # Perform matrix multiplication
         ctm_result = ctm_matA @ ctm_matB
 
+        # Decrypt and reshape result
         result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
 
     return result
 
 
-# Create test class to be discoverable for module running
 class TestSquareMatrixProduct(MainUnittest):
     """Test class for square matrix product operations."""
 
@@ -40,23 +49,37 @@ class TestSquareMatrixProduct(MainUnittest):
 
         for param in ckks_param_list:
             for size in matrix_sizes:
+                # Generate random test matrices
                 matrixA = generate_random_array(size)
                 matrixB = generate_random_array(size)
+
+                # Calculate expected result
                 expected = np.array(matrixA) @ np.array(matrixB)
+
+                # Create test with descriptive name
                 name = "TestSquareMatrixProduct"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
-                test_method = MainUnittest.generate_test_case(
-                    fhe_square_matrix_product, name, test_name, param, [matrixA, matrixB], expected
+                test_name = (
+                    f"test_matrix_product_{test_counter}_ring_{param['ringDim']}_size_{size}"
                 )
-                # Add to TestSquareMatrixProduct class for module discovery
+
+                # Generate test case with debug output
+                test_method = MainUnittest.generate_test_case(
+                    fhe_square_matrix_product,
+                    name,
+                    test_name,
+                    param,
+                    [matrixA, matrixB],
+                    expected,
+                    debug=True,
+                )
+
+                # Register test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestSquareMatrixProduct._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestSquareMatrixProduct.setUpClass()
-    TestSquareMatrixProduct.run_test_summary("Square Matrix Product")
-else:
-    # For module-based execution, generate test cases immediately
-    TestSquareMatrixProduct.setUpClass()
+    TestSquareMatrixProduct.run_test_summary("Square Matrix Product", debug=True)

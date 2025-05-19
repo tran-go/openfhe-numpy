@@ -1,29 +1,42 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_matrix_sumcum_rows(params, input):
-    """Execute matrix row summation with suppressed output."""
+    """Execute matrix row summation with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
+    with suppress_stdout(False):  # Allow output for debugging
+        cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
+
         matrixA = np.array(input[0])
+
+        # Encrypt matrix
         ct_matrixA = onp.array(cc, matrixA, total_slots, public_key=public_key)
         nrows = ct_matrixA.original_shape[0]
+
+        # Generate accumulation keys
         onp.gen_accumulate_rows_key(keys.secretKey, ct_matrixA.ncols, nrows)
-        ct_result = onp.cumsum(ct_matrixA, 0)
-        result = ct_result.decrypt(keys.secretKey)
+
+        # Perform row-wise cumulative sum
+        ct_result = onp.cumsum(ct_matrixA, axis=0)
+
+        # Decrypt result
+        result = ct_result.decrypt(keys.secretKey, format_type="reshape")
 
     return result
 
 
-# Create test class to be discoverable for module running
 class TestMatrixSumCumRows(MainUnittest):
     """Test class for matrix row summation operations."""
 
@@ -36,22 +49,28 @@ class TestMatrixSumCumRows(MainUnittest):
 
         for param in ckks_param_list:
             for size in matrix_sizes:
+                # Generate random test matrix
                 A = generate_random_array(size)
-                expected = np.sum(A, axis=0)
+
+                # Calculate expected result directly
+                expected = np.cumsum(A, axis=0)
+
+                # Create test with descriptive name
                 name = "TestMatrixSumCumRows"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_sumcum_rows_{test_counter}_ring_{param['ringDim']}_size_{size}"
+
+                # Generate test case with debug output
                 test_method = MainUnittest.generate_test_case(
-                    fhe_matrix_sumcum_rows, name, test_name, param, [A], expected
+                    fhe_matrix_sumcum_rows, name, test_name, param, [A], expected, debug=True
                 )
-                # Add to TestMatrixSumCumRows class for module discovery
+
+                # Register test method
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestMatrixSumCumRows._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestMatrixSumCumRows.setUpClass()
-    TestMatrixSumCumRows.run_test_summary("Matrix Sum of Rows")
-else:
-    # For module-based execution, generate test cases immediately
-    TestMatrixSumCumRows.setUpClass()
+    TestMatrixSumCumRows.run_test_summary("Matrix Cumulative Sum Rows", debug=True)

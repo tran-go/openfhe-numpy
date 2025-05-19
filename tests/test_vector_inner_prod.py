@@ -1,20 +1,28 @@
-# At the top of each test file
 import numpy as np
 import openfhe_numpy as onp
 
-# Single import line replaces all the try/except logic
-from tests.test_imports import *
+# Direct imports from main_unittest
+from tests.main_unittest import (
+    generate_random_array,
+    gen_crypto_context,
+    load_ckks_params,
+    suppress_stdout,
+    MainUnittest,
+)
 
 
 def fhe_vector_dot(params, input):
-    """Execute vector dot product with suppressed output."""
+    """Execute vector dot product with FHE."""
     total_slots = params["ringDim"] // 2
 
-    with suppress_stdout():
-        cc, keys = get_cached_crypto_context(params)
+    # Use debug parameter for controlled output
+    with suppress_stdout(False):  # Allow output
+        cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
+
         input_a = np.array(input[0])
         input_b = np.array(input[1])
+
         if input_a.ndim == 1:
             ctm_input_a = onp.array(cc, input_a, total_slots, public_key=keys.publicKey)
             ctm_input_b = onp.array(cc, input_b, total_slots, public_key=keys.publicKey)
@@ -28,7 +36,6 @@ def fhe_vector_dot(params, input):
     return result
 
 
-# Create test class to be discoverable for module running
 class TestVectorInnerProduct(MainUnittest):
     """Test class for vector inner product operations."""
 
@@ -37,28 +44,38 @@ class TestVectorInnerProduct(MainUnittest):
         """Generate test cases for vector inner product."""
         ckks_param_list = load_ckks_params()
         vector_sizes = [2, 3, 8, 16]
-        dims = [1, 2]  # Fixed variable name
         test_counter = 1
 
         for param in ckks_param_list:
             for size in vector_sizes:
+                # Generate random test vectors
                 input_a = generate_random_array(size, 1)
                 input_b = generate_random_array(size, 1)
+
+                # Calculate expected result
                 expected = np.dot(input_a, input_b)
+
+                # Generate test case with descriptive name
                 name = "TestVectorInnerProduct"
-                test_name = f"test_case_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_dot_{test_counter}_ring_{param['ringDim']}_size_{size}"
+
+                # Create test with debug enabled
                 test_method = MainUnittest.generate_test_case(
-                    fhe_vector_dot, name, test_name, param, [input_a, input_b], [expected]
+                    fhe_vector_dot,
+                    name,
+                    test_name,
+                    param,
+                    [input_a, input_b],
+                    [expected],
+                    debug=True,
                 )
-                # Add to TestVectorInnerProduct class for module discovery
+
                 setattr(cls, test_name, test_method)
                 test_counter += 1
 
 
+TestVectorInnerProduct._generate_test_cases()
+
+
 if __name__ == "__main__":
-    # Generate test cases and run with summary
-    TestVectorInnerProduct.setUpClass()
-    TestVectorInnerProduct.run_test_summary("Vector Inner Product")
-else:
-    # For module-based execution, generate test cases immediately
-    TestVectorInnerProduct.setUpClass()
+    TestVectorInnerProduct.run_test_summary("Vector Inner Product", debug=True)
