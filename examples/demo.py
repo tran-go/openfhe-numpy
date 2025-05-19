@@ -4,6 +4,7 @@ from openfhe import (
     CCParamsCKKSRNS,
     GenCryptoContext,
     PKESchemeFeature,
+    HEStd_NotSet,
     FIXEDAUTO,
     HYBRID,
     UNIFORM_TERNARY,
@@ -25,24 +26,33 @@ def gen_crypto_context(mult_depth):
     tuple
         (CryptoContext, CCParamsCKKSRNS, KeyPair)
     """
-    params = CCParamsCKKSRNS()
-    params.SetMultiplicativeDepth(mult_depth)
-    params.SetScalingModSize(59)
-    params.SetFirstModSize(60)
-    params.SetScalingTechnique(FIXEDAUTO)
-    params.SetKeySwitchTechnique(HYBRID)
-    params.SetSecretKeyDist(UNIFORM_TERNARY)
+    ringdim = 2**14
+    p = CCParamsCKKSRNS()
+    p.SetRingDim(ringdim)
+    p.SetMultiplicativeDepth(9)
+    p.SetScalingModSize(59)
+    p.SetBatchSize(ringdim // 2)
+    p.SetFirstModSize(60)
+    p.SetStandardDeviation(3.19)
+    p.SetSecretKeyDist(UNIFORM_TERNARY)
+    p.SetScalingTechnique(FIXEDAUTO)
+    p.SetKeySwitchTechnique(HYBRID)
+    p.SetSecurityLevel(HEStd_NotSet)
+    p.SetNumLargeDigits(3)
+    p.SetMaxRelinSkDeg(2)
+    p.SetDigitSize(0)
+    cc = GenCryptoContext(p)
 
-    cc = GenCryptoContext(params)
-    cc.Enable(PKESchemeFeature.PKE)
-    cc.Enable(PKESchemeFeature.LEVELEDSHE)
-    cc.Enable(PKESchemeFeature.ADVANCEDSHE)
+    for feature in [
+        PKESchemeFeature.PKE,
+        PKESchemeFeature.LEVELEDSHE,
+        PKESchemeFeature.ADVANCEDSHE,
+    ]:
+        cc.Enable(feature)
 
     keys = cc.KeyGen()
-    cc.EvalMultKeyGen(keys.secretKey)
-    cc.EvalSumKeyGen(keys.secretKey)
 
-    return cc, params, keys
+    return cc, p, keys
 
 
 def demo():
@@ -53,7 +63,7 @@ def demo():
     cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
-    matrix = np.array([[1.4080462, 4.79377952], [6.42504974, 9.33786052]])
+    matrix = np.array([[4.22637588, 0.1400861], [6.62002035, 9.45225182]])
 
     print("Matrix:\n", matrix)
     slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
@@ -76,7 +86,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey, True)
+    result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
@@ -105,9 +115,9 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey, True)
+    result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
-    result = np.round(result, decimals=1)
+
     print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
     print(f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
