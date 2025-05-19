@@ -77,33 +77,6 @@ class BaseTensor(ABC, Generic[T]):
     @abstractmethod
     def decrypt(self, *args, **kwargs): ...
 
-    # @abstractmethod
-    # def _add(self, other: "BaseTensor[T]") -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _sub(self, other: "BaseTensor[T]") -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _multiply(self, other: "BaseTensor[T]") -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _matmul(self, other: "BaseTensor[T]") -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _pow(self, exp: int) -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _sum(self, axis: int = 0) -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _reduce(self, axis: int = 0) -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _transpose(self) -> "BaseTensor[T]": ...
-
-    # @abstractmethod
-    # def _trace(self) -> "BaseTensor[T]": ...
-
 
 # -----------------------------------------------------------
 # FHETensor - Generic Tensor with Metadata

@@ -13,6 +13,7 @@ from openfhe_numpy.utils.log import ONP_ERROR
 from openfhe_numpy.utils.utils import MatrixOrder, next_power_of_two
 from openfhe_numpy import _openfhe_numpy
 
+
 ##############################################################################
 # BASIC ARITHMETIC OPERATIONS
 ##############################################################################
@@ -126,7 +127,7 @@ def multiply_ct_scalar(a, scalar):
 @register_tensor_function(
     "multiply", [("BlockCTArray", "BlockCTArray"), ("BlockCTArray", "BlockPTArray")]
 )
-def multiply_block_ct(a, scalar):
+def multiply_block_ct(a, b):
     """Multiply two block tensors element-wise."""
     raise NotImplementedError("BlockPTArray multiplication not implemented yet.")
 
@@ -288,17 +289,22 @@ def pow_block_ct(a, exp):
 # ------------------------------------------------------------------------------
 # Cumulative Sum Operations
 # ------------------------------------------------------------------------------
-def _sumcum_ct(tensor, axis=0, keepdims=True):
+def _cumsum_ct(tensor, axis=0, keepdims=True):
     """
     Compute the cumulative sum of tensor elements along a given axis.
 
     Parameters
     ----------
+    tensor : CTArray
+        Input encrypted tensor.
     axis : int, optional
         Axis along which the cumulative sum is computed. Default is 0.
+    keepdims : bool, optional
+        Whether to keep the dimensions of the original tensor. Default is True.
 
     Returns
     -------
+    CTArray
         A new tensor with cumulative sums along the specified axis.
     """
     if axis not in (0, 1):
@@ -313,13 +319,13 @@ def _sumcum_ct(tensor, axis=0, keepdims=True):
 
 
 @register_tensor_function("cumsum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
-def sumcum_ct(a, axis=0, keepdims=True):
+def cumsum_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a tensor along specified axis."""
-    return _sumcum_ct(a, axis, keepdims)
+    return _cumsum_ct(a, axis, keepdims)
 
 
 @register_tensor_function("cumsum", [("BlockCTArray", "int"), ("BlockCTArray", "int", "bool")])
-def sumcum_block_ct(a, axis=0, keepdims=True):
+def cumsum_block_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a block tensor along specified axis."""
     raise NotImplementedError("BlockPTArray cumulative not implemented yet.")
 
@@ -333,32 +339,86 @@ def _reduce_ct(a, axis=0, keepdims=False):
 
     Parameters
     ----------
+    a : CTArray
+        Input encrypted tensor.
     axis : int, optional
-        Axis along which the cumulative sum is computed. Default is 0.
+        Axis along which the cumulative reduction is computed. Default is 0.
+    keepdims : bool, optional
+        Whether to keep the dimensions of the original tensor. Default is False.
 
     Returns
     -------
-        A new tensor with cumulative sums along the specified axis.
+    CTArray
+        A new tensor with cumulative reduction along the specified axis.
     """
     if axis not in (0, 1):
         ONP_ERROR("Axis must be 0 or 1 for cumulative sum operation")
 
     if axis == 0:
-        ciphertext = _openfhe_numpy.EvalReduceCumRows(
-            tensor.data, tensor.ncols, tensor.original_shape[1]
-        )
+        ciphertext = _openfhe_numpy.EvalReduceCumRows(a.data, a.ncols, a.original_shape[1])
     else:
-        ciphertext = _openfhe_numpy.EvalReduceCumCols(tensor.data, tensor.ncols)
-    return tensor.clone(ciphertext)
+        ciphertext = _openfhe_numpy.EvalReduceCumCols(a.data, a.ncols)
+    return a.clone(ciphertext)
 
 
 @register_tensor_function("cumreduce", [("CTArray", "int", "bool")])
-def reducecum_ct(a, axis=0, keepdims=False):
+def cumreduce_ct(a, axis=0, keepdims=False):
     """Compute cumulative reduction of a tensor along specified axis."""
     return _reduce_ct(a, axis, keepdims)
 
 
 @register_tensor_function("cumreduce", [("BlockCTArray", "int")])
-def reducecum_block_ct(a, axis=0, keepdims=False):
+def cumreduce_block_ct(a, axis=0, keepdims=False):
     """Compute cumulative reduction of a block tensor along specified axis."""
     raise NotImplementedError("BlockPTArray power not implemented yet.")
+
+
+# ------------------------------------------------------------------------------
+# Sum Operations
+# ------------------------------------------------------------------------------
+
+
+@register_tensor_function("sum", [("CTArray", "int", "bool")])
+def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
+    crypto_context = tensor.data.GetCryptoContext()
+    nrows, ncols = tensor.shape
+    if axis is None:
+        ciphertext = crypto_context.EvalSum(tensor.data)
+        CTArray(ciphertext, 1, tensor.batch_size)
+    elif axis == 0:  # sum over rows
+        ciphertext = crypto_context.EvalSumRows(tensor.data, nrows, tensor.extra["rowkey"])
+        CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
+
+    elif axis == 1:  # sum over cols
+        ciphertext = crypto_context.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
+        CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size)
+    else:
+        ONP_ERROR(f"The dimension is invalid axis = {axis}")
+
+
+# ------------------------------------------------------------------------------
+# Mean Operations
+# ------------------------------------------------------------------------------
+
+
+@register_tensor_function("mean", [("CTArray", "int", "bool")])
+def mean_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
+    cc = tensor.data.GetCryptoContext()
+    nrows, ncols = tensor.shape
+    n = nrows * ncols
+    if axis is None:
+        ciphertext = cc.EvalMul(1.0 / n, cc.EvalSum(tensor.data))
+        return CTArray(ciphertext, 1, tensor.batch_size)
+    elif axis == 0:  # sum over rows
+        ciphertext = cc.EvalMul(
+            1.0 / nrows, cc.EvalSumRows(tensor.data, nrows, tensor.extra["rowkey"])
+        )
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
+
+    elif axis == 1:  # sum over cols
+        ciphertext = cc.EvalMul(
+            1.0 / ncols, cc.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
+        )
+        return CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size)
+    else:
+        ONP_ERROR(f"The dimension is invalid axis = {axis}")
