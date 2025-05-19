@@ -55,6 +55,7 @@ SECURITY_LEVEL_MAP = {
 # ===============================
 # Utility Functions
 # ===============================
+@contextlib.contextmanager
 def suppress_stdout(suppress=True):
     """Suppress stdout when suppress=True."""
     if not suppress:

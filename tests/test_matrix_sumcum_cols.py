@@ -21,20 +21,12 @@ def fhe_matrix_sumcum_cols(original_params, input):
     """Execute matrix column summation with suppressed output."""
     params = original_params.copy()
 
-    if params["ringDim"] <= 4096:
-        return np.cumsum(np.array(input[0]), axis=1)
-
     with suppress_stdout(False):
         matrix = np.array(input[0])
 
-        params["multiplicativeDepth"] = len(matrix[0]) + 1  # or however deep you need
-        if params["ksTech"] == "HYBRID":
-            estimated_towers = params["multiplicativeDepth"]
-            if estimated_towers % params["numLargeDigits"] != 0:
-                # Either fix numLargeDigits or switch to BV
-                params["ksTech"] = "BV"  # Safest option
-
-        print("***********depth = ", params["multiplicativeDepth"])
+        if params["multiplicativeDepth"] < len(matrix[0]):
+            params["multiplicativeDepth"] = len(matrix[0]) + 1
+        print("\n***********depth = ", params["multiplicativeDepth"])
 
         # Use gen_crypto_context for consistency with new framework
         cc, keys = gen_crypto_context(params)
