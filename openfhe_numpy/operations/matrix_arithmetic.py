@@ -12,7 +12,8 @@ from openfhe_numpy.tensor.ptarray import PTArray
 from openfhe_numpy.utils.log import ONP_ERROR
 from openfhe_numpy.utils.utils import MatrixOrder, next_power_of_two
 from openfhe_numpy import _openfhe_numpy
-
+from typing import Optional
+from numpy.typing import ArrayLike
 
 ##############################################################################
 # BASIC ARITHMETIC OPERATIONS

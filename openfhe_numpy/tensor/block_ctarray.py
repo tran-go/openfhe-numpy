@@ -1,19 +1,19 @@
-# import openfhe
-# import numpy as np
-# from openfhe_numpy.tensor.block_tensor import BlockFHETensor
+import openfhe
+import numpy as np
+from openfhe_numpy.tensor.block_tensor import BlockFHETensor
 
 
-# class BlockCTArray(BlockFHETensor[openfhe.Ciphertext]):
-#     tensor_priority = 40  # Higher priority than CTArray
+class BlockCTArray(BlockFHETensor[openfhe.Ciphertext]):
+    tensor_priority = 40  # Higher priority than CTArray
 
-#     def __str__(self):
-#         return f"BlockCTArray(shape={self.original_shape}, cell={len(self._blocks)} {len(self._blocks[0]) if self._blocks else 0}, block_shape={self.block_shape})"
+    def __str__(self):
+        return f"BlockCTArray(shape={self.original_shape}, cell={len(self._blocks)} {len(self._blocks[0]) if self._blocks else 0}, block_shape={self.block_shape})"
 
-#     def __repr__(self):
-#         return self.__str__()
+    def __repr__(self):
+        return self.__str__()
 
-#     def clone(self, blocks=None):
-#         pass
+    def clone(self, blocks=None):
+        pass
 
-#     def decrypt(self, secret_key):
-#         pass
+    def decrypt(self, secret_key):
+        pass
