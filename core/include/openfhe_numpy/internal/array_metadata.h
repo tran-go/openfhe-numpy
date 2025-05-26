@@ -101,7 +101,7 @@ public:
     /* Metadata interface overrides */
     std::shared_ptr<lbcrypto::Metadata> Clone() const override;
     bool operator==(const lbcrypto::Metadata& rhs) const override;
-    std::ostream& print(std::ostream& os) const override;
+    std::ostream& print(std::ostream& os) const;
 
     template <class Archive>
     void save(Archive& ar, std::uint32_t) const;
