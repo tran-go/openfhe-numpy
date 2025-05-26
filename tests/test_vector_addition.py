@@ -51,7 +51,7 @@ class TestVectorAddition(MainUnittest):
 
                 # Create test with descriptive name
                 name = "TestVectorAddition"
-                test_name = f"test_vector_add_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"id_{test_counter}_ring_{param['ringDim']}_size_{size}"
 
                 # Generate test case with debug output
                 test_method = MainUnittest.generate_test_case(

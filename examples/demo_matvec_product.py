@@ -85,7 +85,7 @@ def demo():
     print("\n********** Homomorphic Matrix Vector Product **********")
     ctv_result = ctm_matrix @ ctv_vector
 
-    result = ctv_result.decrypt(keys.secretKey, True)
+    result = ctv_result.decrypt(keys.secretKey, format_type="reshape")
     expected = utils.pack_vec_row_wise((A @ b), ncols, total_slots)
 
     print(f"\nExpected:\n{A @ b}")

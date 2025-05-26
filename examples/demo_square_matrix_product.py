@@ -129,7 +129,7 @@ def demo():
 
     # Decrypt result
     start_dec = time.time()
-    result = ct_result.decrypt(keys.secretKey, True)
+    result = ct_result.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
     print(f"Decryption time: {(end_dec - start_dec) * 1000:.2f} ms")
 

@@ -51,6 +51,24 @@ SECURITY_LEVEL_MAP = {
     "HEStd_NotSet": HEStd_NotSet,
 }
 
+# Mapping enums to strings safely
+SECRET_KEY_DIST_MAP = {
+    "UNIFORM_TERNARY": UNIFORM_TERNARY,
+    # Add other distributions here if needed
+}
+
+SCALING_TECHNIQUE_MAP = {
+    "FIXEDAUTO": FIXEDAUTO,
+    "FLEXIBLEAUTOEXT": FLEXIBLEAUTOEXT,
+    "FLEXIBLEAUTO": FLEXIBLEAUTO,
+    "FIXEDMANUAL": FIXEDMANUAL,
+}
+
+KEY_SWITCH_TECHNIQUE_MAP = {
+    "HYBRID": HYBRID,
+    "BV": BV,
+}
+
 
 # ===============================
 # Utility Functions
@@ -85,7 +103,7 @@ def generate_random_array(rows, cols=None, low=0, high=10, seed=None):
 def load_ckks_params() -> List[Dict[str, Any]]:
     """Load CKKS parameters from CSV file."""
     try:
-        with open(PARAMS_CSV, newline="") as csvfile:
+        with PARAMS_CSV.open(newline="") as csvfile:
             reader = csv.DictReader(csvfile)
             return [
                 {
@@ -123,9 +141,9 @@ def gen_crypto_context(params):
     p.SetBatchSize(params["batchSize"])
     p.SetFirstModSize(params["firstModSize"])
     p.SetStandardDeviation(params["standardDeviation"])
-    p.SetSecretKeyDist(eval(params["secretKeyDist"]))
-    p.SetScalingTechnique(eval(params["scalTech"]))
-    p.SetKeySwitchTechnique(eval(params["ksTech"]))
+    p.SetSecretKeyDist(SECRET_KEY_DIST_MAP[params["secretKeyDist"]])
+    p.SetScalingTechnique(SCALING_TECHNIQUE_MAP[params["scalTech"]])
+    p.SetKeySwitchTechnique(KEY_SWITCH_TECHNIQUE_MAP[params["ksTech"]])
     p.SetSecurityLevel(SECURITY_LEVEL_MAP[params["securityLevel"]])
     p.SetNumLargeDigits(params["numLargeDigits"])
     p.SetMaxRelinSkDeg(params["maxRelinSkDeg"])
@@ -213,6 +231,7 @@ def log_test_result(name, test_name, input_data, expected, result, error_size, p
         status=status,
         error_size=error_size,
     )
+    content += f"\nTest executed at: {datetime.now().isoformat()}"
     with open(LOG_DIR / f"{name}.log", "a") as f:
         f.write(f"--- {datetime.now().isoformat()} ---\n{content}\n\n")
 
@@ -283,6 +302,7 @@ class MainUnittest(unittest.TestCase):
         """Generate a test case function."""
 
         def test(self):
+            result = None
             try:
                 with suppress_stdout(not debug):
                     result = func(params, input_data)
