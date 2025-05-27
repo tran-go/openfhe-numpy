@@ -1,7 +1,7 @@
 //==================================================================================
 // BSD 2-Clause License
 //
-// Copyright (c) 2014-2022, NJIT, Duality Technologies Inc. and other contributors
+// Copyright (c) 2014-2025, NJIT, Duality Technologies Inc. and other contributors
 //
 // All rights reserved.
 //
@@ -38,9 +38,9 @@
 #include <memory>
 
 #define ARRAY_METADATA_API
-/* ------------------------------------------------------------------ */
-/*  ArrayMetadata declaration                                         */
-/* ------------------------------------------------------------------ */
+// ------------------------------------------------------------------
+//  ArrayMetadata declaration
+// ------------------------------------------------------------------
 namespace openfhe_numpy {
 class ArrayMetadata : public lbcrypto::Metadata {
 public:

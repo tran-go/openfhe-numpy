@@ -52,7 +52,7 @@ if(POLICY CMP0148)
 endif()
 
 # Dependencies
-find_package(OpenFHE 1.2.3 REQUIRED)
+find_package(OpenFHE 1.3.0 REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(OpenMP QUIET)
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
