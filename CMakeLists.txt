@@ -158,7 +158,7 @@ endif()
 
 message(STATUS "Python package will be installed to: ${PYTHON_INSTALL_PATH}")
 
-# Install the Python extension and files - MODIFIED to avoid nested directories
+# Install the Python extension and files 
 if(DEFINED SKBUILD)
     # For pip installations, keep the /openfhe_numpy subdirectory
     install(TARGETS _openfhe_numpy 

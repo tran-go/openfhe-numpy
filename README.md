@@ -10,18 +10,26 @@ The project is currently in development, with a planned release shortly.
 
 
 ## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-  - [Installing OpenFHE-Python](#installing-openfhe-python)
-  - [Installing OpenFHE-NumPy](#installing-openfhe_numpy)
-- [Example Usage](#example-usage)
-- [Available Operations](#available-operations)
-- [Documentation](#documentation)
-- [Examples](#examples)
-- [Performance](#performance)
-- [Contributing](#contributing)
-- [License](#license)
+- [OpenFHE-NumPy](#openfhe-numpy)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Project Structure](#project-structure)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Installing OpenFHE-Python](#installing-openfhe-python)
+    - [Installing OpenFHE-NumPy](#installing-openfhe-numpy)
+      - [From PyPI (coming soon)](#from-pypi-coming-soon)
+      - [From Source](#from-source)
+    - [Development Setup](#development-setup)
+    - [Running Tests](#running-tests)
+  - [Example Usage](#example-usage)
+  - [Available Operations](#available-operations)
+  - [Documentation](#documentation)
+  - [Examples](#examples)
+  - [Performance](#performance)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [License](#license-1)
 
 ## Features
 
@@ -32,12 +40,34 @@ The project is currently in development, with a planned release shortly.
 - **Type flexibility**: Support for both encrypted (CT) and plaintext (PT) data types
 - **Interoperability**: Seamless integration with Python machine learning workflows
 
+## Project Structure
+
+OpenFHE-NumPy is organized as a hybrid C++/Python project with the following structure:
+
+```
+openfhe-numpy/
+├── core/                # C++ implementation
+│   ├── include/         # Public headers
+│   │   └── openfhe_numpy/
+│   ├── src/             # C++ source code
+│   └── examples/        # C++ examples
+├── python/              # Python package
+│   └── openfhe_numpy/   # Python module code
+│       ├── operations/  # Matrix operations
+│       ├── tensor/      # Tensor implementations
+│       └── utils/       # Utility functions
+├── tests/               # Test suite
+├── examples/            # Python examples
+├── CMakeLists.txt       # Build configuration
+└── dev_mode.sh          # Development environment setup
+```
+
 ## Installation
 
 ### Prerequisites
 
 - **OpenFHE**: Version 1.2.3 or newer
-- **C++ compiler**: Supporting C++20 standard
+- **C++ compiler**: Supporting C++17 standard
 - **CMake**: Version 3.16 or newer
 - **Python**: Version 3.8 or newer
 - **NumPy**: Recent version
@@ -75,7 +105,11 @@ mkdir build && cd build
 
 # Configure with CMake
 # Set OpenFHE_DIR to your OpenFHE installation path if needed
-cmake ..  -DCMAKE_INSTALL_PREFIX=/path/to/openfhe/install
+cmake .. \
+  -DWITH_CUSTOM_OPENFHE=ON \
+  -DCUSTOM_OPENFHE_ROOT=/path/to/openfhe \
+  -DCUSTOM_OPENFHE_PYTHON=/path/to/openfhe_python \
+  -DCMAKE_BUILD_TYPE=Release
 
 # Build the package
 make 
@@ -84,6 +118,35 @@ make
 make install
 
 ```
+
+### Development Setup
+
+For development, use the provided dev_mode.sh script to set up a local development environment:
+
+```bash
+# Make the script executable
+chmod +x dev_mode.sh
+
+# Run the script (IMPORTANT: use source to preserve environment variables)
+source ./dev_mode.sh
+```
+This will:
+1. Build the C++ extension
+2. Create a development environment in dev_build
+3. Set up necessary environment variables (PYTHONPATH, LD_LIBRARY_PATH)
+
+After running this script, you can run tests and import the package in your Python code without formal installation.
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m tests
+
+# Run a specific test
+python -m tests.test_matrix_addition
+```
+
 
 ## Example Usage
 
@@ -150,16 +213,16 @@ print(decrypted_sum)
 
 OpenFHE-NumPy currently supports the following operations:
 
-| Operation | Description | Example |
-|-----------|-------------|---------|
-| `add` | Element-wise addition | `onp.add(a, b)` or `a + b` |
-| `subtract` | Element-wise subtraction | `onp.subtract(a, b)` or `a - b` |
-| `multiply` | Element-wise multiplication | `onp.multiply(a, b)` or `a * b` |
-| `matmul` | Matrix multiplication | `onp.matmul(a, b)` or `a @ b` |
-| `transpose` | Matrix transposition | `onp.transpose(a)` |
-| `cumsum` | Cumulative sum along axis | `onp.cumsum(a, axis)` |
-| `power` | Element-wise power | `onp.power(a, exp)` |
-| `dot` | Dot product | `onp.dot(a, b)` |
+| Operation   | Description                 | Example                         |
+| ----------- | --------------------------- | ------------------------------- |
+| `add`       | Element-wise addition       | `onp.add(a, b)` or `a + b`      |
+| `subtract`  | Element-wise subtraction    | `onp.subtract(a, b)` or `a - b` |
+| `multiply`  | Element-wise multiplication | `onp.multiply(a, b)` or `a * b` |
+| `matmul`    | Matrix multiplication       | `onp.matmul(a, b)` or `a @ b`   |
+| `transpose` | Matrix transposition        | `onp.transpose(a)`              |
+| `cumsum`    | Cumulative sum along axis   | `onp.cumsum(a, axis)`           |
+| `power`     | Element-wise power          | `onp.power(a, exp)`             |
+| `dot`       | Dot product                 | `onp.dot(a, b)`                 |
 
 ## Documentation
 
