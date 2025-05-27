@@ -8,7 +8,6 @@ A NumPy-compatible API for homomorphic encryption operations, built on top of Op
 
 The project is currently in development, with a planned release shortly.
 
-
 ## Table of Contents
 - [OpenFHE-NumPy](#openfhe-numpy)
   - [Table of Contents](#table-of-contents)
@@ -16,10 +15,14 @@ The project is currently in development, with a planned release shortly.
   - [Project Structure](#project-structure)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
-    - [Installing OpenFHE-Python](#installing-openfhe-python)
-    - [Installing OpenFHE-NumPy](#installing-openfhe-numpy)
-      - [From PyPI (coming soon)](#from-pypi-coming-soon)
-      - [From Source](#from-source)
+    - [Method 1: Building from Source](#method-1-building-from-source)
+      - [Step 1: Install OpenFHE (Required)](#step-1-install-openfhe-required)
+      - [Step 2: Install OpenFHE-Python from Source](#step-2-install-openfhe-python-from-source)
+      - [Step 3: Install OpenFHE-NumPy from Source](#step-3-install-openfhe-numpy-from-source)
+    - [Method 2: Installation with pip (for Ubuntu)](#method-2-installation-with-pip-for-ubuntu)
+      - [Step 1: Install OpenFHE (Required)](#step-1-install-openfhe-required-1)
+      - [Step 2: Install OpenFHE-Python](#step-2-install-openfhe-python)
+      - [Step 3: Install OpenFHE-NumPy via pip](#step-3-install-openfhe-numpy-via-pip)
     - [Development Setup](#development-setup)
     - [Running Tests](#running-tests)
   - [Example Usage](#example-usage)
@@ -29,7 +32,6 @@ The project is currently in development, with a planned release shortly.
   - [Performance](#performance)
   - [Contributing](#contributing)
   - [License](#license)
-  - [License](#license-1)
 
 ## Features
 
@@ -66,70 +68,123 @@ openfhe-numpy/
 
 ### Prerequisites
 
-- **OpenFHE**: Version 1.2.3 or newer
 - **C++ compiler**: Supporting C++17 standard
 - **CMake**: Version 3.16 or newer
 - **Python**: Version 3.8 or newer
 - **NumPy**: Recent version
 
-### Installing OpenFHE-Python
+### Method 1: Building from Source
 
-OpenFHE-NumPy requires the OpenFHE-Python bindings:
+#### Step 1: Install OpenFHE (Required)
+
+OpenFHE must be installed from source with shared libraries:
+
+```bash
+# Install system dependencies (Ubuntu)
+sudo apt update
+sudo apt install build-essential cmake
+
+# Clone OpenFHE
+git clone https://github.com/openfheorg/openfhe-development.git
+cd openfhe-development
+
+# Create build directory
+mkdir build && cd build
+
+# Configure with shared libraries enabled
+cmake .. -DBUILD_SHARED_LIBS=ON
+
+# Build and install
+make -j$(nproc)
+sudo make install
+
+# Set environment variable (add to ~/.bashrc for persistence)
+echo 'export OpenFHE_DIR=/usr/local/lib/cmake/OpenFHE' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### Step 2: Install OpenFHE-Python from Source
 
 ```bash
 # Clone OpenFHE-Python
 git clone https://github.com/openfheorg/openfhe-python.git
 cd openfhe-python
 
-# Install with pip
-pip install .
+# Install from source
+cmake -S . -B build \
+  -DCMAKE_INSTALL_PREFIX=/path/to/openfhe-python \
+  -DCMAKE_PREFIX_PATH=/path/to/openfhe
+
+# Build the package
+make
+
+# Install
+make install
 ```
 
-### Installing OpenFHE-NumPy
-
-#### From PyPI (coming soon)
-
-```bash
-pip install openfhe_numpy
-```
-
-#### From Source
+#### Step 3: Install OpenFHE-NumPy from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/openfheorg/openfhe_numpy.git
-cd openfhe_numpy
+git clone https://github.com/openfheorg/openfhe-numpy.git
+cd openfhe-numpy
 
 # Create build directory
 mkdir build && cd build
 
 # Configure with CMake
-# Set OpenFHE_DIR to your OpenFHE installation path if needed
 cmake .. \
   -DWITH_CUSTOM_OPENFHE=ON \
   -DCUSTOM_OPENFHE_ROOT=/path/to/openfhe \
-  -DCUSTOM_OPENFHE_PYTHON=/path/to/openfhe_python \
-  -DCMAKE_BUILD_TYPE=Release
+  -DCUSTOM_OPENFHE_PYTHON=/path/to/openfhe-python \
+  -DCMAKE_INSTALL_PREFIX=/path/to/openfhe_numpy
 
 # Build the package
 make 
 
 # Install
 make install
+```
 
+### Method 2: Installation with pip (for Ubuntu)
+
+#### Step 1: Install OpenFHE (Required)
+
+Follow the same OpenFHE installation instructions from Method 1, Step 1.
+
+#### Step 2: Install OpenFHE-Python
+
+```bash
+# Install OpenFHE-Python from PyPI
+pip install openfhe-python
+```
+
+#### Step 3: Install OpenFHE-NumPy via pip
+
+```bash
+# Install from PyPI (once available)
+pip install openfhe-numpy
+
+# Or install directly from GitHub
+pip install git+https://github.com/openfheorg/openfhe-numpy.git
 ```
 
 ### Development Setup
 
-For development, use the provided dev_mode.sh script to set up a local development environment:
+For development without installation, use the provided script:
 
 ```bash
+# Clone the repository
+git clone https://github.com/openfheorg/openfhe-numpy.git
+cd openfhe-numpy
+
 # Make the script executable
 chmod +x dev_mode.sh
 
 # Run the script (IMPORTANT: use source to preserve environment variables)
 source ./dev_mode.sh
 ```
+
 This will:
 1. Build the C++ extension
 2. Create a development environment in dev_build
@@ -146,7 +201,6 @@ python -m tests
 # Run a specific test
 python -m tests.test_matrix_addition
 ```
-
 
 ## Example Usage
 
@@ -186,8 +240,6 @@ A = np.array([[1, 2], [3, 4]])
 ring_dim = cc.GetRingDimension()
 total_slots = ring_dim // 2
 
-
-
 # Encrypt with OpenFHE-NumPy
 tensor_A = onp.array(cc, A, total_slots, public_key=keys.publicKey)
 
@@ -226,17 +278,17 @@ OpenFHE-NumPy currently supports the following operations:
 
 ## Documentation
 
-For detailed documentation on the API, please visit our [documentation site](https://openfheorg.github.io/openfhe_numpy).
+For detailed documentation on the API, please visit our [documentation site](https://openfheorg.github.io/openfhe-numpy).
 
 ## Examples
 
 We provide several examples showcasing the library's functionality:
 
-- [Matrix Addition](https://github.com/openfheorg/openfhe_numpy/blob/main/examples/demo_matrix_addition.py)
-- [Matrix Transpose](https://github.com/openfheorg/openfhe_numpy/blob/main/examples/demo_matrix_transpose.py)
-- [Matrix-Vector Multiplication](https://github.com/openfheorg/openfhe_numpy/blob/main/examples/demo_matvec_product.py)
-- [Square Matrix Multiplication](https://github.com/openfheorg/openfhe_numpy/blob/main/examples/demo_square_matrix_product.py)
-- [Cumulative Matrix Operations](https://github.com/openfheorg/openfhe_numpy/blob/main/examples/demo_matrix_accumulation.py)
+- [Matrix Addition](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_matrix_addition.py)
+- [Matrix Transpose](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_matrix_transpose.py)
+- [Matrix-Vector Multiplication](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_matvec_product.py)
+- [Square Matrix Multiplication](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_square_matrix_product.py)
+- [Cumulative Matrix Operations](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_matrix_accumulation.py)
 
 ## Performance
 
@@ -252,8 +304,6 @@ Contributions to OpenFHE-NumPy are welcome! Please see our contributing guidelin
 ## License
 
 OpenFHE-NumPy is licensed under the BSD 3-Clause License. See the LICENSE file for details.
-
-## License
 
 ---
 
