@@ -69,7 +69,8 @@ message(STATUS "OpenFHE library path: ${OpenFHE_LIBDIR}")
 set(OpenFHE_Numpy_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/core/src)
 set(OpenFHE_Numpy_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/core/include)
 set(OpenFHE_Numpy_BINDINGS ${OpenFHE_Numpy_SOURCES}/bindings.cpp)
-set(OpenFHE_Numpy_PYTHON ${CMAKE_CURRENT_SOURCE_DIR}/openfhe_numpy)
+# Updated path to reflect new directory structure
+set(OpenFHE_Numpy_PYTHON ${CMAKE_CURRENT_SOURCE_DIR}/python/openfhe_numpy)
 set(OpenFHE_Numpy_BUILD_PYTHON ${CMAKE_BINARY_DIR}/openfhe_numpy)
 
 file(MAKE_DIRECTORY ${OpenFHE_Numpy_BUILD_PYTHON})
