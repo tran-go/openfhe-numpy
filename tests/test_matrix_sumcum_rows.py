@@ -16,6 +16,11 @@ def fhe_matrix_sumcum_rows(params, input):
     total_slots = params["ringDim"] // 2
 
     with suppress_stdout(False):  # Allow output for debugging
+        matrix = np.array(input[0])
+
+        if params["multiplicativeDepth"] < len(matrix):
+            params["multiplicativeDepth"] = len(matrix) + 1
+
         cc, keys = gen_crypto_context(params)
         public_key = keys.publicKey
 
@@ -57,7 +62,7 @@ class TestMatrixSumCumRows(MainUnittest):
 
                 # Create test with descriptive name
                 name = "TestMatrixSumCumRows"
-                test_name = f"test_sumcum_rows_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_id_{test_counter:03d}_ring_{param['ringDim']}_size_{size}"
 
                 # Generate test case with debug output
                 test_method = MainUnittest.generate_test_case(

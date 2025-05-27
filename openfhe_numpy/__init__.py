@@ -18,14 +18,25 @@ from typing import Any, List, Dict
 
 # Version information
 try:
-    __version__ = version(__name__)
-except PackageNotFoundError:
-    __version__ = "0.0.0"  # Development version (package metadata not found)
-    warnings.warn(
-        f"Using fallback version {__version__}; metadata for package '{__name__}' not found.",
-        UserWarning,
-        stacklevel=2,
-    )
+    # First try to import from _version.py (development mode)
+    from ._version import __version__
+except ImportError:
+    try:
+        # Next try version.py (CMake-generated version)
+        from .version import __version__
+    except ImportError:
+        try:
+            # Last, try package metadata (pip installed)
+            from importlib.metadata import version, PackageNotFoundError
+
+            __version__ = version(__name__)
+        except (ImportError, PackageNotFoundError):
+            __version__ = "0.0.1"  # Fallback version
+            warnings.warn(
+                f"Using fallback version {__version__}; metadata for package '{__name__}' not found.",
+                UserWarning,
+                stacklevel=2,
+            )
 
 # Mapping of public names to their defining submodule
 _export_map: Dict[str, str] = {

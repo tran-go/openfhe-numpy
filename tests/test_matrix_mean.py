@@ -83,9 +83,7 @@ class TestMatrixmean(MainUnittest):
                     # Calculate expected result directly
 
                     # Create test name with descriptive format
-                    test_name = (
-                        f"test_{mean_type}_{test_counter}_ring_{param['ringDim']}_size_{size}"
-                    )
+                    test_name = f"test_id_{mean_type}_{test_counter:03d}_ring_{param['ringDim']}_size_{size}"
 
                     # Generate the test case with debug output
                     test_method = MainUnittest.generate_test_case(

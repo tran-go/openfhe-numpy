@@ -53,7 +53,7 @@ class TestMatrixAddition(MainUnittest):
 
                 # Create test name with descriptive format
                 name = "TestMatrixAddition"
-                test_name = f"test_addition_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_id_{test_counter:03d}_ring_{param['ringDim']}_size_{size}"
 
                 # Generate the test case with debug output
                 test_method = MainUnittest.generate_test_case(

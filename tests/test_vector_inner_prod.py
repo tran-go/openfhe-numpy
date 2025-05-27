@@ -57,7 +57,7 @@ class TestVectorInnerProduct(MainUnittest):
 
                 # Generate test case with descriptive name
                 name = "TestVectorInnerProduct"
-                test_name = f"test_dot_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_id_{test_counter:03d}_ring_{param['ringDim']}_size_{size}"
 
                 # Create test with debug enabled
                 test_method = MainUnittest.generate_test_case(

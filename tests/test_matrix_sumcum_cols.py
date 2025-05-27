@@ -25,7 +25,7 @@ def fhe_matrix_sumcum_cols(original_params, input):
         matrix = np.array(input[0])
 
         if params["multiplicativeDepth"] < len(matrix[0]):
-            params["multiplicativeDepth"] = len(matrix[0]) + 2
+            params["multiplicativeDepth"] = len(matrix[0]) + 1
 
         # Use gen_crypto_context for consistency with new framework
         cc, keys = gen_crypto_context(params)
@@ -62,7 +62,7 @@ class TestMatrixSumCumCols(MainUnittest):
 
                 # Create test name with descriptive format
                 name = "TestMatrixSumCumCols"
-                test_name = f"test_sumcum_cols_{test_counter}_ring_{param['ringDim']}_size_{size}"
+                test_name = f"test_id_{test_counter:03d}_ring_{param['ringDim']}_size_{size}"
 
                 # Generate the test case with debug output
                 test_method = MainUnittest.generate_test_case(
