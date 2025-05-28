@@ -104,7 +104,6 @@ def demo():
     # Encrypt matrix
     start_enc_matrix = time.time()
     ctm_matA = onp.array(cc, A, total_slots, public_key=keys.publicKey)
-    ctm_matB = onp.array(cc, B, total_slots, public_key=keys.publicKey)
 
     enc_time = time.time()
     print(f"Matrix [2] encryption time: {(enc_time - start_enc_matrix) * 1000:.2f} ms")
