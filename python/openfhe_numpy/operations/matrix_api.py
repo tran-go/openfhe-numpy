@@ -344,7 +344,8 @@ def sum(a: ArrayLike, axis: Optional[int] = 0, keepdims: bool = False) -> ArrayL
     Examples
     --------
     >>> import numpy as np
-    >>> a = np.array([[1, 2], [3, 4]])
+    >>> a = np.array([[1, 2],
+                      [3, 4]])
     >>> sum(a)
     10
     >>> sum(a, axis=0)

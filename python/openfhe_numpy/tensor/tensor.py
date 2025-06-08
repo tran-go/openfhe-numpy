@@ -94,7 +94,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
     batch_size : int
         Total number of packed slots.
     ncols : int
-        Number of logical columns after padding.
+        Number of columns after zeros padding.
     order : int
         Packing order, e.g., row- or column-major.
     """
@@ -128,6 +128,10 @@ class FHETensor(BaseTensor[T], Generic[T]):
     ###
 
     @property
+    def size(self):
+        return self._ncols
+
+    @property
     def dtype(self):
         return self._dtype
 
@@ -139,6 +143,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
     @property
     def shape(self) -> Tuple[int, int]:
         """Logical 2-D shape after packing."""
+        # it is weird, I think shape = padded_rows * padded_columns
         rows = self._batch_size // self._ncols
         return (rows, self._ncols)
 

@@ -82,6 +82,7 @@ examples/build/
 
 # Generated files from your build
 openfhe_numpy/version.py
+openfhe-numpy/core/include/openfhe_numpy/config.h
 
 
 # CMake specific
@@ -92,3 +93,5 @@ CTestTestfile.cmake
 Makefile
 Testing/
 install_manifest.txt
+# Development build directory
+dev_build/

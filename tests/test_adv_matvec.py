@@ -60,7 +60,7 @@ class TestMatrixVectorProduct(MainUnittest):
 
                 # Calculate expected result
                 size = onp.next_power_of_two(size)
-                expected = onp.pack_vec_row_wise((A @ b), size, param["ringDim"] // 2)
+                expected = onp.pack_vector_row_wise((A @ b), size, param["ringDim"] // 2)
 
                 # Create test with descriptive name
                 name = "TestMatrixVectorProduct"

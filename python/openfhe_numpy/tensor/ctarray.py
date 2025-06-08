@@ -7,6 +7,7 @@ from openfhe_numpy.utils.log import ONP_ERROR
 from openfhe_numpy.utils import utils
 
 
+
 class CTArray(FHETensor[openfhe.Ciphertext]):
     """
     Encrypted tensor class for OpenFHE ciphertexts.
@@ -107,6 +108,11 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
 
     def __repr__(self) -> str:
         return f"CTArray(meta={self.meta})"
+    
+    def _sum(self) -> "CTArray":
+        if self._order == utils.MatrixOrder.ROW_MAJOR:
+            
+
 
     # def _add(self, other) -> "CTArray":
     #     """Element-wise addition with packing compatibility."""

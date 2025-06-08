@@ -1,14 +1,15 @@
 import time
+
 import numpy as np
+import openfhe_numpy as onp
 from openfhe import (
-    CCParamsCKKSRNS,
-    GenCryptoContext,
-    PKESchemeFeature,
     FIXEDAUTO,
     HYBRID,
     UNIFORM_TERNARY,
+    CCParamsCKKSRNS,
+    GenCryptoContext,
+    PKESchemeFeature,
 )
-import openfhe_numpy as onp
 
 
 def gen_crypto_context(mult_depth):
@@ -67,12 +68,17 @@ def demo():
     )
 
     print("Matrix:\n", matrix)
-    slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
+    if params.GetBatchSize():
+        batch_size = params.GetBatchSize()
+    else:
+        batch_size = cc.GetRingDimension() // 2
 
     # Encrypt matrix A
-    tensor = onp.array(cc, matrix, slots, public_key=keys.publicKey)
+    tensor = onp.array(cc, matrix, batch_size, public_key=keys.publicKey)
 
-    print(f"slots = {slots}, dim = {cc.GetRingDimension()}, ncols = {tensor.ncols}")
+    print(
+        f"batch_size = {batch_size}, dim = {cc.GetRingDimension()}, ncols = {tensor.ncols}"
+    )
 
     print("\n********** HOMOMORPHIC SUM BY ALL ENTRIES **********")
     #  Generate rotation keys for column operations
@@ -82,24 +88,30 @@ def demo():
 
     # Perform homomorphic column accumulation
     start_acc = time.time()
-    tensor_result = onp.sum(tensor)
+    result_tensor = onp.sum(tensor)
     end_acc = time.time()
 
     # Perform decryption
     start_dec = time.time()
-    result = tensor_result.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
-    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
+
+    expected = np.sum(matrix)
+    is_match, error = onp.check_equality_matrix(result, expected)
+
+    # Timing
+    print(
+        f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
+    )
+    print(
+        f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
+    )
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
-    # Compare with plain result
-    expected = np.sum(matrix)
+    # Print out result
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
-
-    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
     print("\n********** HOMOMORPHIC SUM BY ROWS **********")
@@ -110,16 +122,20 @@ def demo():
 
     # Perform homomorphic column accumulation
     start_acc = time.time()
-    tensor_result = onp.sum(tensor, axis=0)
+    result_tensor = onp.sum(tensor, axis=0)
     end_acc = time.time()
 
     # Perform decryption
     start_dec = time.time()
-    result = tensor_result.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
-    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
+    print(
+        f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
+    )
+    print(
+        f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
+    )
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
@@ -139,16 +155,20 @@ def demo():
 
     # Perform homomorphic column accumulation
     start_acc = time.time()
-    tensor_result = onp.sum(tensor, axis=1)
+    result_tensor = onp.sum(tensor, axis=1)
     end_acc = time.time()
 
     # Perform decryption
     start_dec = time.time()
-    result = tensor_result.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
-    print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
+    print(
+        f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
+    )
+    print(
+        f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
+    )
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result

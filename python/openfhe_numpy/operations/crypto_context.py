@@ -29,7 +29,7 @@ def accumulation_depth(nrows, ncols, accumulate_by_rows):
     return _openfhe_numpy.MulDepthAccumulation(nrows, ncols, accumulate_by_rows)
 
 
-def sum_row_keys(context, secret_key, ncols=0):
+def sum_row_keys(secret_key, ncols=0):
     """
     Generate keys for summing rows in a matrix.
 
@@ -47,10 +47,11 @@ def sum_row_keys(context, secret_key, ncols=0):
     object
         Generated sum keys
     """
+    context = secret_key.GetCryptoContext()
     return context.EvalSumRowsKeyGen(secret_key, None, ncols)
 
 
-def sum_col_keys(context, secret_key, ncols=0):
+def sum_col_keys(secret_key, ncols=0):
     """
     Generate keys for summing columns in a matrix.
 
@@ -63,15 +64,7 @@ def sum_col_keys(context, secret_key, ncols=0):
     ncols : int, optional
         Number of columns in the matrix, by default 0
     """
-    # import numpy as np
-
-    # base = np.arange(ncols) * ncols
-    # indices = np.empty(2 * ncols, dtype=base.dtype)
-    # indices[0::2] = base
-    # indices[1::2] = -base
-
-    # indices = [x for i in range(ncols) for x in (i * ncols, -i * ncols)]
-    # context.EvalRotateKeyGen(secret_key, indices)
+    context = secret_key.GetCryptoContext()
     return context.EvalSumColsKeyGen(secret_key)
 
 
@@ -103,7 +96,7 @@ def gen_accumulate_cols_key(secret_key, ncols):
     _openfhe_numpy.EvalSumCumColsKeyGen(secret_key, ncols)
 
 
-def gen_rotation_keys(context, secret_key, rotation_indices):
+def gen_rotation_keys(secret_key, rotation_indices):
     """
     Generate rotation keys for the specified indices.
 
@@ -116,6 +109,7 @@ def gen_rotation_keys(context, secret_key, rotation_indices):
     rotation_indices : list
         List of rotation indices to generate keys for
     """
+    context = secret_key.GetCryptoContext()
     context.EvalRotateKeyGen(secret_key, rotation_indices)
 
 

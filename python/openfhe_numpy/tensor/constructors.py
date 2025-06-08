@@ -1,21 +1,28 @@
-import numpy as np
-import openfhe
 import copy
 
-from .tensor import BaseTensor, FHETensor
-from .ptarray import PTArray
-from .ctarray import CTArray
-from .block_tensor import BlockFHETensor
-from .block_ctarray import BlockCTArray
+import numpy as np
+import openfhe
+
+from openfhe_numpy.config import DataType, MatrixOrder
 from openfhe_numpy.utils import utils
-from openfhe_numpy.config import MatrixOrder, DataType
-from openfhe_numpy.utils.log import ONP_DEBUG, ONP_ERROR, ONP_WARNING, ONPNotImplementedError
+from openfhe_numpy.utils.log import (
+    ONP_DEBUG,
+    ONP_ERROR,
+    ONP_WARNING,
+    ONPNotImplementedError,
+)
+
+from .block_ctarray import BlockCTArray
+from .block_tensor import BlockFHETensor
+from .ctarray import CTArray
+from .ptarray import PTArray
+from .tensor import BaseTensor, FHETensor
 
 
 # TODO: constructor for block matrix
 def _get_block_dimensions(data, slots) -> tuple[int, int]:
     pass
-    # org_rows, org_cols, ndim = utils.get_shape(data)
+    # org_rows, org_cols, ndim = utils._get_shape(data)
     # nrows = next_power_of_two(org_rows)
     # ncols = next_power_of_two(org_cols)
 
@@ -33,33 +40,34 @@ def _get_block_dimensions(data, slots) -> tuple[int, int]:
     #     cell_cols = ncols
 
 
-def pack(
+def _pack(
     data: list | tuple | np.ndarray | int,
-    slots: int,
+    batch_size: int,
     ncols: int = 0,
     order: int = MatrixOrder.ROW_MAJOR,
 ):
-    org_rows, org_cols, ndim = utils.get_shape(data)
-    if slots < 0:
-        ONP_ERROR("The number of slots is negative")
+    if batch_size < 0:
+        ONP_ERROR("The batch size is negative")
+
+    org_rows, org_cols, ndim = utils._get_shape(data)
 
     if isinstance(data, int):
-        packed_data = [data] * slots
+        packed_data = [data] * batch_size
     else:
         if ndim == 2:
             if ncols == 0:
                 ncols = utils.next_power_of_two(org_cols)
-            packed_data = ravel_matrix(data, slots, ncols, order)
+            packed_data = _ravel_matrix(data, batch_size, ncols, order)
         else:
             if ncols == 0:
                 ncols = 1
-            packed_data = ravel_vector(data, slots, ncols, order)
+            packed_data = _ravel_vector(data, batch_size, ncols, order)
 
     return {
         "data": packed_data,
         "original_shape": (org_rows, org_cols),
         "ndim": ndim,
-        "batch_size": slots,
+        "batch_size": batch_size,
         "ncols": ncols,
         "order": order,
     }
@@ -101,7 +109,7 @@ def array(
     """
 
     if package is None:
-        package = pack(data, slots, ncols, order)
+        package = _pack(data, slots, ncols, order)
 
     packed_data = package["data"]
     org_rows = package["original_shape"][0]
@@ -114,10 +122,14 @@ def array(
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
-        result = PTArray(plaintext, (org_rows, org_cols), ndim, slots, ncols, order)
+        result = PTArray(
+            plaintext, (org_rows, org_cols), ndim, slots, ncols, order
+        )
     else:
         if public_key is None:
-            raise ValueError("Public key must be provided for ciphertext encoding.")
+            raise ValueError(
+                "Public key must be provided for ciphertext encoding."
+            )
 
         ciphertext = cc.Encrypt(public_key, plaintext)
         result = CTArray(ciphertext, (org_rows, org_cols), slots, ncols, order)
@@ -127,7 +139,9 @@ def array(
     return result
 
 
-def ravel_matrix(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR, repetitions=1):
+def _ravel_matrix(
+    data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR, repetitions=1
+):
     """
     Encode a 2D matrix into a CKKS plaintext.
 
@@ -146,16 +160,20 @@ def ravel_matrix(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR, repetitions=
     """
 
     if order == MatrixOrder.ROW_MAJOR:
-        packed_data = utils.pack_mat_row_wise(data, ncols, slots, repetitions)
+        packed_data, shape = utils._pack_matrix_row_wise(
+            data, ncols, slots, repetitions
+        )
     elif order == MatrixOrder.COL_MAJOR:
-        packed_data = utils.pack_mat_col_wise(data, ncols, slots, repetitions)
+        packed_data = utils._pack_matrix_col_wise(
+            data, ncols, slots, repetitions
+        )
     else:
         raise ValueError("Unsupported encoding order")
 
-    return packed_data
+    return packed_data, shape
 
 
-def ravel_vector(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR):
+def _ravel_vector(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR):
     """
     Encode a 1D vector into a CKKS plaintext.
 
@@ -181,9 +199,9 @@ def ravel_vector(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR):
         raise ValueError("Repetition count must be a power of two")
 
     if order == MatrixOrder.ROW_MAJOR:
-        packed_data = utils.pack_vec_row_wise(data, ncols, slots)
+        packed_data = utils._pack_vector_row_wise(data, ncols, slots)
     elif order == MatrixOrder.COL_MAJOR:
-        packed_data = utils.pack_vec_col_wise(data, ncols, slots)
+        packed_data = utils._pack_vector_col_wise(data, ncols, slots)
     else:
         raise ValueError("Unsupported encoding order")
 

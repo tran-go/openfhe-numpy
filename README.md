@@ -29,7 +29,6 @@ The project is currently in development, with a planned release shortly.
   - [Available Operations](#available-operations)
   - [Documentation](#documentation)
   - [Examples](#examples)
-  - [Performance](#performance)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -79,7 +78,7 @@ openfhe-numpy/
 
 OpenFHE must be installed from source with shared libraries:
 
-```bash
+<!-- ```bash
 # Install system dependencies (Ubuntu)
 sudo apt update
 sudo apt install build-essential cmake
@@ -101,11 +100,13 @@ sudo make install
 # Set environment variable (add to ~/.bashrc for persistence)
 echo 'export OpenFHE_DIR=/usr/local/lib/cmake/OpenFHE' >> ~/.bashrc
 source ~/.bashrc
-```
+``` -->
 
 #### Step 2: Install OpenFHE-Python from Source
 
-```bash
+Refer to the instruction from OpenFHE-Python
+
+<!-- ```bash
 # Clone OpenFHE-Python
 git clone https://github.com/openfheorg/openfhe-python.git
 cd openfhe-python
@@ -120,7 +121,7 @@ make
 
 # Install
 make install
-```
+``` -->
 
 #### Step 3: Install OpenFHE-NumPy from Source
 
@@ -290,20 +291,13 @@ We provide several examples showcasing the library's functionality:
 - [Square Matrix Multiplication](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_square_matrix_product.py)
 - [Cumulative Matrix Operations](https://github.com/openfheorg/openfhe-numpy/blob/main/examples/demo_matrix_accumulation.py)
 
-## Performance
-
-OpenFHE-NumPy is designed for both usability and performance. For optimal performance:
-- Use appropriate multiplicative depth for your operations
-- Choose ring dimension based on your security requirements and dataset size
-- Consider the tradeoff between precision and performance when selecting scaling parameters
 
 ## Contributing
-
-Contributions to OpenFHE-NumPy are welcome! Please see our contributing guidelines for details.
+[OpenFHE Development - Contributing Guide](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/contributing/contributing_workflow.html)
 
 ## License
 
-OpenFHE-NumPy is licensed under the BSD 3-Clause License. See the LICENSE file for details.
+OpenFHE-NumPy is licensed under the BSD 2-Clause License. See the LICENSE file for details.
 
 ---
 

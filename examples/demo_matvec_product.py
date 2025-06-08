@@ -86,7 +86,7 @@ def demo():
     ctv_result = ctm_matrix @ ctv_vector
 
     result = ctv_result.decrypt(keys.secretKey, format_type="reshape")
-    expected = utils.pack_vec_row_wise((A @ b), ncols, total_slots)
+    expected = utils.pack_vector_row_wise((A @ b), ncols, total_slots)
 
     print(f"\nExpected:\n{A @ b}")
     print(f"\nPacked Expected:\n{expected[:32]}")

@@ -3,7 +3,7 @@
 # Import utility functions from modules
 from .utils import (
     check_equality_matrix,
-    pack_vec_row_wise,
+    # pack_vector_row_wise,
 )
 
 
@@ -27,7 +27,7 @@ __all__ = [
     # Math utilities
     "is_power_of_two",
     "next_power_of_two",
-    "pack_vec_row_wise",
+    # "_pack_vector_row_wise",
     # Validation utilities
     "check_equality_matrix",
     "next_power_of_two",

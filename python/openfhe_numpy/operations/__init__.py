@@ -2,16 +2,7 @@
 
 # Import arithmetic operations
 from .matrix_arithmetic import *
-from .matrix_api import (
-    add,
-    multiply,
-    dot,
-    matmul,
-    transpose,
-    power,
-    cumsum,
-    cumreduce,
-)
+from .matrix_api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce, sum
 
 # Import crypto context utilities
 from .crypto_context import (

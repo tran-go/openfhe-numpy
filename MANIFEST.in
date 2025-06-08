@@ -1,0 +1,6 @@
+include CMakeLists.txt
+include LICENSE
+include README.md
+recursive-include core *
+recursive-include python/openfhe_numpy *.py
+recursive-include python/openfhe_numpy *.py.in

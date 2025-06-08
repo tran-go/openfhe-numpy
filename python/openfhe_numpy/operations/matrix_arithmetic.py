@@ -379,20 +379,20 @@ def cumreduce_block_ct(a, axis=0, keepdims=False):
 # ------------------------------------------------------------------------------
 
 
-@register_tensor_function("sum", [("CTArray", "int", "bool")])
+@register_tensor_function("sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
 def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
     crypto_context = tensor.data.GetCryptoContext()
     nrows, ncols = tensor.shape
     if axis is None:
-        ciphertext = crypto_context.EvalSum(tensor.data)
-        CTArray(ciphertext, 1, tensor.batch_size)
+        ciphertext = crypto_context.EvalSum(tensor.data, tensor.total_slots)
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
     elif axis == 0:  # sum over rows
         ciphertext = crypto_context.EvalSumRows(tensor.data, nrows, tensor.extra["rowkey"])
-        CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
 
     elif axis == 1:  # sum over cols
         ciphertext = crypto_context.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
-        CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size)
+        return CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size)
     else:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")
 

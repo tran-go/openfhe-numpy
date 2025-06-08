@@ -57,6 +57,7 @@ _export_map: Dict[str, str] = {
     "power": "operations.matrix_api",
     "cumsum": "operations.matrix_api",
     "cumreduce": "operations.matrix_api",
+    "sum": "operations.matrix_api",
     # Crypto context utilities
     "sum_row_keys": "operations.crypto_context",
     "sum_col_keys": "operations.crypto_context",
@@ -83,7 +84,7 @@ _export_map: Dict[str, str] = {
     "is_power_of_two": "utils.utils",
     "next_power_of_two": "utils.utils",
     "check_equality_matrix": "utils.utils",
-    "pack_vec_row_wise": "utils.utils",
+    "pack_vector_row_wise": "utils.utils",
     # Constants and types
     "MatrixOrder": "config",
     "DataType": "config",

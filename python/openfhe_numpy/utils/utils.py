@@ -6,19 +6,6 @@ from openfhe_numpy.config import FormatType
 from typing import Union
 
 
-# def format_vector(
-#     data: np.ndarray,
-#     format_type: Union[FormatType, str],
-#     tensor_ndim: int,
-#     original_shape: tuple,
-#     tensor_shape: tuple,
-# ):
-#     if tensor_ndim != 1:
-#         ONP_ERROR("The input is not a vector")
-
-#     if format_type == FormatType.ORGINI
-
-
 def format_array(
     data: np.ndarray,
     format_type: Union[FormatType, str],
@@ -54,7 +41,9 @@ def format_array(
         try:
             format_type = FormatType(format_type.lower())
         except ValueError:
-            print(f"Warning: Unrecognized format_type '{format_type}'. Using 'raw' instead.")
+            print(
+                f"Warning: Unrecognized format_type '{format_type}'. Using 'raw' instead."
+            )
             format_type = FormatType.RAW
 
     # Return raw result if requested
@@ -72,7 +61,9 @@ def format_array(
             else:
                 data = np.reshape(data, new_shape)
         else:
-            data = _format_array(data, tensor_ndim, original_shape, tensor_shape)
+            data = _format_array(
+                data, tensor_ndim, original_shape, tensor_shape
+            )
 
     # Apply rounding if needed
     if format_type == FormatType.ROUND:
@@ -112,7 +103,7 @@ def _format_array(array, ndim, original_shape, new_shape):
     return np.array(reshaped.flatten()[: original_shape[0]])
 
 
-def get_shape(data):
+def _get_shape(data):
     """Determine the shape and dimension of a given matrix-like structure.
 
     Parameters
@@ -144,7 +135,7 @@ def get_shape(data):
     ONP_ERROR("Invalid data type provided. Must be list, tuple, or ndarray.")
 
 
-def rotate_vector(vec, k):
+def _rotate_vector(vec, k):
     """Rotate a vector by k positions.
 
     Parameters
@@ -164,7 +155,7 @@ def rotate_vector(vec, k):
     return [new_vec[(i + k) % n] for i in range(n)]
 
 
-def pack_vec_row_wise(v, block_size, num_slots):
+def _pack_vector_row_wise(v, block_size, num_slots):
     """
     Clone a vector v to fill num_slots
     1 -> 1111 2222 3333
@@ -175,10 +166,14 @@ def pack_vec_row_wise(v, block_size, num_slots):
     assert is_power_of_two(block_size)
     assert is_power_of_two(num_slots)
     if num_slots < n:
-        ONP_ERROR("ERROR ::: [row_wise_vector] vector is longer than total   slots")
+        ONP_ERROR(
+            "ERROR ::: [row_wise_vector] vector is longer than total   slots"
+        )
     if num_slots == n:
         if num_slots // block_size > 1:
-            ONP_ERROR("ERROR ::: [row_wise_vector] vector is too longer, can't duplicate")
+            ONP_ERROR(
+                "ERROR ::: [row_wise_vector] vector is too longer, can't duplicate"
+            )
         return v
 
     # print data
@@ -196,7 +191,7 @@ def pack_vec_row_wise(v, block_size, num_slots):
     return packed
 
 
-def pack_vec_col_wise(v, block_size, num_slots):
+def _pack_vector_col_wise(v, block_size, num_slots):
     """
     Clone a vector v to fill num_slots
     1 -> 1230 1230 1230
@@ -211,7 +206,9 @@ def pack_vec_col_wise(v, block_size, num_slots):
             f"ERROR ::: [col_wise_vector] vector of size ({n}) is longer than size of a slot ({block_size})"
         )
     if num_slots < n:
-        ONP_ERROR("ERROR ::: [col_wise_vector] vector is longer than total slots")
+        ONP_ERROR(
+            "ERROR ::: [col_wise_vector] vector is longer than total slots"
+        )
     if num_slots == n:
         return v
 
@@ -247,7 +244,7 @@ def reoriginal_shape(vec, total_slots, ncols):
 
 def convert_cw_rw(v, block_size, num_slots):
     org_v = v[:block_size]
-    vv = pack_vec_row_wise(org_v, block_size, num_slots)
+    vv = _pack_vector_row_wise(org_v, block_size, num_slots)
 
     if 0:
         wnice_org = [round(x, 3) for x in v[: 2 * block_size]]
@@ -264,7 +261,7 @@ def convert_rw_cw(v, block_size, num_slots):
     for k in range(block_size):
         org_v.append(v[k * block_size])
 
-    vv = pack_vec_col_wise(org_v, block_size, num_slots)
+    vv = _pack_vector_col_wise(org_v, block_size, num_slots)
 
     if 0:
         wnice_org = [round(x, 3) for x in v[: 2 * block_size]]
@@ -291,7 +288,7 @@ def print_matrix(matrix, rows):
         print(f"[{row_str}]")
 
 
-def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
+def _pack_matrix_row_wise(matrix, ncols, total_slots, is_row_padded=False):
     """Pack a matrix into a flat array row-wise with zero padding.
 
     Parameters
@@ -302,7 +299,7 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
         Target row size after padding; must be a power of two.
     total_slots : int
         Total number of slots available in the output array; must be a power of two and divisible by ncols.
-    pad_rows : bool, optional
+    is_row_padded : bool, optional
         If True, pad the number of rows to the next power of two. Default is False.
 
     Returns
@@ -324,8 +321,9 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
     if total_slots % ncols != 0:
         ONP_ERROR("total_slots must be divisible by ncols")
 
-    padded_cols = next_power_of_two(rows) if pad_cols else rows
-    required_size = padded_cols * ncols
+    nrows = next_power_of_two(rows) if is_row_padded else rows
+    required_size = nrows * ncols
+    shape = nrows, ncols
 
     if total_slots < required_size:
         ONP_ERROR("Total slots insufficient for the given matrix and padding.")
@@ -340,58 +338,47 @@ def pack_mat_row_wise(matrix, ncols, total_slots, pad_cols=False):
             flat_array[index : index + cols] = matrix[i]
             index += ncols
 
-        index += (padded_cols - rows) * ncols
+        index += (nrows - rows) * ncols
 
-    return flat_array
+    return flat_array, shape
 
 
-def pack_mat_col_wise(matrix, block_size, num_slots, verbose=0):
-    """
-    Packing Matric M using row-wise
+def _pack_matrix_col_wise(
+    matrix, ncols, num_slots, is_padded_rows=None, verbose=0
+):
+    """Pack a matrix into a flat array column-wise with zero padding.
     [[1 2 3] -> [1 4 7 0 2 5 8 0 3 6 9 0]
      [4 5 6]
      [7 8 9]]
     """
-    assert is_power_of_two(block_size)
+    assert is_power_of_two(ncols)
     assert is_power_of_two(num_slots)
-    assert num_slots % block_size == 0
-    cols = len(matrix)
-    rows = len(matrix[0])
-    total_blocks = num_slots // block_size
-    free_slots = num_slots - cols * block_size
+    assert num_slots % ncols == 0
 
-    if verbose:
-        print(
-            "#\t [enc. matrix] n = %d, m = %d, #slots = %d, bs = %d, blks = %d, #freeslots = %d, used <= %.3f"
-            % (
-                cols,
-                rows,
-                num_slots,
-                block_size,
-                total_blocks,
-                free_slots,
-                (num_slots - free_slots) / num_slots,
-            )
-        )
+    rows = len(matrix)
+    cols = len(matrix[0])
 
-    if num_slots < cols * rows:
+    nrows = next_power_of_two(rows) if is_padded_rows else rows
+
+    if num_slots < ncols * nrows:
         ONP_ERROR(
             f"encrypt_matrix ::: Matrix [{rows} x {cols}]is too big compared with num_slots [{num_slots}]"
         )
 
-    packed = np.zeros(num_slots)
-    k = 0  # index into vector to write
+    shape = nrows, ncols
+    flat_array = np.zeros(num_slots)
+    index = 0  # index into vector to write
 
-    for col in range(cols):
-        for row in range(block_size):
-            if row < rows:
-                packed[k] = matrix[row][col]
-            k = k + 1
+    for c in range(ncols):
+        for r in range(nrows):
+            if r < rows and c < cols:
+                flat_array[index] = matrix[r][c]
+            index += 1
 
-    return packed
+    return flat_array, shape
 
 
-def gen_comm_mat(m, n, opt=1):
+def _gen_comm_mat(m, n, opt=1):
     """
     Generate a commutation matrix https://en.wikipedia.org/wiki/Commutation_matrix
     """
@@ -409,12 +396,12 @@ def gen_comm_mat(m, n, opt=1):
 
 
 # Function to generate a random square matrix of size n x n
-def generate_random_matrix(n):
+def _generate_random_matrix(n):
     return [[random.randint(0, 9) for _ in range(n)] for _ in range(n)]
 
 
 # Function to multiply two matrices A and B in Plain
-def matrix_multiply(A, B, precision=2):
+def _matrix_multiply(A, B, precision=2):
     """
     Multiply two square matrices A and B.
 
@@ -438,4 +425,6 @@ def matrix_multiply(A, B, precision=2):
         for j in range(n):
             for k in range(n):
                 result[i][j] += A[i][k] * B[k][j]
-    return [[round(result[i][j], precision) for j in range(n)] for i in range(n)]
+    return [
+        [round(result[i][j], precision) for j in range(n)] for i in range(n)
+    ]
