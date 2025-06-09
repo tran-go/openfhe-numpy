@@ -12,9 +12,9 @@ from ..utils.packing import (
     _pack_matrix_col_wise,
     _pack_matrix_row_wise,
     _pack_vector_row_wise,
-    is_power_of_two,
-    next_power_of_two,
+    _pack_vector_col_wise,
 )
+from ..utils.matlib import is_power_of_two, next_power_of_two
 from .ctarray import CTArray
 from .ptarray import PTArray
 from .tensor import FHETensor
@@ -48,7 +48,7 @@ def _pack_array(
     order: int = MatrixOrder.ROW_MAJOR,
 ):
     if batch_size < 0:
-        ONP_ERROR("The batch size is negative")
+        ValueError("The batch size cannot be negative.")
 
     org_rows, org_cols, ndim = _get_shape(data)
 

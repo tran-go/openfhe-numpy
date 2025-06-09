@@ -2,6 +2,7 @@ import numpy as np
 from typing import Union
 
 
+# ===  Visual Format Array ==
 def format_array(
     data: np.ndarray,
     format_type: Union[FormatType, str],
@@ -97,3 +98,20 @@ def _format_array(array, ndim, original_shape, new_shape):
     if ndim == 2:
         return reshaped[: original_shape[0], : original_shape[1]]
     return np.array(reshaped.flatten()[: original_shape[0]])
+
+
+# ===  Printing Utilities ==
+def print_matrix(matrix, rows):
+    """
+    Print a matrix in a nicely formatted way.
+
+    Parameters
+    ----------
+    matrix : array_like
+        A 2D matrix (list of lists or ndarray) to print.
+    rows : int
+        Number of rows to print from the matrix.
+    """
+    for i in range(rows):
+        row_str = "\t".join(f"{val:.2f}" for val in matrix[i])
+        print(f"[{row_str}]")
