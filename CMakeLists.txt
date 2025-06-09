@@ -30,12 +30,12 @@ if(WITH_CUSTOM_OPENFHE)
     if(NOT CUSTOM_OPENFHE_ROOT)
         message(FATAL_ERROR "WITH_CUSTOM_OPENFHE is ON but CUSTOM_OPENFHE_ROOT is not specified")
     endif()
-    
+
     set(OpenFHE_DIR "${CUSTOM_OPENFHE_ROOT}/lib/cmake/OpenFHE" CACHE PATH "Path to OpenFHE cmake config" FORCE)
     list(APPEND CMAKE_PREFIX_PATH "${CUSTOM_OPENFHE_ROOT}")
-    
+
     message(STATUS "Using custom OpenFHE installation: ${CUSTOM_OPENFHE_ROOT}")
-    
+
     if(CUSTOM_OPENFHE_PYTHON)
         message(STATUS "Using custom OpenFHE Python wrapper: ${CUSTOM_OPENFHE_PYTHON}")
         # Add Python wrapper to PYTHONPATH at build time
@@ -65,20 +65,21 @@ message(STATUS "OpenFHE libraries: ${OpenFHE_LIBRARIES}")
 message(STATUS "OpenFHE include path: ${OpenFHE_INCLUDE}")
 message(STATUS "OpenFHE library path: ${OpenFHE_LIBDIR}")
 
-# Project Structure
-set(OpenFHE_Numpy_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/core/src)
-set(OpenFHE_Numpy_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/core/include)
-set(OpenFHE_Numpy_BINDINGS ${OpenFHE_Numpy_SOURCES}/bindings.cpp)
-# Updated path to reflect new directory structure
-set(OpenFHE_Numpy_PYTHON ${CMAKE_CURRENT_SOURCE_DIR}/python/openfhe_numpy)
+# Project Structure - Updated for new directory layout
+set(OpenFHE_Numpy_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(OpenFHE_Numpy_CPP_DIR ${OpenFHE_Numpy_SRC_DIR}/cpp)
+set(OpenFHE_Numpy_SOURCES ${OpenFHE_Numpy_CPP_DIR}/lib)
+set(OpenFHE_Numpy_INCLUDES ${OpenFHE_Numpy_CPP_DIR}/include)
+set(OpenFHE_Numpy_BINDINGS ${OpenFHE_Numpy_CPP_DIR}/lib/numpy_bindings.cpp)
+set(OpenFHE_Numpy_PYTHON ${OpenFHE_Numpy_SRC_DIR})
 set(OpenFHE_Numpy_BUILD_PYTHON ${CMAKE_BINARY_DIR}/openfhe_numpy)
 
 file(MAKE_DIRECTORY ${OpenFHE_Numpy_BUILD_PYTHON})
 
 # Configuration Header
 configure_file(
-    "${OpenFHE_Numpy_INCLUDES}/openfhe_numpy/config.h.in"
-    "${OpenFHE_Numpy_INCLUDES}/openfhe_numpy/config.h" @ONLY)
+    "${OpenFHE_Numpy_SRC_DIR}/version.py.in"
+    "${OpenFHE_Numpy_BUILD_PYTHON}/version.py" @ONLY)
 
 # Include Paths
 include_directories(
@@ -91,7 +92,7 @@ include_directories(
 
 # Source Files
 file(GLOB_RECURSE CORE_SOURCES ${OpenFHE_Numpy_SOURCES}/*.cpp)
-list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/bindings?\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/numpy_bindings\\.cpp$")
 
 add_library(openfhe_numpy_cpp_core STATIC ${CORE_SOURCES})
 
@@ -113,23 +114,24 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 # Python Extension
-pybind11_add_module(_openfhe_numpy MODULE ${OpenFHE_Numpy_BINDINGS})
-target_link_libraries(_openfhe_numpy PRIVATE openfhe_numpy_cpp_core)
-
-configure_file(
-    "${OpenFHE_Numpy_PYTHON}/version.py.in"
-    "${OpenFHE_Numpy_BUILD_PYTHON}/version.py" @ONLY)
+pybind11_add_module(_onp_cpp MODULE ${OpenFHE_Numpy_BINDINGS})
+target_link_libraries(_onp_cpp PRIVATE openfhe_numpy_cpp_core)
 
 # Set output location for the compiled Python extension
-set_target_properties(_openfhe_numpy PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${OpenFHE_Numpy_BUILD_PYTHON}/openfhe_numpy
+set_target_properties(_onp_cpp PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${OpenFHE_Numpy_BUILD_PYTHON}
     INSTALL_RPATH "$ORIGIN;${OpenFHE_LIBDIR}"
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
 # Copy Python files to build directory
-file(GLOB_RECURSE PYTHON_SOURCE_FILES "${OpenFHE_Numpy_PYTHON}/*.py")
+file(GLOB_RECURSE PYTHON_SOURCE_FILES
+    "${OpenFHE_Numpy_PYTHON}/*.py"
+    "${OpenFHE_Numpy_PYTHON}/operations/*.py"
+    "${OpenFHE_Numpy_PYTHON}/tensor/*.py"
+    "${OpenFHE_Numpy_PYTHON}/utils/*.py")
+
 foreach(PY_FILE ${PYTHON_SOURCE_FILES})
     file(RELATIVE_PATH REL_PATH "${OpenFHE_Numpy_PYTHON}" "${PY_FILE}")
     configure_file(${PY_FILE} "${OpenFHE_Numpy_BUILD_PYTHON}/${REL_PATH}" COPYONLY)
@@ -147,7 +149,7 @@ else()
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         execute_process(
             COMMAND "${Python_EXECUTABLE}" -c "import site; print(site.getsitepackages()[0])"
-            OUTPUT_VARIABLE PYTHON_SITE_PACKAGES 
+            OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
         set(PYTHON_INSTALL_PATH "${PYTHON_SITE_PACKAGES}")
@@ -158,30 +160,60 @@ endif()
 
 message(STATUS "Python package will be installed to: ${PYTHON_INSTALL_PATH}")
 
-# Install the Python extension and files 
+# Install the Python extension and files
 if(DEFINED SKBUILD)
-    # For pip installations, keep the /openfhe_numpy subdirectory
-    install(TARGETS _openfhe_numpy 
-            LIBRARY DESTINATION "${PYTHON_INSTALL_PATH}/openfhe_numpy")
-
-    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/"
-            DESTINATION "${PYTHON_INSTALL_PATH}/openfhe_numpy"
-            FILES_MATCHING PATTERN "*.py"
-            PATTERN "__pycache__" EXCLUDE)
-
-    install(FILES "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
-            DESTINATION "${PYTHON_INSTALL_PATH}/openfhe_numpy")
-else()
-    # For custom installations, install directly to specified path
-    install(TARGETS _openfhe_numpy 
+    # For pip installations
+    install(TARGETS _onp_cpp
             LIBRARY DESTINATION "${PYTHON_INSTALL_PATH}")
 
-    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/"
+    # Install Python modules
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/operations"
             DESTINATION "${PYTHON_INSTALL_PATH}"
             FILES_MATCHING PATTERN "*.py"
             PATTERN "__pycache__" EXCLUDE)
 
-    install(FILES "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/tensor"
+            DESTINATION "${PYTHON_INSTALL_PATH}"
+            FILES_MATCHING PATTERN "*.py"
+            PATTERN "__pycache__" EXCLUDE)
+
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/utils"
+            DESTINATION "${PYTHON_INSTALL_PATH}"
+            FILES_MATCHING PATTERN "*.py"
+            PATTERN "__pycache__" EXCLUDE)
+
+    # Install root Python files
+    install(FILES
+            "${OpenFHE_Numpy_PYTHON}/__init__.py"
+            "${OpenFHE_Numpy_PYTHON}/_version.py"
+            "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
+            DESTINATION "${PYTHON_INSTALL_PATH}")
+else()
+    # For custom installations, install directly to specified path
+    install(TARGETS _onp_cpp
+            LIBRARY DESTINATION "${PYTHON_INSTALL_PATH}")
+
+    # Install Python modules with directory structure
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/operations"
+            DESTINATION "${PYTHON_INSTALL_PATH}"
+            FILES_MATCHING PATTERN "*.py"
+            PATTERN "__pycache__" EXCLUDE)
+
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/tensor"
+            DESTINATION "${PYTHON_INSTALL_PATH}"
+            FILES_MATCHING PATTERN "*.py"
+            PATTERN "__pycache__" EXCLUDE)
+
+    install(DIRECTORY "${OpenFHE_Numpy_PYTHON}/utils"
+            DESTINATION "${PYTHON_INSTALL_PATH}"
+            FILES_MATCHING PATTERN "*.py"
+            PATTERN "__pycache__" EXCLUDE)
+
+    # Install root Python files
+    install(FILES
+            "${OpenFHE_Numpy_PYTHON}/__init__.py"
+            "${OpenFHE_Numpy_PYTHON}/_version.py"
+            "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
             DESTINATION "${PYTHON_INSTALL_PATH}")
 endif()
 
@@ -194,7 +226,7 @@ if(BUILD_EXAMPLES)
     find_library(OPENFHE_PKE_LIB OPENFHEpke PATHS ${OpenFHE_LIBDIR} REQUIRED)
     find_library(OPENFHE_BINFHE_LIB OPENFHEbinfhe PATHS ${OpenFHE_LIBDIR} REQUIRED)
 
-    file(GLOB EXAMPLES ${CMAKE_CURRENT_SOURCE_DIR}/core/examples/*.cpp)
+    file(GLOB EXAMPLES ${OpenFHE_Numpy_CPP_DIR}/examples/*.cpp)
     foreach(ex IN LISTS EXAMPLES)
         get_filename_component(name ${ex} NAME_WE)
         file(READ ${ex} FILE_CONTENT)
@@ -205,7 +237,7 @@ if(BUILD_EXAMPLES)
                 ${OPENFHE_PKE_LIB}
                 ${OPENFHE_CORE_LIB}
                 ${OPENFHE_BINFHE_LIB})
-            set_target_properties(${name} PROPERTIES 
+            set_target_properties(${name} PROPERTIES
                 RUNTIME_OUTPUT_DIRECTORY ${EXAMPLE_OUTPUT_DIR}
                 INSTALL_RPATH "${OpenFHE_LIBDIR}")
         endif()
