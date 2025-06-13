@@ -122,13 +122,11 @@ def demo():
     start_matmul = time.time()
     ct_result = ctm_matA @ ctm_matB
     end_matmul = time.time()
-    print(
-        f"Homomorphic matrix-matrix multiplication time: {(end_matmul - start_matmul) * 1000:.2f} ms"
-    )
+    print(f"Homomorphic matrix-matrix multiplication time: {(end_matmul - start_matmul) * 1000:.2f} ms")
 
     # Decrypt result
     start_dec = time.time()
-    result = ct_result.decrypt(keys.secretKey, format_type="reshape")
+    result = ct_result.decrypt(keys.secretKey, unpack_type="reshape")
     end_dec = time.time()
     print(f"Decryption time: {(end_dec - start_dec) * 1000:.2f} ms")
 

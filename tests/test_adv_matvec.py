@@ -37,7 +37,7 @@ def fhe_matrix_vector_product(params, input):
         ctv_result = ctm_matrix @ ctv_vector
 
         # Decrypt result
-        result = ctv_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ctv_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

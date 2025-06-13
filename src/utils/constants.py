@@ -21,8 +21,9 @@ EPSILON_HIGH = 1e-4
 
 
 # default format result
-class FormatType(Enum):
+class UnpackType(Enum):
     RAW = "raw"
+    ORIGINAL = "original"
     RESHAPE = "reshape"
-    ROUND = "round"
-    AUTO = "auto"
+    # ROUND = "round"
+    # AUTO = "auto"

@@ -4,7 +4,7 @@
 [![Python Versions](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![OpenFHE Version](https://img.shields.io/badge/OpenFHE-1.2.3%2B-green)](https://github.com/openfheorg/openfhe-development)
 
-A NumPy-like API for homomorphic encryption operations, built on top of OpenFHE. This library enables data scientists and machine learning practitioners to perform computations on encrypted data using familiar NumPy syntax. 
+A NumPy-like API for homomorphic encryption operations, built on top of OpenFHE. This library enables data scientists and machine learning practitioners to perform computations on encrypted data using familiar NumPy syntax.
 
 The project is currently in development, with a planned release shortly.
 
@@ -141,7 +141,7 @@ cmake .. \
   -DCMAKE_INSTALL_PREFIX=/path/to/openfhe_numpy
 
 # Build the package
-make 
+make
 
 # Install
 make install
@@ -252,8 +252,8 @@ tensor_product = tensor_A @ tensor_A  # Matrix multiplication
 tensor_sum = onp.add(tensor_A, tensor_A)  # Element-wise addition
 
 # Decrypt results
-decrypted_product = tensor_product.decrypt(keys.secretKey, format_type = True)
-decrypted_sum = tensor_sum.decrypt(keys.secretKey, format_type = True)
+decrypted_product = tensor_product.decrypt(keys.secretKey, unpack_type = True)
+decrypted_sum = tensor_sum.decrypt(keys.secretKey, unpack_type = True)
 
 print("Result of A @ A:")
 print(decrypted_product)

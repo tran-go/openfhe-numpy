@@ -6,14 +6,29 @@ using the OpenFHE library. Operations include addition, subtraction, multiplicat
 matrix multiplication, and other mathematical operations.
 """
 
+# Standard library imports
+from typing import Optional, Union, List, Tuple
+
+# Third-party imports
+from numpy.typing import ArrayLike
+
+# Project imports
 from openfhe_numpy.operations.dispatch import register_tensor_function
 from openfhe_numpy.tensor.ctarray import CTArray
 from openfhe_numpy.tensor.ptarray import PTArray
+from openfhe_numpy.utils.constants import MatrixOrder
 from openfhe_numpy.utils.log import ONP_ERROR
-from openfhe_numpy.utils.utils import MatrixOrder, next_power_of_two
-from openfhe_numpy import _onp_cpp
-from typing import Optional
-from numpy.typing import ArrayLike
+from openfhe_numpy.utils.utils import next_power_of_two
+
+# Import specific functions from C++ module
+from openfhe_numpy._onp_cpp import (
+    EvalMultMatVec,
+    EvalMatMulSquare,
+    EvalTranspose,
+    EvalSumCumRows,
+    EvalSumCumCols,
+    MatVecEncoding,
+)
 
 ##############################################################################
 # BASIC ARITHMETIC OPERATIONS
@@ -31,12 +46,10 @@ def _eval_add(lhs, rhs):
         rhs = crypto_context.MakeCKKSPackedPlaintext([rhs] * lhs.batch_size)
 
     result = crypto_context.EvalAdd(lhs.data, rhs)
-    return lhs.clone(result)
+    return CTArray(result, lhs.original_shape, lhs.batch_size, lhs.shape, lhs.order)
 
 
-@register_tensor_function(
-    "add", [("CTArray", "CTArray"), ("CTArray", "PTArray")]
-)
+@register_tensor_function("add", [("CTArray", "CTArray"), ("CTArray", "PTArray")])
 def add_ct(a, b):
     """Add two tensors."""
     if a.shape != b.shape:
@@ -50,22 +63,16 @@ def add_ct_scalar(a, scalar):
     return _eval_add(a, scalar)
 
 
-@register_tensor_function(
-    "add", [("BlockCTArray", "BlockCTArray"), ("BlockCTArray", "BlockPTArray")]
-)
+@register_tensor_function("add", [("BlockCTArray", "BlockCTArray"), ("BlockCTArray", "BlockPTArray")])
 def add_block_ct(a, b):
     """Add two block tensors."""
-    raise NotImplementedError(
-        "BlockPTArray and BlockCTArray addition not implemented yet."
-    )
+    raise NotImplementedError("BlockPTArray and BlockCTArray addition not implemented yet.")
 
 
 @register_tensor_function("add", [("BlockCTArray", "scalar")])
 def add_block_ct_scalar(a, scalar):
     """Add a scalar to a block tensor."""
-    raise NotImplementedError(
-        "BlockPTArray and scalar addition not implemented yet."
-    )
+    raise NotImplementedError("BlockPTArray and scalar addition not implemented yet.")
 
 
 # ------------------------------------------------------------------------------
@@ -73,11 +80,7 @@ def add_block_ct_scalar(a, scalar):
 # ------------------------------------------------------------------------------
 def _eval_sub(lhs, rhs):
     """Internal function to evaluate subtraction between encrypted tensors."""
-    crypto_context = (
-        rhs.data.GetCryptoContext()
-        if rhs.is_ciphertext
-        else lhs.data.GetCryptoContext()
-    )
+    crypto_context = rhs.data.GetCryptoContext() if rhs.is_ciphertext else lhs.data.GetCryptoContext()
 
     if isinstance(rhs, (int, float)):
         rhs = crypto_context.MakeCKKSPackedPlaintext([rhs] * lhs.batch_size)
@@ -99,9 +102,7 @@ def subtract_ct(a, b):
     return _eval_sub(a, b)
 
 
-@register_tensor_function(
-    "subtract", [("CTArray", "scalar"), ("scalar", "CTArray")]
-)
+@register_tensor_function("subtract", [("CTArray", "scalar"), ("scalar", "CTArray")])
 def subtract_ct_scalar(a, b):
     """Subtract a scalar from a tensor or vice versa."""
     return _eval_sub(a, b.data)
@@ -122,9 +123,7 @@ def _eval_multiply(lhs, rhs):
     return lhs.clone(result)
 
 
-@register_tensor_function(
-    "multiply", [("CTArray", "CTArray"), ("CTArray", "PTArray")]
-)
+@register_tensor_function("multiply", [("CTArray", "CTArray"), ("CTArray", "PTArray")])
 def multiply_ct(a, b):
     """Multiply two tensors element-wise."""
     if a.shape != b.shape:
@@ -144,17 +143,13 @@ def multiply_ct_scalar(a, scalar):
 )
 def multiply_block_ct(a, b):
     """Multiply two block tensors element-wise."""
-    raise NotImplementedError(
-        "BlockPTArray multiplication not implemented yet."
-    )
+    raise NotImplementedError("BlockPTArray multiplication not implemented yet.")
 
 
 @register_tensor_function("multiply", [("BlockCTArray", "scalar")])
 def multiply_block_ct_scalar(a, scalar):
     """Multiply a block tensor by a scalar."""
-    raise NotImplementedError(
-        "BlockPTArray and scalar multiplication not implemented yet."
-    )
+    raise NotImplementedError("BlockPTArray and scalar multiplication not implemented yet.")
 
 
 ##############################################################################
@@ -170,48 +165,32 @@ def _eval_matvec_ct(lhs, rhs):
     crypto_context = lhs.data.GetCryptoContext()
     if lhs.ndim == 2 and rhs.ndim == 1:
         if lhs.original_shape[1] != rhs.original_shape[0]:
-            ONP_ERROR(
-                f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]"
-            )
-        if (
-            lhs.order == MatrixOrder.ROW_MAJOR
-            and rhs.order == MatrixOrder.COL_MAJOR
-        ):
+            ONP_ERROR(f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]")
+        if lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
             sumkey = lhs.extra["colkey"]
-            ciphertext = _onp_cpp.EvalMultMatVec(
+            ciphertext = EvalMultMatVec(
                 sumkey,
-                _onp_cpp.MatVecEncoding.MM_CRC,
+                MatVecEncoding.MM_CRC,
                 lhs.ncols,
                 rhs.data,
                 lhs.data,
             )
-            return CTArray(
-                ciphertext, (lhs.original_shape[0], 0), lhs.batch_size
-            )
+            return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
 
-        elif (
-            lhs.order == MatrixOrder.COL_MAJOR
-            and rhs.order == MatrixOrder.ROW_MAJOR
-        ):
+        elif lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
             sumkey = lhs.extra["rowkey"]
-            ciphertext = _onp_cpp.EvalMultMatVec(
+            ciphertext = EvalMultMatVec(
                 sumkey,
-                _onp_cpp.MatVecEncoding.MM_RCR,
+                MatVecEncoding.MM_RCR,
                 lhs.ncols,
                 rhs.data,
                 lhs.data,
             )
-            return CTArray(
-                ciphertext, (lhs.original_shape[0], 0), lhs.batch_size
-            )
+            return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
         else:
-            ONP_ERROR(
-                "Encoding styles of matrix and vector must be complementary (ROW_MAJOR/COL_MAJOR or vice versa)."
-            )
+            ONP_ERROR("Encoding styles of matrix and vector must be complementary (ROW_MAJOR/COL_MAJOR or vice versa).")
     else:
-        ONP_ERROR(
-            f"Matrix dimension mismatch for multiplication: {lhs.original_shape} and {rhs.original_shape}"
-        )
+        ONP_ERROR(f"Matrix dimension mismatch for multiplication: {lhs.original_shape} and {rhs.original_shape}")
 
 
 def _matmul_ct(lhs, rhs):
@@ -220,14 +199,10 @@ def _matmul_ct(lhs, rhs):
         if lhs.shape == rhs.shape:
             if rhs.ndim == 1:
                 return _eval_matvec_ct(lhs, rhs)
-            return lhs.clone(
-                _onp_cpp.EvalMatMulSquare(lhs.data, rhs.data, lhs.ncols)
-            )
+            return lhs.clone(EvalMatMulSquare(lhs.data, rhs.data, lhs.ncols))
 
         else:
-            ONP_ERROR(
-                f"Matrix dimension mismatch for multiplication: {lhs.shape} and {rhs.shape}"
-            )
+            ONP_ERROR(f"Matrix dimension mismatch for multiplication: {lhs.shape} and {rhs.shape}")
 
 
 @register_tensor_function("matmul", [("CTArray", "CTArray")])
@@ -243,9 +218,7 @@ def _dot(lhs, rhs):
     """Internal function to evaluate dot product."""
     if lhs.ndim == 1 and rhs.ndim == 1:
         crypto_context = lhs.data.GetCryptoContext()
-        ciphertext = crypto_context.EvalInnerProduct(
-            lhs.data, rhs.data, lhs.original_shape[0]
-        )
+        ciphertext = crypto_context.EvalInnerProduct(lhs.data, rhs.data, lhs.original_shape[0])
         return lhs.clone(ciphertext)
     else:
         return lhs._matmul(rhs)
@@ -262,7 +235,7 @@ def dot_ct(a, b):
 # ------------------------------------------------------------------------------
 def _transpose_ct(ctarray: CTArray) -> "CTArray":
     """Internal function to evaluate transpose of a tensor."""
-    ciphertext = _onp_cpp.EvalTranspose(ctarray.data, ctarray.ncols)
+    ciphertext = EvalTranspose(ctarray.data, ctarray.ncols)
     shape = (ctarray.original_shape[1], ctarray.original_shape[0])
     ncols = next_power_of_two(shape[1])
     return CTArray(ciphertext, shape, ctarray.batch_size, ncols, ctarray.order)
@@ -345,25 +318,19 @@ def _cumsum_ct(tensor, axis=0, keepdims=True):
     if axis not in (0, 1):
         ONP_ERROR("Axis must be 0 or 1 for cumulative sum operation")
     if axis == 0:
-        ciphertext = _onp_cpp.EvalSumCumRows(
-            tensor.data, tensor.ncols, tensor.original_shape[1]
-        )
+        ciphertext = EvalSumCumRows(tensor.data, tensor.ncols, tensor.original_shape[1])
     else:
-        ciphertext = _onp_cpp.EvalSumCumCols(tensor.data, tensor.ncols)
+        ciphertext = EvalSumCumCols(tensor.data, tensor.ncols)
     return tensor.clone(ciphertext)
 
 
-@register_tensor_function(
-    "cumsum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")]
-)
+@register_tensor_function("cumsum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
 def cumsum_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a tensor along specified axis."""
     return _cumsum_ct(a, axis, keepdims)
 
 
-@register_tensor_function(
-    "cumsum", [("BlockCTArray", "int"), ("BlockCTArray", "int", "bool")]
-)
+@register_tensor_function("cumsum", [("BlockCTArray", "int"), ("BlockCTArray", "int", "bool")])
 def cumsum_block_ct(a, axis=0, keepdims=True):
     """Compute cumulative sum of a block tensor along specified axis."""
     raise NotImplementedError("BlockPTArray cumulative not implemented yet.")
@@ -394,11 +361,9 @@ def _reduce_ct(a, axis=0, keepdims=False):
         ONP_ERROR("Axis must be 0 or 1 for cumulative sum operation")
 
     if axis == 0:
-        ciphertext = _onp_cpp.EvalReduceCumRows(
-            a.data, a.ncols, a.original_shape[1]
-        )
+        ciphertext = EvalReduceCumRows(a.data, a.ncols, a.original_shape[1])
     else:
-        ciphertext = _onp_cpp.EvalReduceCumCols(a.data, a.ncols)
+        ciphertext = EvalReduceCumCols(a.data, a.ncols)
     return a.clone(ciphertext)
 
 
@@ -419,34 +384,20 @@ def cumreduce_block_ct(a, axis=0, keepdims=False):
 # ------------------------------------------------------------------------------
 
 
-@register_tensor_function(
-    "sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")]
-)
-def sum_ct(
-    tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False
-):
+@register_tensor_function("sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
+def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
     crypto_context = tensor.data.GetCryptoContext()
     nrows, ncols = tensor.shape
     if axis is None:
-        ciphertext = crypto_context.EvalSum(tensor.data, tensor.total_slots)
-        return CTArray(
-            ciphertext, (1, tensor.original_shape[1]), tensor.batch_size
-        )
+        ciphertext = crypto_context.EvalSum(tensor.data, tensor.size)
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size, (1, 0), False)
     elif axis == 0:  # sum over rows
-        ciphertext = crypto_context.EvalSumRows(
-            tensor.data, nrows, tensor.extra["rowkey"]
-        )
-        return CTArray(
-            ciphertext, (1, tensor.original_shape[1]), tensor.batch_size
-        )
+        ciphertext = crypto_context.EvalSumRows(tensor.data, ncols, tensor.extra["rowkey"])
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size, tensor.shape, tensor.is_padded)
 
     elif axis == 1:  # sum over cols
-        ciphertext = crypto_context.EvalSumCols(
-            tensor.data, ncols, tensor.extra["colkey"]
-        )
-        return CTArray(
-            ciphertext, (tensor.original_shape[0], 1), tensor.batch_size
-        )
+        ciphertext = crypto_context.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
+        return CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size, tensor.shape, tensor.is_padded)
     else:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")
 
@@ -457,9 +408,7 @@ def sum_ct(
 
 
 @register_tensor_function("mean", [("CTArray", "int", "bool")])
-def mean_ct(
-    tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False
-):
+def mean_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
     cc = tensor.data.GetCryptoContext()
     nrows, ncols = tensor.shape
     n = nrows * ncols
@@ -471,17 +420,13 @@ def mean_ct(
             1.0 / nrows,
             cc.EvalSumRows(tensor.data, nrows, tensor.extra["rowkey"]),
         )
-        return CTArray(
-            ciphertext, (1, tensor.original_shape[1]), tensor.batch_size
-        )
+        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size)
 
     elif axis == 1:  # sum over cols
         ciphertext = cc.EvalMul(
             1.0 / ncols,
             cc.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"]),
         )
-        return CTArray(
-            ciphertext, (tensor.original_shape[0], 1), tensor.batch_size
-        )
+        return CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size)
     else:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")

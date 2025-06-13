@@ -22,7 +22,7 @@ version = ">=3.16"
 build-type = "Release"
 
 [tool.scikit-build.build]
-targets = ["_openfhe_numpy"]
+targets = ["_onp_cpp"]
 
 [tool.scikit-build.sdist]
 include = [
@@ -35,7 +35,7 @@ include = [
 
 [tool.scikit-build.wheel]
 packages = ["python/openfhe_numpy"]
-platlib = ["**/_openfhe_numpy*.so"]
+platlib = ["**/_onp_cpp*.so"]
 
 [tool.scikit-build.install]
 components = ["python_modules"]

@@ -52,7 +52,7 @@ echo "=== Setting up development Python package ==="
 rsync -a --exclude="__pycache__" python/openfhe_numpy/ "${DEV_DIR}/openfhe_numpy/"
 
 # Copy compiled extension to dev package
-extension_path=$(find build -name "_openfhe_numpy*.so" | head -n 1)
+extension_path=$(find build -name "_onp_cpp*.so" | head -n 1)
 if [ -n "$extension_path" ]; then
     cp "${extension_path}" "${DEV_DIR}/openfhe_numpy/"
     echo "Extension copied: $(basename "${extension_path}")"

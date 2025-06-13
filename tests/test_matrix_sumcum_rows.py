@@ -37,7 +37,7 @@ def fhe_matrix_sumcum_rows(params, input):
         ct_result = onp.cumsum(ct_matrixA, axis=0)
 
         # Decrypt result
-        result = ct_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ct_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

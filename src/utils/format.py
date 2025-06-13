@@ -5,7 +5,7 @@ from typing import Union
 # ===  Visual Format Array ==
 def format_array(
     data: np.ndarray,
-    format_type: Union[FormatType, str],
+    unpack_type: Union[UnpackType, str],
     tensor_ndim: int,
     original_shape: tuple,
     tensor_shape: tuple,
@@ -17,7 +17,7 @@ def format_array(
     ----------
     result : np.ndarray
         Raw decrypted data
-    format_type : FormatType or str
+    unpack_type : UnpackType or str
         Format type to apply
     tensor_ndim : int
         Number of dimensions in the original tensor
@@ -34,21 +34,19 @@ def format_array(
         Formatted result
     """
     # Convert string format type to enum if needed
-    if isinstance(format_type, str):
+    if isinstance(unpack_type, str):
         try:
-            format_type = FormatType(format_type.lower())
+            unpack_type = UnpackType(unpack_type.lower())
         except ValueError:
-            print(
-                f"Warning: Unrecognized format_type '{format_type}'. Using 'raw' instead."
-            )
-            format_type = FormatType.RAW
+            print(f"Warning: Unrecognized unpack_type '{unpack_type}'. Using 'raw' instead.")
+            unpack_type = UnpackType.RAW
 
     # Return raw result if requested
-    if format_type == FormatType.RAW:
+    if unpack_type == UnpackType.RAW:
         return data
 
     # Apply reshape if needed
-    if format_type in (FormatType.RESHAPE, FormatType.ROUND):
+    if unpack_type in (UnpackType.RESHAPE, UnpackType.ROUND):
         if "new_shape" in format_options:
             new_shape = format_options["new_shape"]
             if isinstance(new_shape, int):
@@ -58,12 +56,10 @@ def format_array(
             else:
                 data = np.reshape(data, new_shape)
         else:
-            data = _format_array(
-                data, tensor_ndim, original_shape, tensor_shape
-            )
+            data = _format_array(data, tensor_ndim, original_shape, tensor_shape)
 
     # Apply rounding if needed
-    if format_type == FormatType.ROUND:
+    if unpack_type == UnpackType.ROUND:
         precision = format_options.get("precision", 0)
         data = np.round(data, precision)
 

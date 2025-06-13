@@ -32,7 +32,7 @@ def fhe_square_matrix_product(params, input):
         ctm_result = ctm_matA @ ctm_matB
 
         # Decrypt and reshape result
-        result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

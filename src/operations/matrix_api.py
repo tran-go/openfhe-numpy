@@ -19,7 +19,6 @@ from .dispatch import tensor_function_api
 # ===========================
 
 
-@tensor_function_api("add", binary=True)
 def add(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     """
     Add two tensors or a tensor and a scalar.
@@ -45,6 +44,11 @@ def add(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     >>> add([1, 2], [3, 4])
     array([4, 6])
     """
+    return _add_dispatch(a, b)
+
+
+@tensor_function_api("add", binary=True)
+def _add_dispatch(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     pass
 
 

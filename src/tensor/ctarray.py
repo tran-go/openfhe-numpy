@@ -1,19 +1,20 @@
-import openfhe
 import io
+from typing import Optional, Tuple, Union
+
 import numpy as np
+import openfhe
 from openfhe_numpy import _onp_cpp
-from .tensor import FHETensor
-from openfhe_numpy.utils.log import ONP_ERROR
 from openfhe_numpy.utils import utils
+from openfhe_numpy.utils.constants import UnpackType
+from openfhe_numpy.utils.log import ONP_ERROR
+
+from .tensor import FHETensor
 
 
 class CTArray(FHETensor[openfhe.Ciphertext]):
     """
     Encrypted tensor class for OpenFHE ciphertexts.
-
-    This class represents encrypted tensors that can be manipulated
-    using homomorphic operations. It supports standard operations
-    like addition, multiplication, and matrix operations.
+    This class represents encrypted tensors.
 
     Examples
     --------
@@ -21,7 +22,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     >>> cc, keys = gen_crypto_context(4)
     >>> matrix = np.array([[1, 2], [3, 4]])
     >>> encrypted = onp.array(cc, matrix, slots, keys.publicKey)
-    >>> result = encrypted + encrypted  # Homomorphic addition
+    >>> result = encrypted + encrypted  # or add(encrypted, encrypted)
     >>> decrypted = result.decrypt(keys.secretKey)
     """
 
@@ -30,8 +31,8 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     def decrypt(
         self,
         secret_key: openfhe.PrivateKey,
-        format_type: str = "raw",
-        **format_options,
+        unpack_type: UnpackType = UnpackType.RAW,
+        new_shape: Optional[Union[Tuple[int, ...], int]] = None,
     ) -> np.ndarray:
         """Decrypt ciphertext using given secret key with flexible formatting options.
 
@@ -39,17 +40,15 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         ----------
         secret_key : openfhe.PrivateKey
             Secret key used for decryption
-        format_type : str, optional
+        unpack_type : UnpackType
             Formatting option to apply:
-            - "raw": Return raw decrypted data without reshaping
-            - "reshape": Reshape to original dimensions
-            - "round": Reshape and round values to integers
-            - "auto": Auto-detect best format based on data (default)
-        format_options : dict
-            Additional formatting options:
-            - precision: int, number of decimal places for rounding
-            - dtype: numpy dtype for output array
-            - new_shape: tuple (min, max) to clip values
+            - UnpackType.RAW: Return raw decrypted data without reshaping
+            - UnpackType.RESHAPE: Reshape to original dimensions
+            - UnpackType.ROUND: Reshape and round values to integers
+            - UnpackType.AUTO: Auto-detect best format based on data
+        new_shape : tuple or int, optional
+            Custom shape to reshape the output array to
+            If None, uses the tensor's original shape
 
         Returns
         -------
@@ -69,15 +68,27 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         plaintext.SetLength(self.batch_size)
         result = plaintext.GetRealPackedValue()
 
-        # Define valid format types
-        return utils.format_array(
-            result,
-            format_type,
-            self.ndim,
-            self.original_shape,
-            self.shape,
-            **format_options,
-        )
+        print("unpack_type = ", unpack_type)
+
+        unpack_type = UnpackType(unpack_type.lower())
+        if unpack_type == UnpackType.RAW:
+            return result
+        if unpack_type == UnpackType.ORIGINAL:
+            print("ORIGINAL = ")
+            return utils.process_packed_data(result, self.info)
+
+        # Consider the reshape function later. I don't think it is needed now.
+        # if unpack_type == UnpackType.RESHAPE:
+        #     return utils.process_packed_data(result, self.info, new_shape)
+
+        # return utils.format_array(
+        #     result,
+        #     unpack_type,
+        #     self.ndim,
+        #     self.original_shape,
+        #     self.shape,
+        #     **format_options,
+        # )
 
     def serialize(self) -> dict:
         """Serialize ciphertext and metadata to dictionary."""
@@ -120,7 +131,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         )
 
     def __repr__(self) -> str:
-        return f"CTArray(meta={self.meta})"
+        return f"CTArray(metadata={self.metadata})"
 
     def _sum(self) -> "CTArray":
         # if self._order == utils.MatrixOrder.ROW_MAJOR:

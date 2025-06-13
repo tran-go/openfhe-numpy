@@ -11,7 +11,7 @@ from tests.main_unittest import (
 )
 
 """
-Note: Column-wise cumulative sum requires sufficient multiplicative 
+Note: Column-wise cumulative sum requires sufficient multiplicative
 depth and ring dimension to accommodate the computational complexity.
 Small ring dimensions (<4096) may result in high approximation errors.
 """
@@ -37,7 +37,7 @@ def fhe_matrix_sumcum_cols(original_params, input):
 
         onp.gen_accumulate_cols_key(keys.secretKey, ctm_matrix.ncols)
         ctm_result = onp.cumsum(ctm_matrix, 1, True)
-        result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

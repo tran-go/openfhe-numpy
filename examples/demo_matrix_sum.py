@@ -76,9 +76,7 @@ def demo():
     # Encrypt matrix A
     tensor = onp.array(cc, matrix, batch_size, public_key=keys.publicKey)
 
-    print(
-        f"batch_size = {batch_size}, dim = {cc.GetRingDimension()}, ncols = {tensor.ncols}"
-    )
+    print(f"batch_size = {batch_size}, dim = {cc.GetRingDimension()}, shape = {tensor.shape}")
 
     print("\n********** HOMOMORPHIC SUM BY ALL ENTRIES **********")
     #  Generate rotation keys for column operations
@@ -93,7 +91,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
 
@@ -101,12 +99,8 @@ def demo():
     is_match, error = onp.check_equality_matrix(result, expected)
 
     # Timing
-    print(
-        f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
-    )
-    print(
-        f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
-    )
+    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
+    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Print out result
@@ -127,15 +121,11 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
-    print(
-        f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
-    )
-    print(
-        f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
-    )
+    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
+    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
@@ -160,15 +150,11 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, format_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
     end_dec = time.time()
     result = np.round(result, decimals=1)
-    print(
-        f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms"
-    )
-    print(
-        f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms"
-    )
+    print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
+    print(f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result

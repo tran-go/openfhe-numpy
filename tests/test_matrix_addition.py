@@ -26,7 +26,7 @@ def fhe_matrix_addition(params, input):
     ctm_sum = onp.add(ctm_A, ctm_B)
 
     # Decrypt and format result
-    result = ctm_sum.decrypt(keys.secretKey, format_type="reshape")
+    result = ctm_sum.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

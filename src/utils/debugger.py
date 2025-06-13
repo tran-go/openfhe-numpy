@@ -20,7 +20,7 @@ class FHEDebugger:
         info = {
             "name": name,
             "shape": ct_array.original_shape,
-            "meta": ct_array.meta,
+            "meta": ct_array.metadata,
             "time": time.time(),
         }
 
@@ -34,12 +34,8 @@ class FHEDebugger:
         # Decrypt if secret key available and requested
         if self.secret_key:
             try:
-                info["sample_values"] = ct_array.decrypt(
-                    self.secret_key
-                ).flatten()[:5]
-                info["decrypted_mean"] = np.mean(
-                    ct_array.decrypt(self.secret_key)
-                )
+                info["sample_values"] = ct_array.decrypt(self.secret_key).flatten()[:5]
+                info["decrypted_mean"] = np.mean(ct_array.decrypt(self.secret_key))
             except:
                 info["decrypt_error"] = "Failed to decrypt"
 
@@ -65,9 +61,7 @@ class FHEDebugger:
             "shape_match": decrypted.shape == expected.shape,
             "mean_diff": np.mean(np.abs(decrypted - expected)),
             "max_diff": np.max(np.abs(decrypted - expected)),
-            "relative_error": np.mean(
-                np.abs((decrypted - expected) / (expected + 1e-10))
-            ),
+            "relative_error": np.mean(np.abs((decrypted - expected) / (expected + 1e-10))),
         }
 
         self.log.append(metrics)

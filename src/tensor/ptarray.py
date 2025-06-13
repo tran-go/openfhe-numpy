@@ -21,7 +21,7 @@ class PTArray(FHETensor[openfhe.Plaintext]):
         raise NotImplementedError("Decrypt not implemented for plaintext")
 
     def __repr__(self) -> str:
-        return f"PTArray(meta={self.meta})"
+        return f"PTArray(meta={self.metadata})"
 
     def serialize(self) -> dict:
         raise NotImplementedError("Serialize not implemented for plaintext")

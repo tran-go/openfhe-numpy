@@ -56,7 +56,7 @@ source venv/bin/activate
 pip install -e .
 ```
 
-This ensures your C++ extension module (`_openfhe_numpy`) will be properly linked and available during testing.
+This ensures your C++ extension module (`_onp_cpp`) will be properly linked and available during testing.
 
 ## Viewing Test Results
 

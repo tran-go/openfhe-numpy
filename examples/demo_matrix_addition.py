@@ -9,7 +9,6 @@ from openfhe import (
     UNIFORM_TERNARY,
 )
 import openfhe_numpy as onp
-from openfhe_numpy.utils import check_equality_matrix
 
 
 def gen_crypto_context(mult_depth):
@@ -66,18 +65,20 @@ def demo():
 
     # Timing the decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+    result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
+    print(result)
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Time for decryption: {end_dec - start_dec:.4f} seconds")
 
     # Compare with plain result
     expected = matA + matB
+    expected = np.add(matA, matB)
 
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = check_equality_matrix(result, expected)
+    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

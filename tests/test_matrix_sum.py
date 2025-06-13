@@ -11,7 +11,7 @@ from tests.main_unittest import (
 )
 
 """
-Note: Column-wise cumulative sum requires sufficient multiplicative 
+Note: Column-wise cumulative sum requires sufficient multiplicative
 depth and ring dimension to accommodate the computational complexity.
 Small ring dimensions (<4096) may result in high approximation errors.
 """
@@ -46,7 +46,7 @@ def fhe_matrix_sum(original_params, input):
             ctm_result = onp.sum(ctm_matrix, 1, True)
         else:
             ctm_result = None
-        result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 
@@ -84,9 +84,7 @@ class TestMatrixSum(MainUnittest):
                     # Calculate expected result directly
 
                     # Create test name with descriptive format
-                    test_name = (
-                        f"test_{sum_type}_{test_counter}_ring_{param['ringDim']}_size_{size}"
-                    )
+                    test_name = f"test_{sum_type}_{test_counter}_ring_{param['ringDim']}_size_{size}"
 
                     # Generate the test case with debug output
                     test_method = MainUnittest.generate_test_case(

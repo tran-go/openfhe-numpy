@@ -5,7 +5,7 @@ This module provides functions for generating rotation, accumulation, and other 
 keys needed for various homomorphic operations in OpenFHE-NumPy.
 """
 
-from openfhe_numpy import _onp_cpp  # Import from parent package
+from openfhe_numpy import _onp_cpp as backend  # Import from cpp source
 
 
 def accumulation_depth(nrows, ncols, accumulate_by_rows):
@@ -26,7 +26,7 @@ def accumulation_depth(nrows, ncols, accumulate_by_rows):
     int
         Required multiplicative depth
     """
-    return _onp_cpp.MulDepthAccumulation(nrows, ncols, accumulate_by_rows)
+    return backend.MulDepthAccumulation(nrows, ncols, accumulate_by_rows)
 
 
 def sum_row_keys(secret_key, ncols=0):
@@ -79,7 +79,7 @@ def gen_accumulate_rows_key(secret_key, ncols):
     ncols : int
         Number of columns in the matrix
     """
-    _onp_cpp.EvalSumCumRowsKeyGen(secret_key, ncols)
+    backend.EvalSumCumRowsKeyGen(secret_key, ncols)
 
 
 def gen_accumulate_cols_key(secret_key, ncols):
@@ -93,7 +93,7 @@ def gen_accumulate_cols_key(secret_key, ncols):
     ncols : int
         Number of columns in the matrix
     """
-    _onp_cpp.EvalSumCumColsKeyGen(secret_key, ncols)
+    backend.EvalSumCumColsKeyGen(secret_key, ncols)
 
 
 def gen_rotation_keys(secret_key, rotation_indices):
@@ -113,9 +113,7 @@ def gen_rotation_keys(secret_key, rotation_indices):
     context.EvalRotateKeyGen(secret_key, rotation_indices)
 
 
-def gen_lintrans_keys(
-    secret_key, block_size, linear_transform_type, repetitions=0
-):
+def gen_lintrans_keys(secret_key, block_size, linear_transform_type, repetitions=0):
     """
     Generate keys for linear transformations.
 
@@ -130,9 +128,7 @@ def gen_lintrans_keys(
     repetitions : int, optional
         Number of repetitions, by default 0
     """
-    _onp_cpp.EvalLinTransKeyGen(
-        secret_key, block_size, linear_transform_type, repetitions
-    )
+    backend.EvalLinTransKeyGen(secret_key, block_size, linear_transform_type, repetitions)
 
 
 def gen_square_matmult_key(secret_key, block_size):
@@ -146,7 +142,7 @@ def gen_square_matmult_key(secret_key, block_size):
     block_size : int
         Block size for the matrix
     """
-    _onp_cpp.EvalSquareMatMultRotateKeyGen(secret_key, block_size)
+    backend.EvalSquareMatMultRotateKeyGen(secret_key, block_size)
 
 
 def gen_transpose_keys(secret_key, ctm_matrix):
@@ -160,6 +156,4 @@ def gen_transpose_keys(secret_key, ctm_matrix):
     ctm_matrix : CTArray
         The ciphertext matrix to transpose
     """
-    _onp_cpp.EvalLinTransKeyGen(
-        secret_key, ctm_matrix.ncols, _onp_cpp.LinTransType.TRANSPOSE
-    )
+    backend.EvalLinTransKeyGen(secret_key, ctm_matrix.ncols, backend.LinTransType.TRANSPOSE)

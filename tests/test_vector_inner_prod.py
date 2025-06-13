@@ -31,7 +31,7 @@ def fhe_vector_dot(params, input):
             ctm_input_b = onp.array(cc, input_b, total_slots, public_key=keys.publicKey)
 
         ctm_dot = onp.dot(ctm_input_a, ctm_input_b)
-        result = ctm_dot.decrypt(keys.secretKey, format_type="reshape", new_shape=(1,))
+        result = ctm_dot.decrypt(keys.secretKey, unpack_type="reshape", new_shape=(1,))
 
     return result
 

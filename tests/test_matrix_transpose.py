@@ -31,7 +31,7 @@ def fhe_matrix_transpose(params, input):
         ct_result = onp.transpose(ct_matrixA)
 
         # Decrypt result
-        result = ct_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ct_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 

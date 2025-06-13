@@ -11,7 +11,7 @@ from tests.main_unittest import (
 )
 
 """
-Note: Column-wise cumulative mean requires sufficient multiplicative 
+Note: Column-wise cumulative mean requires sufficient multiplicative
 depth and ring dimension to accommodate the computational complexity.
 Small ring dimensions (<4096) may result in high approximation errors.
 """
@@ -46,7 +46,7 @@ def fhe_matrix_mean(original_params, input):
             ctm_result = onp.mean(ctm_matrix, 1, True)
         else:
             ctm_result = None
-        result = ctm_result.decrypt(keys.secretKey, format_type="reshape")
+        result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
 
     return result
 
