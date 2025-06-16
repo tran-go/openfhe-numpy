@@ -1,7 +1,6 @@
-# Import OpenFHE and matrix utilities
+# Import OpenFHE and Numpy
 import numpy as np
 from openfhe import *
-from openfhe_numpy.utils import utils
 
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
@@ -78,21 +77,21 @@ def demo():
     # Encrypt both matrices
     ctm_matrix = onp.array(cc, A, total_slots, public_key=keys.publicKey)
     ncols = ctm_matrix.ncols
-    sumkey = onp.sum_col_keys(cc, keys.secretKey)
+    sumkey = onp.sum_col_keys(keys.secretKey)
     ctm_matrix.extra["colkey"] = sumkey
-    ctv_vector = onp.array(cc, b, total_slots, ncols, "C", public_key=keys.publicKey)
+    ctv_vector = onp.array(cc, b, total_slots, "C", public_key=keys.publicKey)
 
     print("\n********** Homomorphic Matrix Vector Product **********")
     ctv_result = ctm_matrix @ ctv_vector
 
     result = ctv_result.decrypt(keys.secretKey, unpack_type="reshape")
-    expected = utils.pack_vector_row_wise((A @ b), ncols, total_slots)
+    expected = onp.pack_vector_row_wise((A @ b), ncols, total_slots)
 
     print(f"\nExpected:\n{A @ b}")
     print(f"\nPacked Expected:\n{expected[:32]}")
     print(f"\nDecrypted Result:\n{result[:32]}")
 
-    is_match, error = utils.check_equality_vector(result[:32], expected[:32])
+    is_match, error = onp.check_equality_vector(result[:32], expected[:32])
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

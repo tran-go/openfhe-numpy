@@ -16,9 +16,8 @@ from numpy.typing import ArrayLike
 from openfhe_numpy.operations.dispatch import register_tensor_function
 from openfhe_numpy.tensor.ctarray import CTArray
 from openfhe_numpy.tensor.ptarray import PTArray
-from openfhe_numpy.utils.constants import MatrixOrder
 from openfhe_numpy.utils.log import ONP_ERROR
-from openfhe_numpy.utils.utils import next_power_of_two
+from openfhe_numpy.utils.matlib import next_power_of_two
 
 # Import specific functions from C++ module
 from openfhe_numpy._onp_cpp import (
@@ -28,6 +27,7 @@ from openfhe_numpy._onp_cpp import (
     EvalSumCumRows,
     EvalSumCumCols,
     MatVecEncoding,
+    ArrayEncodingType,
 )
 
 ##############################################################################
@@ -166,7 +166,7 @@ def _eval_matvec_ct(lhs, rhs):
     if lhs.ndim == 2 and rhs.ndim == 1:
         if lhs.original_shape[1] != rhs.original_shape[0]:
             ONP_ERROR(f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]")
-        if lhs.order == MatrixOrder.ROW_MAJOR and rhs.order == MatrixOrder.COL_MAJOR:
+        if lhs.order == ArrayEncodingType.ROW_MAJOR and rhs.order == ArrayEncodingType.COL_MAJOR:
             sumkey = lhs.extra["colkey"]
             ciphertext = EvalMultMatVec(
                 sumkey,
@@ -177,7 +177,7 @@ def _eval_matvec_ct(lhs, rhs):
             )
             return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
 
-        elif lhs.order == MatrixOrder.COL_MAJOR and rhs.order == MatrixOrder.ROW_MAJOR:
+        elif lhs.order == ArrayEncodingType.COL_MAJOR and rhs.order == ArrayEncodingType.ROW_MAJOR:
             sumkey = lhs.extra["rowkey"]
             ciphertext = EvalMultMatVec(
                 sumkey,
@@ -236,9 +236,10 @@ def dot_ct(a, b):
 def _transpose_ct(ctarray: CTArray) -> "CTArray":
     """Internal function to evaluate transpose of a tensor."""
     ciphertext = EvalTranspose(ctarray.data, ctarray.ncols)
-    shape = (ctarray.original_shape[1], ctarray.original_shape[0])
-    ncols = next_power_of_two(shape[1])
-    return CTArray(ciphertext, shape, ctarray.batch_size, ncols, ctarray.order)
+    pre_padded_shape = (ctarray.original_shape[1], ctarray.original_shape[0])
+    padded_shape = (ctarray.shape[1], ctarray.shape[0])
+
+    return CTArray(ciphertext, pre_padded_shape, ctarray.batch_size, padded_shape, ctarray.order)
 
 
 @register_tensor_function("transpose", [("CTArray",)])

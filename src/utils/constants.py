@@ -2,13 +2,6 @@
 from enum import Enum
 
 
-# Encoding strategy for matrix packing
-class MatrixOrder:
-    ROW_MAJOR = "R"  # Encode data row-wise (default)
-    COL_MAJOR = "C"  # Encode data column-wise
-    DIAG_MAJOR = "D"  # Optional: encode data diagonally (future use)
-
-
 # Types of data representation
 class DataType:
     PLAINTEXT = "P"
@@ -25,5 +18,3 @@ class UnpackType(Enum):
     RAW = "raw"
     ORIGINAL = "original"
     RESHAPE = "reshape"
-    # ROUND = "round"
-    # AUTO = "auto"

@@ -1,6 +1,4 @@
-# -----------------------------------------------------------
 # Standard Library Imports
-# -----------------------------------------------------------
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -13,33 +11,32 @@ from typing import (
     Tuple,
     TypeVar,
 )
-import io
-import sys
-import logging
+# import io
+# import sys
+# import logging
 
 
-# -----------------------------------------------------------
 # Third-Party Imports
-# -----------------------------------------------------------
 import numpy as np
-from openfhe import *
+# from openfhe import *
 
-from ..utils.log import ONP_ERROR
-from ..utils.packing import (
+# Internal C++ module Imports
+from openfhe_numpy._onp_cpp import ArrayEncodingType
+
+# Subpackage Imports
+from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.matlib import (
     is_power_of_two,
     next_power_of_two,
 )
-from ..utils.constants import *
+from openfhe_numpy.utils.constants import *
 
-# -----------------------------------------------------------
+
 # Ultilities Imports
-# -----------------------------------------------------------
 T = TypeVar("T")
 
 
-# -----------------------------------------------------------
 # BaseTensor - Abstract Interface
-# -----------------------------------------------------------
 class BaseTensor(ABC, Generic[T]):
     @property
     @abstractmethod
@@ -80,9 +77,9 @@ class BaseTensor(ABC, Generic[T]):
     def decrypt(self, *args, **kwargs): ...
 
 
-# -----------------------------------------------------------
 # FHETensor - Generic Tensor with Metadata
-# -----------------------------------------------------------
+
+
 class FHETensor(BaseTensor[T], Generic[T]):
     """
     Concrete base class for tensors in FHE computation.
@@ -116,7 +113,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
         original_shape: Tuple[int, int],
         batch_size: int,
         new_shape: Tuple[int, int],
-        order: int = MatrixOrder.ROW_MAJOR,
+        order: int = ArrayEncodingType.ROW_MAJOR,
         is_padded: bool = True,
     ):
         self._data = data
@@ -253,7 +250,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
     #         raise ValueError(f"Value must be positive, got {value}")
     #     self._ncols = value
 
-    def set_shape(self, value: int):
+    def set_shape(self, value: Tuple[int, int]):
         self._shape = value
 
     def clone(self, data: Optional[T] = None) -> "BaseTensor[T]":

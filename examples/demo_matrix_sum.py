@@ -150,7 +150,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey)
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")

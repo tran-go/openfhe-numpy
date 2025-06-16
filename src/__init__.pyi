@@ -27,7 +27,7 @@ from ._onp_cpp import (
     EvalSumCumCols,
 )
 from .utils.utils import is_power_of_two, next_power_of_two, check_equality_matrix, pack_vector_row_wise
-from .config import MatrixOrder, DataType, EPSILON, EPSILON_HIGH, UnpackType
+from .config import ArrayEncodingType, DataType, EPSILON, EPSILON_HIGH, UnpackType
 from .utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
 
 __version__: str

@@ -108,8 +108,6 @@ def check_equality_matrix(a, b, eps=EPSILON):
 
     error, is_equal = 0, True
 
-    # if a.shape != b.shape:
-    #    rows = min(a)
     if a.ndim == 1:
         for i in range(len(a)):
             f, e = check_single_equality(a[i], b[i], eps)
@@ -178,9 +176,7 @@ def _matrix_multiply(A, B, precision=2):
         for j in range(n):
             for k in range(n):
                 result[i][j] += A[i][k] * B[k][j]
-    return [
-        [round(result[i][j], precision) for j in range(n)] for i in range(n)
-    ]
+    return [[round(result[i][j], precision) for j in range(n)] for i in range(n)]
 
 
 def _rotate_vector(vec, k):

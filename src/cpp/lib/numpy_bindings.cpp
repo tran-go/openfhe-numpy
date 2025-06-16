@@ -260,8 +260,8 @@ void bind_ciphertext(py::module& m) {
 void bind_privatekey(py::module& m) {
     py::object existingModule = py::module_::import("openfhe");
     py::object pyClsObj       = existingModule.attr("PrivateKey");
-    auto cls                  = py::reinterpret_borrow<py::class_<Ciphertext<DCRTPoly>>>(pyClsObj);
-    cls.def("GetCryptoContext", [](const Ciphertext<DCRTPoly>& ct) { return ct->GetCryptoContext(); });
+    auto cls                  = py::reinterpret_borrow<py::class_<PrivateKey<DCRTPoly>>>(pyClsObj);
+    cls.def("GetCryptoContext", [](const PrivateKey<DCRTPoly>& ct) { return ct->GetCryptoContext(); });
 }
 
 

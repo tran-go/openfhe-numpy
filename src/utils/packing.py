@@ -12,17 +12,15 @@ The module is organized into sections:
 4. Conversion functions between different packing formats
 """
 
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict, Any
 
 import numpy as np
 
-from .log import ONP_ERROR
-from .matlib import is_power_of_two, next_power_of_two
+from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.matlib import is_power_of_two, next_power_of_two
 
 
 # === Shape and Utility Functions ==
-
-
 def _get_shape(data: Union[List, Tuple, np.ndarray]) -> Tuple[int, int, int]:
     """Determine the shape and dimension of a given array.
 
@@ -127,12 +125,12 @@ def _pack_vector_row_wise(v, total_slots, repeats=0, pad_to_power_of_2=True, pad
     return packed, shape
 
 
-def _pack_vector_col_wise(v, total_slots, repeats=0, pad_to_power_of_2=True):
+def _pack_vector_col_wise(v, total_slots, repeats=0, pad_to_power_of_2=True, padding_value="default"):
     """Pack a vector by repeating it multiple times in a column-wise pattern.
 
     This function repeats the entire vector multiple times, arranging them in blocks.
-    For example, packing [1,2,3] into 12 slots would result in [1,2,3,0,1,2,3,0,1,2,3,0]
-    where 0 is padding if size is padded to power of two.
+    - padding_value is "default" and pad_to_power_of_2 = True
+    >>> packing [1,2,3] into 12 slots would result in [1,2,3,0,1,2,3,0,1,2,3,0]
 
     Parameters
     ----------
@@ -171,7 +169,7 @@ def _pack_vector_col_wise(v, total_slots, repeats=0, pad_to_power_of_2=True):
         size = next_power_of_two(size)
     if repeats == 0:
         repeats = total_slots // size
-    shape = (size, repeats)
+    shape = (size, 0)
 
     if size < n:
         ONP_ERROR(f"Padded size [{size}] is smaller than vector size [{n}]")
@@ -419,3 +417,63 @@ def vector_row_major_2_col_major(v, block_size, total_slots):
         print(f"convert {org_v} to {vv[:block_size]}")
         print(f"{wnice}")
     return vv
+
+
+# Utilities functions for unpacking
+
+
+def _extract_matrix(data, info):
+    print(info)
+    ncols = info["shape"][1]
+    nrows = info["batch_size"] // ncols
+    reshaped = np.reshape(data, (nrows, ncols))
+
+    if info["order"] == ArrayEncodingType.ROW_MAJOR:
+        return reshaped[: info["original_shape"][0], : info["original_shape"][1]]
+    elif info["order"] == ArrayEncodingType.COL_MAJOR:
+        tranposed = np.transpose(reshaped)
+        return tranposed[: info["original_shape"][0], : info["original_shape"][1]]
+    else:
+        ONP_ERROR("Order is not supported!!!")
+        return None
+
+
+def _extract_vector(data, info):
+    original_row = info["original_shape"][0]
+    ncols = info["shape"][1]
+    nrows = info["batch_size"] // ncols
+    reshaped = np.reshape(data, (ncols, nrows))
+
+    if info["order"] == ArrayEncodingType.ROW_MAJOR:
+        return [reshaped[x + ncols] for x in range(original_row)]
+    elif info["order"] == ArrayEncodingType.COL_MAJOR:
+        return reshaped[:original_row]
+    else:
+        ONP_ERROR("Order is not supported!!!")
+        return None
+
+
+def process_packed_data(
+    data: np.ndarray,
+    info: Dict[str, Any],
+) -> np.ndarray:
+    """
+    Reshape a flattened array to its original matrix shape or a new shape.
+
+    Parameters
+    ----------
+    array : array_like
+        The flattened array to reshape.
+    info: dictionary
+        Array's metadata
+
+    Returns
+    -------
+    ndarray
+        Reshaped array to its desired shape
+    """
+
+    if info["ndim"] == 2:
+        return _extract_matrix(data, info)
+    else:
+        return _extract_vector(data, info)

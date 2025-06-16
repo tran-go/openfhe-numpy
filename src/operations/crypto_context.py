@@ -5,10 +5,11 @@ This module provides functions for generating rotation, accumulation, and other 
 keys needed for various homomorphic operations in OpenFHE-NumPy.
 """
 
+import openfhe
 from openfhe_numpy import _onp_cpp as backend  # Import from cpp source
 
 
-def accumulation_depth(nrows, ncols, accumulate_by_rows):
+def accumulation_depth(nrows: int, ncols: int, accumulate_by_rows: bool):
     """
     Compute the CKKS multiplicative depth needed to sum over a matrix.
 
@@ -29,7 +30,7 @@ def accumulation_depth(nrows, ncols, accumulate_by_rows):
     return backend.MulDepthAccumulation(nrows, ncols, accumulate_by_rows)
 
 
-def sum_row_keys(secret_key, ncols=0):
+def sum_row_keys(secret_key: openfhe.PrivateKey, ncols: int = 0):
     """
     Generate keys for summing rows in a matrix.
 
@@ -51,14 +52,12 @@ def sum_row_keys(secret_key, ncols=0):
     return context.EvalSumRowsKeyGen(secret_key, None, ncols)
 
 
-def sum_col_keys(secret_key, ncols=0):
+def sum_col_keys(secret_key: openfhe.PrivateKey, ncols: int = 0):
     """
     Generate keys for summing columns in a matrix.
 
     Parameters
     ----------
-    context : CryptoContext
-        The OpenFHE crypto context
     secret_key : PrivateKey
         The private key to use for key generation
     ncols : int, optional
@@ -68,7 +67,7 @@ def sum_col_keys(secret_key, ncols=0):
     return context.EvalSumColsKeyGen(secret_key)
 
 
-def gen_accumulate_rows_key(secret_key, ncols):
+def gen_accumulate_rows_key(secret_key: openfhe.PrivateKey, ncols: int):
     """
     Generate keys for cumulative sum of rows in a matrix.
 
@@ -82,7 +81,7 @@ def gen_accumulate_rows_key(secret_key, ncols):
     backend.EvalSumCumRowsKeyGen(secret_key, ncols)
 
 
-def gen_accumulate_cols_key(secret_key, ncols):
+def gen_accumulate_cols_key(secret_key: openfhe.PrivateKey, ncols: int):
     """
     Generate keys for cumulative sum of columns in a matrix.
 
@@ -96,7 +95,7 @@ def gen_accumulate_cols_key(secret_key, ncols):
     backend.EvalSumCumColsKeyGen(secret_key, ncols)
 
 
-def gen_rotation_keys(secret_key, rotation_indices):
+def gen_rotation_keys(secret_key: openfhe.PrivateKey, rotation_indices: int):
     """
     Generate rotation keys for the specified indices.
 
@@ -113,7 +112,7 @@ def gen_rotation_keys(secret_key, rotation_indices):
     context.EvalRotateKeyGen(secret_key, rotation_indices)
 
 
-def gen_lintrans_keys(secret_key, block_size, linear_transform_type, repetitions=0):
+def gen_lintrans_keys(secret_key: openfhe.PrivateKey, block_size: int, linear_transform_type, repetitions: int = 0):
     """
     Generate keys for linear transformations.
 
@@ -131,7 +130,7 @@ def gen_lintrans_keys(secret_key, block_size, linear_transform_type, repetitions
     backend.EvalLinTransKeyGen(secret_key, block_size, linear_transform_type, repetitions)
 
 
-def gen_square_matmult_key(secret_key, block_size):
+def gen_square_matmult_key(secret_key: openfhe.PrivateKey, block_size: int):
     """
     Generate keys for square matrix multiplication.
 
@@ -145,7 +144,7 @@ def gen_square_matmult_key(secret_key, block_size):
     backend.EvalSquareMatMultRotateKeyGen(secret_key, block_size)
 
 
-def gen_transpose_keys(secret_key, ctm_matrix):
+def gen_transpose_keys(secret_key: openfhe.PrivateKey, ctm_matrix):
     """
     Generate keys for matrix transposition.
 

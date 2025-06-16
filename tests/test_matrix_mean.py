@@ -42,7 +42,7 @@ def fhe_matrix_mean(original_params, input):
             onp.sum_row_keys(keys.secretKey, ctm_matrix.ncols)
             ctm_result = onp.mean(ctm_matrix, 0, True)
         elif input[1] == 1:
-            onp.sum_col_keys(cc, keys.secretKey, ctm_matrix.ncols)
+            onp.sum_col_keys(keys.secretKey, ctm_matrix.ncols)
             ctm_result = onp.mean(ctm_matrix, 1, True)
         else:
             ctm_result = None

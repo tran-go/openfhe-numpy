@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import openfhe
 from openfhe_numpy import _onp_cpp
-from openfhe_numpy.utils import utils
 from openfhe_numpy.utils.constants import UnpackType
 from openfhe_numpy.utils.log import ONP_ERROR
 
@@ -31,7 +30,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     def decrypt(
         self,
         secret_key: openfhe.PrivateKey,
-        unpack_type: UnpackType = UnpackType.RAW,
+        unpack_type: UnpackType = UnpackType.ORIGINAL,
         new_shape: Optional[Union[Tuple[int, ...], int]] = None,
     ) -> np.ndarray:
         """Decrypt ciphertext using given secret key with flexible formatting options.
@@ -69,13 +68,14 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         result = plaintext.GetRealPackedValue()
 
         print("unpack_type = ", unpack_type)
+        if isinstance(unpack_type, str):
+            unpack_type = UnpackType(unpack_type.lower())
 
-        unpack_type = UnpackType(unpack_type.lower())
         if unpack_type == UnpackType.RAW:
             return result
         if unpack_type == UnpackType.ORIGINAL:
             print("ORIGINAL = ")
-            return utils.process_packed_data(result, self.info)
+            return process_packed_data(result, self.info)
 
         # Consider the reshape function later. I don't think it is needed now.
         # if unpack_type == UnpackType.RESHAPE:
@@ -134,7 +134,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         return f"CTArray(metadata={self.metadata})"
 
     def _sum(self) -> "CTArray":
-        # if self._order == utils.MatrixOrder.ROW_MAJOR:
+        # if self._order == utils.ArrayEncodingType.ROW_MAJOR:
         pass
 
     # def _add(self, other) -> "CTArray":
@@ -202,8 +202,8 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     #             f"Matrix dimension [{tensor_matrix.original_shape}] mismatch with vector dimension [{tensor_vector.shape}]"
     #         )
     #     if (
-    #         tensor_matrix.order == MatrixOrder.ROW_MAJOR
-    #         and tensor_vector.order == MatrixOrder.COL_MAJOR
+    #         tensor_matrix.order == ArrayEncodingType.ROW_MAJOR
+    #         and tensor_vector.order == ArrayEncodingType.COL_MAJOR
     #     ):
     #         ciphertext = EvalMultMatVec(
     #             sumkey,
@@ -217,12 +217,12 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     #             (tensor_matrix.original_shape[0], 1),
     #             tensor_matrix.batch_size,
     #             tensor_matrix.ncols,
-    #             MatrixOrder.COL_MAJOR,
+    #             ArrayEncodingType.COL_MAJOR,
     #         )
 
     #     elif (
-    #         tensor_matrix.order == MatrixOrder.COL_MAJOR
-    #         and tensor_vector.order == MatrixOrder.ROW_MAJOR
+    #         tensor_matrix.order == ArrayEncodingType.COL_MAJOR
+    #         and tensor_vector.order == ArrayEncodingType.ROW_MAJOR
     #     ):
     #         ct_product = EvalMultMatVec(
     #             crypto_context,
@@ -237,7 +237,7 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
     #             (tensor_matrix.original_shape[0], 1),
     #             tensor_matrix.batch_size,
     #             tensor_matrix.ncols,
-    #             MatrixOrder.ROW_MAJOR,
+    #             ArrayEncodingType.ROW_MAJOR,
     #         )
     #     else:
     #         ONP_ERROR(

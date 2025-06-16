@@ -5,7 +5,6 @@ import openfhe_numpy as onp
 
 # Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
-from openfhe_numpy.utils import check_equality_matrix
 
 
 def gen_crypto_context(mult_depth):
@@ -76,15 +75,16 @@ def demo():
     # Perform matrix tranpose on ciphertexts
     onp.gen_transpose_keys(keys.secretKey, ctm_matA)
     ctm_result = onp.transpose(ctm_matA)
+    print(">>>>>>>>>>>>>>>>>>>>", ctm_result.shape)
 
     # Decrypt the result
-    result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
+    result = ctm_result.decrypt(keys.secretKey)
     # Compare with plain result
     expected = matrix.T
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = check_equality_matrix(result, expected)
+    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

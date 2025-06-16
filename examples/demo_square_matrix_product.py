@@ -14,7 +14,7 @@ from openfhe import (
     HEStd_NotSet,
 )
 import openfhe_numpy as onp
-from openfhe_numpy.utils import utils
+# from openfhe_numpy.utils import utils
 
 
 def gen_crypto_context(mult_depth, ring_dim=0):

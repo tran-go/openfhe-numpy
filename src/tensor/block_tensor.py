@@ -1,5 +1,5 @@
 from typing import TypeVar, Generic, Tuple, List
-from openfhe_numpy.utils.constants import MatrixOrder
+from openfhe_numpy._onp_cpp import ArrayEncodingType
 from openfhe_numpy.tensor.tensor import FHETensor, T
 
 
@@ -13,7 +13,7 @@ class BlockFHETensor(FHETensor[T], Generic[T]):
         original_shape,
         batch_size,
         ncols=1,
-        order=MatrixOrder.ROW_MAJOR,
+        order=ArrayEncodingType.ROW_MAJOR,
     ):
         self._blocks = blocks
         self._block_shape = block_shape

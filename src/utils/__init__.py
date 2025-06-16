@@ -4,8 +4,8 @@ This module provides math utilities, validation functions, and logging tools
 for the OpenFHE-NumPy package.
 """
 
-from .matlib import is_power_of_two, next_power_of_two, check_equality_matrix
-from .log import ONPError
+from openfhe_numpy.utils.matlib import is_power_of_two, next_power_of_two, check_equality_matrix
+from openfhe_numpy.utils.log import ONPError
 
 
 __all__ = [

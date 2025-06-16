@@ -43,6 +43,7 @@ _MODULE_EXPORTS = {
     "_onp_cpp": [
         "LinTransType",
         "MatVecEncoding",
+        "ArrayEncodingType",
         "MulDepthAccumulation",
         "EvalLinTransKeyGen",
         "EvalSquareMatMultRotateKeyGen",
@@ -55,18 +56,17 @@ _MODULE_EXPORTS = {
         "EvalSumCumCols",
     ],
     "utils.matlib": ["is_power_of_two", "next_power_of_two", "check_equality_matrix"],
-    "config": ["MatrixOrder", "DataType", "EPSILON", "EPSILON_HIGH", "UnpackType"],
     "utils.log": ["ONP_WARNING", "ONP_DEBUG", "ONP_ERROR", "ONPNotImplementedError"],
-    "utils.constants": ["UnpackType"],
+    "utils.constants": ["DataType", "EPSILON", "EPSILON_HIGH", "UnpackType"],
 }
 _EXPORT_MAP: Dict[str, str] = {name: module for module, names in _MODULE_EXPORTS.items() for name in names}
 __all__ = list(_EXPORT_MAP.keys())
 
 # === EXPLICIT IMPORTS  ===
 if not USE_LAZY_IMPORTS:
-    from .tensor import BaseTensor, FHETensor, PTArray, CTArray, BlockFHETensor, BlockCTArray, array
-    from .operations.matrix_api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce, sum
-    from .operations.crypto_context import (
+    from openfhe_numpy.tensor import BaseTensor, FHETensor, PTArray, CTArray, BlockFHETensor, BlockCTArray, array
+    from openfhe_numpy.operations.matrix_api import add, multiply, dot, matmul, transpose, power, cumsum, cumreduce, sum
+    from openfhe_numpy.operations.crypto_context import (
         sum_row_keys,
         sum_col_keys,
         gen_rotation_keys,
@@ -76,9 +76,10 @@ if not USE_LAZY_IMPORTS:
         gen_accumulate_rows_key,
         gen_accumulate_cols_key,
     )
-    from ._onp_cpp import (
+    from openfhe_numpy._onp_cpp import (
         LinTransType,
         MatVecEncoding,
+        ArrayEncodingType,
         MulDepthAccumulation,
         EvalLinTransKeyGen,
         EvalSquareMatMultRotateKeyGen,
@@ -90,9 +91,9 @@ if not USE_LAZY_IMPORTS:
         EvalSumCumRows,
         EvalSumCumCols,
     )
-    from .utils.matlib import is_power_of_two, next_power_of_two, check_equality_matrix
-    from .config import MatrixOrder, DataType, EPSILON, EPSILON_HIGH, UnpackType
-    from .utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
+    from openfhe_numpy.utils.matlib import is_power_of_two, next_power_of_two, check_equality_matrix
+    from openfhe_numpy.utils.constants import DataType, EPSILON, EPSILON_HIGH, UnpackType
+    from openfhe_numpy.utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
 
 # === LAZY IMPORTS ===
 if USE_LAZY_IMPORTS:

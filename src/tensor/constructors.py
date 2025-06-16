@@ -1,23 +1,24 @@
-# Standard library imports
-import numpy as np
-
 # Third-party imports
+import numpy as np
 import openfhe
 
+# Local backend
+from openfhe_numpy._onp_cpp import ArrayEncodingType
+
 # Local imports
-from ..utils.constants import DataType, MatrixOrder
-from ..utils.log import ONP_ERROR
-from ..utils.packing import (
+from openfhe_numpy.utils.constants import DataType
+from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.packing import (
     _get_shape,
     _pack_matrix_col_wise,
     _pack_matrix_row_wise,
     _pack_vector_row_wise,
     _pack_vector_col_wise,
 )
-from ..utils.matlib import is_power_of_two, next_power_of_two
-from .ctarray import CTArray
-from .ptarray import PTArray
-from .tensor import FHETensor
+
+from openfhe_numpy.tensor.ctarray import CTArray
+from openfhe_numpy.tensor.ptarray import PTArray
+from openfhe_numpy.tensor.tensor import FHETensor
 
 
 # TODO: constructor for block matrix
@@ -28,7 +29,7 @@ def _get_block_dimensions(data, slots) -> tuple[int, int]:
 def _pack_array(
     data: list | tuple | np.ndarray | int,
     batch_size: int,
-    order: int = MatrixOrder.ROW_MAJOR,
+    order: int = ArrayEncodingType.ROW_MAJOR,
     repeats: int = 0,
 ):
     if batch_size < 0:
@@ -43,8 +44,6 @@ def _pack_array(
         if ndim == 2:
             packed_data, shape = _ravel_matrix(data, batch_size, order, True, repeats)
         elif ndim == 1:
-            # if repeats == 0 and order == MatrixOrder.ROW_MAJOR:
-            #     repeats = 1
             packed_data, shape = _ravel_vector(data, batch_size, order, True, repeats)
         else:
             ONP_ERROR("Not support dimension [{ndim}]")
@@ -62,31 +61,30 @@ def array(
     cc: openfhe.CryptoContext,
     data: list | tuple | np.ndarray | int,
     slots: int = -1,
-    # ncols: int = 0,
-    order: int = MatrixOrder.ROW_MAJOR,
+    order: int = ArrayEncodingType.ROW_MAJOR,
     type: str = DataType.CIPHERTEXT,
     package=None,
     public_key=None,
 ) -> FHETensor:
     """
-    Construct either a ciphertext (FHETensor) or plaintext (PTArray) from raw input data.
+    Construct either a ciphertext or plaintext (CTArray/PTArray) from raw input data.
 
     Parameters
     ----------
     cc : CryptoContext
         The OpenFHE CryptoContext.
-    data : list
-        Input list or matrix data.
+    data : matrix/vector/int
+        A matrix has a dimension of m x n (m rows x n cols)
+        A vector is considered as n x 1 matrix
+        A number is considered as 1 x 1 matrix
     slots : int
-        Number of total CKKS slots.
-    ncols : int
-        Size of a row.
+        Number of total plaintext slots.
     order : int
-        MatrixOrder.ROW_MAJOR or COL_MAJOR.
+        Encoding order: ArrayEncodingType.ROW_MAJOR or COL_MAJOR.
     type : str
         DataType.CIPHERTEXT or PLAINTEXT.
     public_key : optional
-        Public key needed for encryption.
+        Public key needed for encryption if the output is encrypted
 
     Returns
     -------
@@ -94,7 +92,7 @@ def array(
     """
 
     if package is None:
-        package = _pack_array(data, slots, order, 0)
+        package = _pack_array(data, slots, order=ArrayEncodingType.ROW_MAJOR)
 
     packed_data = package["data"]
     org_rows = package["original_shape"][0]
@@ -103,7 +101,6 @@ def array(
     slots = package["batch_size"]
     shape = package["shape"]
     order = package["order"]
-
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == DataType.PLAINTEXT:
@@ -120,7 +117,7 @@ def array(
     return result
 
 
-def _ravel_matrix(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, repeats=0):
+def _ravel_matrix(data, slots, order=ArrayEncodingType.ROW_MAJOR, pad_to_pow2=True, repeats=0):
     """
     Encode a 2D matrix into a packed array.
 
@@ -129,7 +126,7 @@ def _ravel_matrix(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, re
     data : list of list
     ncols : int
         Block size per row.
-    order : MatrixOrder
+    order : ArrayEncodingType
     repeats : int
         Number of repeats.
         0: full repeats
@@ -141,9 +138,9 @@ def _ravel_matrix(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, re
     Plaintext
     """
 
-    if order == MatrixOrder.ROW_MAJOR:
+    if order == ArrayEncodingType.ROW_MAJOR:
         packed_data, shape = _pack_matrix_row_wise(data, slots, pad_to_pow2, repeats)
-    elif order == MatrixOrder.COL_MAJOR:
+    elif order == ArrayEncodingType.COL_MAJOR:
         packed_data, shape = _pack_matrix_col_wise(data, slots, pad_to_pow2, repeats)
     else:
         raise ValueError("Unsupported encoding order")
@@ -151,8 +148,8 @@ def _ravel_matrix(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, re
     return packed_data, shape
 
 
-def _ravel_vector(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, repeats=1):
-    # def _ravel_vector(data, slots, ncols=1, order=MatrixOrder.ROW_MAJOR):
+def _ravel_vector(data, slots, order=ArrayEncodingType.ROW_MAJOR, pad_to_pow2=True, repeats=1):
+    # def _ravel_vector(data, slots, ncols=1, order=ArrayEncodingType.ROW_MAJOR):
     """
     Encode a 1D vector into a packed array.
 
@@ -161,7 +158,7 @@ def _ravel_vector(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, re
     data : list
     repeats : int
         Number of repeats.
-    order : MatrixOrder
+    order : ArrayEncodingType
 
     Returns
     -------
@@ -174,12 +171,11 @@ def _ravel_vector(data, slots, order=MatrixOrder.ROW_MAJOR, pad_to_pow2=True, re
     # It will depend to user
     # if not is_power_of_two(repeats):
     #     raise ONP_ERROR("Repetition count must be a power of two")
-
-    if order == MatrixOrder.ROW_MAJOR:
+    print("order = ", order)
+    if order == ArrayEncodingType.ROW_MAJOR:
         packed_data, shape = _pack_vector_row_wise(data, slots, repeats, pad_to_pow2, "default")
-    elif order == MatrixOrder.COL_MAJOR:
+    elif order == ArrayEncodingType.COL_MAJOR:
         packed_data, shape = _pack_vector_col_wise(data, slots, repeats, pad_to_pow2, "default")
     else:
         raise ONP_ERROR("Unsupported encoding order")
-
     return packed_data, shape
