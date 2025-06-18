@@ -8,6 +8,7 @@ from openfhe import (
     HYBRID,
     UNIFORM_TERNARY,
 )
+
 import openfhe_numpy as onp
 
 

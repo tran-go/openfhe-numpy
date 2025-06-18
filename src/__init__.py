@@ -23,6 +23,13 @@ except ImportError:
     except ImportError:
         __version__ = "0.0.1"
 
+from openfhe_numpy._onp_cpp import ArrayEncodingType
+
+# Direct imports for common constants
+ROW_MAJOR = ArrayEncodingType.ROW_MAJOR
+COL_MAJOR = ArrayEncodingType.COL_MAJOR
+
+
 # === OPTION: Choose Import Style ===
 USE_LAZY_IMPORTS = True  # Set to True for lazy loading, False for eager/explicit
 
@@ -55,12 +62,12 @@ _MODULE_EXPORTS = {
         "EvalSumCumRows",
         "EvalSumCumCols",
     ],
-    "utils.matlib": ["is_power_of_two", "next_power_of_two", "check_equality_matrix"],
+    "utils.matlib": ["is_power_of_two", "next_power_of_two", "check_equality_matrix", "check_equality_vector"],
     "utils.log": ["ONP_WARNING", "ONP_DEBUG", "ONP_ERROR", "ONPNotImplementedError"],
     "utils.constants": ["DataType", "EPSILON", "EPSILON_HIGH", "UnpackType"],
 }
 _EXPORT_MAP: Dict[str, str] = {name: module for module, names in _MODULE_EXPORTS.items() for name in names}
-__all__ = list(_EXPORT_MAP.keys())
+__all__ = list(_EXPORT_MAP.keys()) + ["ROW_MAJOR", "COL_MAJOR"]
 
 # === EXPLICIT IMPORTS  ===
 if not USE_LAZY_IMPORTS:
@@ -91,7 +98,12 @@ if not USE_LAZY_IMPORTS:
         EvalSumCumRows,
         EvalSumCumCols,
     )
-    from openfhe_numpy.utils.matlib import is_power_of_two, next_power_of_two, check_equality_matrix
+    from openfhe_numpy.utils.matlib import (
+        is_power_of_two,
+        next_power_of_two,
+        check_equality_matrix,
+        check_equality_vector,
+    )
     from openfhe_numpy.utils.constants import DataType, EPSILON, EPSILON_HIGH, UnpackType
     from openfhe_numpy.utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError
 

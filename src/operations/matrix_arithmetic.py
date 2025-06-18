@@ -160,13 +160,15 @@ def multiply_block_ct_scalar(a, scalar):
 # ------------------------------------------------------------------------------
 # Matrix Multiplication Operations
 # ------------------------------------------------------------------------------
+
+
 def _eval_matvec_ct(lhs, rhs):
     """Internal function to evaluate matrix-vector multiplication."""
-    crypto_context = lhs.data.GetCryptoContext()
     if lhs.ndim == 2 and rhs.ndim == 1:
         if lhs.original_shape[1] != rhs.original_shape[0]:
             ONP_ERROR(f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]")
         if lhs.order == ArrayEncodingType.ROW_MAJOR and rhs.order == ArrayEncodingType.COL_MAJOR:
+            # print("MM_CRC")
             sumkey = lhs.extra["colkey"]
             ciphertext = EvalMultMatVec(
                 sumkey,
@@ -175,9 +177,12 @@ def _eval_matvec_ct(lhs, rhs):
                 rhs.data,
                 lhs.data,
             )
-            return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
+            return CTArray(
+                ciphertext, (lhs.original_shape[0],), lhs.batch_size, (lhs.shape[0],), ArrayEncodingType.ROW_MAJOR
+            )
 
-        elif lhs.order == ArrayEncodingType.COL_MAJOR and rhs.order == ArrayEncodingType.ROW_MAJOR:
+        elif lhs.order == ArrayEncodingType.COL_MAJOR and rhs.order == ArrayEncodingType.COL_MAJOR:
+            # print("MM_RCR")
             sumkey = lhs.extra["rowkey"]
             ciphertext = EvalMultMatVec(
                 sumkey,
@@ -186,9 +191,13 @@ def _eval_matvec_ct(lhs, rhs):
                 rhs.data,
                 lhs.data,
             )
-            return CTArray(ciphertext, (lhs.original_shape[0], 0), lhs.batch_size)
+            return CTArray(
+                ciphertext, (lhs.original_shape[0],), lhs.batch_size, (lhs.shape[0],), ArrayEncodingType.ROW_MAJOR
+            )
         else:
-            ONP_ERROR("Encoding styles of matrix and vector must be complementary (ROW_MAJOR/COL_MAJOR or vice versa).")
+            ONP_ERROR(
+                f"Encoding styles of matrix ({lhs.order}) and vector ({rhs.order}) must be complementary (ROW_MAJOR/COL_MAJOR or vice versa)."
+            )
     else:
         ONP_ERROR(f"Matrix dimension mismatch for multiplication: {lhs.original_shape} and {rhs.original_shape}")
 

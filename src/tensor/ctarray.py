@@ -6,6 +6,7 @@ import openfhe
 from openfhe_numpy import _onp_cpp
 from openfhe_numpy.utils.constants import UnpackType
 from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.packing import process_packed_data
 
 from .tensor import FHETensor
 
@@ -72,9 +73,10 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
             unpack_type = UnpackType(unpack_type.lower())
 
         if unpack_type == UnpackType.RAW:
+            print("=-=>>>>>>>>>>>>>>>>>>>>>>>RAW = ")
             return result
         if unpack_type == UnpackType.ORIGINAL:
-            print("ORIGINAL = ")
+            print("=-=>>>>>>>>>>>>>>>>>>>>>>>ORIGINAL = ")
             return process_packed_data(result, self.info)
 
         # Consider the reshape function later. I don't think it is needed now.

@@ -4,31 +4,17 @@ from typing import (
     Any,
     Dict,
     Generic,
-    List,
-    Literal,
     Optional,
-    Sequence,
     Tuple,
     TypeVar,
 )
-# import io
-# import sys
-# import logging
 
-
-# Third-Party Imports
-import numpy as np
-# from openfhe import *
 
 # Internal C++ module Imports
 from openfhe_numpy._onp_cpp import ArrayEncodingType
 
 # Subpackage Imports
 from openfhe_numpy.utils.log import ONP_ERROR
-from openfhe_numpy.utils.matlib import (
-    is_power_of_two,
-    next_power_of_two,
-)
 from openfhe_numpy.utils.constants import *
 
 
@@ -158,14 +144,14 @@ class FHETensor(BaseTensor[T], Generic[T]):
         return self._data
 
     @property
-    def shape(self) -> Tuple[int, int]:
-        """Shape after padding."""
-        return self._shape
-
-    @property
     def original_shape(self) -> Tuple[int, int]:
         """Original shape before any padding was applied."""
         return self._original_shape
+
+    @property
+    def shape(self) -> Tuple[int, int]:
+        """Shape after padding."""
+        return self._shape
 
     @property
     def ndim(self) -> int:
