@@ -2,14 +2,7 @@ import time
 
 import numpy as np
 import openfhe_numpy as onp
-from openfhe import (
-    FIXEDAUTO,
-    HYBRID,
-    UNIFORM_TERNARY,
-    CCParamsCKKSRNS,
-    GenCryptoContext,
-    PKESchemeFeature,
-)
+from openfhe import *
 
 
 def gen_crypto_context(mult_depth):
@@ -74,7 +67,7 @@ def demo():
         batch_size = cc.GetRingDimension() // 2
 
     # Encrypt matrix A
-    tensor = onp.array(cc, matrix, batch_size, public_key=keys.publicKey)
+    tensor = onp.array(cc, matrix, batch_size, onp.ROW_MAJOR, "C", mode="zero", public_key=keys.publicKey)
 
     print(f"batch_size = {batch_size}, dim = {cc.GetRingDimension()}, shape = {tensor.shape}")
 
@@ -91,16 +84,16 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
-    result = np.round(result, decimals=1)
 
     expected = np.sum(matrix)
-    is_match, error = onp.check_equality_matrix(result, expected)
+
+    is_match, error = onp.check_single_equality(result, expected)
 
     # Timing
-    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
+    print(f"Sum Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
+    print(f"Sum Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Print out result
@@ -121,7 +114,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey, unpack_type="reshape")
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
@@ -133,7 +126,7 @@ def demo():
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = onp.check_equality_matrix(result, expected)
+    is_match, error = onp.check_equality_vector(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
     print("\n********** HOMOMORPHIC SUM BY COLUMNS **********")
@@ -150,7 +143,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = result_tensor.decrypt(keys.secretKey)
+    result = result_tensor.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
@@ -162,7 +155,7 @@ def demo():
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = onp.check_equality_matrix(result, expected)
+    is_match, error = onp.check_equality_vector(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

@@ -62,7 +62,13 @@ _MODULE_EXPORTS = {
         "EvalSumCumRows",
         "EvalSumCumCols",
     ],
-    "utils.matlib": ["is_power_of_two", "next_power_of_two", "check_equality_matrix", "check_equality_vector"],
+    "utils.matlib": [
+        "is_power_of_two",
+        "next_power_of_two",
+        "check_equality_matrix",
+        "check_equality_vector",
+        "check_single_equality",
+    ],
     "utils.log": ["ONP_WARNING", "ONP_DEBUG", "ONP_ERROR", "ONPNotImplementedError"],
     "utils.constants": ["DataType", "EPSILON", "EPSILON_HIGH", "UnpackType"],
 }
@@ -103,6 +109,7 @@ if not USE_LAZY_IMPORTS:
         next_power_of_two,
         check_equality_matrix,
         check_equality_vector,
+        check_single_equality,
     )
     from openfhe_numpy.utils.constants import DataType, EPSILON, EPSILON_HIGH, UnpackType
     from openfhe_numpy.utils.log import ONP_WARNING, ONP_DEBUG, ONP_ERROR, ONPNotImplementedError

@@ -59,7 +59,7 @@ def gen_crypto_context(mult_depth, ring_dim=0):
 
 def demo():
     """
-    Run a demonstration of homomorphic matrix-vector multiplication using OpenFHE-NumPy.
+    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
     ring_dim = 2**15
     mult_depth = 4
@@ -104,11 +104,10 @@ def demo():
     # Encrypt matrix
     start_enc_matrix = time.time()
     ctm_matA = onp.array(cc, A, total_slots, public_key=keys.publicKey)
+    ctm_matB = onp.array(cc, B, total_slots, public_key=keys.publicKey)
 
     enc_time = time.time()
     print(f"Matrix [2] encryption time: {(enc_time - start_enc_matrix) * 1000:.2f} ms")
-
-    ncols = ctm_matA.ncols
 
     # Generate keys for sum operations
     start_key_gen = time.time()
@@ -126,7 +125,7 @@ def demo():
 
     # Decrypt result
     start_dec = time.time()
-    result = ct_result.decrypt(keys.secretKey, unpack_type="reshape")
+    result = ct_result.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
     print(f"Decryption time: {(end_dec - start_dec) * 1000:.2f} ms")
 
@@ -135,7 +134,7 @@ def demo():
     print(f"\nExpected:\n{A @ B}")
     print(f"\nDecrypted Result:\n{result}")
 
-    is_match, error = utils.check_equality_matrix(result, expected)
+    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

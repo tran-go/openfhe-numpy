@@ -33,20 +33,30 @@ def fhe_matrix_sum(original_params, input):
         total_slots = params["ringDim"] // 2
 
         public_key = keys.publicKey
-        ctm_matrix = onp.array(cc, matrix, total_slots, public_key=public_key)
+
+        # Use explicit ROW_MAJOR encoding for consistency
+        ctm_matrix = onp.array(cc, matrix, total_slots, onp.ROW_MAJOR, public_key=public_key)
 
         if input[1] is None:
+            # Sum all entries
             cc.EvalSumKeyGen(keys.secretKey)
             ctm_result = onp.sum(ctm_matrix)
         elif input[1] == 0:
-            onp.sum_row_keys(keys.secretKey, ctm_matrix.ncols)
+            # Sum rows (axis=0)
+            ctm_matrix.extra["rowkey"] = onp.sum_row_keys(keys.secretKey, ctm_matrix.ncols)
             ctm_result = onp.sum(ctm_matrix, 0, True)
         elif input[1] == 1:
-            onp.sum_col_keys(keys.secretKey, ctm_matrix.ncols)
+            # Sum columns (axis=1)
+            ctm_matrix.extra["colkey"] = onp.sum_col_keys(keys.secretKey, ctm_matrix.ncols)
             ctm_result = onp.sum(ctm_matrix, 1, True)
         else:
             ctm_result = None
-        result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
+
+        # Use "original" unpack_type for consistency with demos
+        result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
+
+        # Round results for floating-point stability
+        result = np.round(result, decimals=1)
 
     return result
 
@@ -72,21 +82,25 @@ class TestMatrixSum(MainUnittest):
                         name = "TestMatrixSum"
                         expected = np.sum(A)
                         _input = [A, None]
+                        # Use check_equality_scalar for scalar comparison
+                        compare_fn = onp.check_equality_scalar
                     elif sum_type == "sumcols":
                         name = "TestMatrixSumCols"
                         expected = np.sum(A, axis=1)
                         _input = [A, 1]
+                        # Use check_equality_vector for vector comparisons
+                        compare_fn = onp.check_equality_vector
                     else:
                         name = "TestMatrixSumRows"
                         expected = np.sum(A, axis=0)
                         _input = [A, 0]
-
-                    # Calculate expected result directly
+                        # Use check_equality_vector for vector comparisons
+                        compare_fn = onp.check_equality_vector
 
                     # Create test name with descriptive format
                     test_name = f"test_{sum_type}_{test_counter}_ring_{param['ringDim']}_size_{size}"
 
-                    # Generate the test case with debug output
+                    # Generate the test case with debug output and appropriate comparison function
                     test_method = MainUnittest.generate_test_case(
                         fhe_matrix_sum,
                         name,
@@ -94,6 +108,8 @@ class TestMatrixSum(MainUnittest):
                         param,
                         _input,
                         expected,
+                        compare_fn=compare_fn,  # Use the appropriate comparison function
+                        tolerance=0.1,  # Add tolerance for floating-point comparison
                         debug=True,
                     )
 

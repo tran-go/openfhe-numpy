@@ -1,3 +1,5 @@
+format
+
 # OpenFHE-NumPy
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
@@ -7,7 +9,6 @@
 A NumPy-like API for homomorphic encryption operations, built on top of OpenFHE. This library enables data scientists and machine learning practitioners to perform computations on encrypted data using familiar NumPy syntax.
 
 The project is currently in development, with a planned release shortly.
-
 ## Table of Contents
 - [OpenFHE-NumPy](#openfhe-numpy)
   - [Table of Contents](#table-of-contents)
@@ -15,16 +16,7 @@ The project is currently in development, with a planned release shortly.
   - [Project Structure](#project-structure)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
-    - [Method 1: Building from Source](#method-1-building-from-source)
-      - [Step 1: Install OpenFHE (Required)](#step-1-install-openfhe-required)
-      - [Step 2: Install OpenFHE-Python from Source](#step-2-install-openfhe-python-from-source)
-      - [Step 3: Install OpenFHE-NumPy from Source](#step-3-install-openfhe-numpy-from-source)
-    - [Method 2: Installation with pip (for Ubuntu)](#method-2-installation-with-pip-for-ubuntu)
-      - [Step 1: Install OpenFHE (Required)](#step-1-install-openfhe-required-1)
-      - [Step 2: Install OpenFHE-Python](#step-2-install-openfhe-python)
-      - [Step 3: Install OpenFHE-NumPy via pip](#step-3-install-openfhe-numpy-via-pip)
-    - [Development Setup](#development-setup)
-    - [Running Tests](#running-tests)
+    - [Building from Source](#building-from-source)
   - [Example Usage](#example-usage)
   - [Available Operations](#available-operations)
   - [Documentation](#documentation)
@@ -70,61 +62,14 @@ openfhe-numpy/
 - **C++ compiler**: Supporting C++17 standard
 - **CMake**: Version 3.16 or newer
 - **Python**: Version 3.8 or newer
-- **NumPy**: Recent version
+- **NumPy**: Any version
+- **OpenFHE**: Any version
+- **OpenFHE Python**: Any version
 
-### Method 1: Building from Source
-
-#### Step 1: Install OpenFHE (Required)
-
-OpenFHE must be installed from source with shared libraries:
-
-<!-- ```bash
-# Install system dependencies (Ubuntu)
-sudo apt update
-sudo apt install build-essential cmake
-
-# Clone OpenFHE
-git clone https://github.com/openfheorg/openfhe-development.git
-cd openfhe-development
-
-# Create build directory
-mkdir build && cd build
-
-# Configure with shared libraries enabled
-cmake .. -DBUILD_SHARED_LIBS=ON
-
-# Build and install
-make -j$(nproc)
-sudo make install
-
-# Set environment variable (add to ~/.bashrc for persistence)
-echo 'export OpenFHE_DIR=/usr/local/lib/cmake/OpenFHE' >> ~/.bashrc
-source ~/.bashrc
-``` -->
-
-#### Step 2: Install OpenFHE-Python from Source
-
-Refer to the instruction from OpenFHE-Python
-
-<!-- ```bash
-# Clone OpenFHE-Python
-git clone https://github.com/openfheorg/openfhe-python.git
-cd openfhe-python
-
-# Install from source
-cmake -S . -B build \
-  -DCMAKE_INSTALL_PREFIX=/path/to/openfhe-python \
-  -DCMAKE_PREFIX_PATH=/path/to/openfhe
-
-# Build the package
-make
-
-# Install
-make install
-``` -->
-
-#### Step 3: Install OpenFHE-NumPy from Source
-
+### Building from Source
+Please refer to the following repositories for installation instructions:
+- [OpenFHE Development](https://github.com/openfheorg/openfhe-development)
+- [OpenFHE Python Bindings](https://github.com/openfheorg/openfhe-python)
 ```bash
 # Clone the repository
 git clone https://github.com/openfheorg/openfhe-numpy.git
@@ -134,11 +79,7 @@ cd openfhe-numpy
 mkdir build && cd build
 
 # Configure with CMake
-cmake .. \
-  -DWITH_CUSTOM_OPENFHE=ON \
-  -DCUSTOM_OPENFHE_ROOT=/path/to/openfhe \
-  -DCUSTOM_OPENFHE_PYTHON=/path/to/openfhe-python \
-  -DCMAKE_INSTALL_PREFIX=/path/to/openfhe_numpy
+cmake ..
 
 # Build the package
 make
@@ -147,53 +88,7 @@ make
 make install
 ```
 
-### Method 2: Installation with pip (for Ubuntu)
-
-#### Step 1: Install OpenFHE (Required)
-
-Follow the same OpenFHE installation instructions from Method 1, Step 1.
-
-#### Step 2: Install OpenFHE-Python
-
-```bash
-# Install OpenFHE-Python from PyPI
-pip install openfhe-python
-```
-
-#### Step 3: Install OpenFHE-NumPy via pip
-
-```bash
-# Install from PyPI (once available)
-pip install openfhe-numpy
-
-# Or install directly from GitHub
-pip install git+https://github.com/openfheorg/openfhe-numpy.git
-```
-
-### Development Setup
-
-For development without installation, use the provided script:
-
-```bash
-# Clone the repository
-git clone https://github.com/openfheorg/openfhe-numpy.git
-cd openfhe-numpy
-
-# Make the script executable
-chmod +x dev_mode.sh
-
-# Run the script (IMPORTANT: use source to preserve environment variables)
-source ./dev_mode.sh
-```
-
-This will:
-1. Build the C++ extension
-2. Create a development environment in dev_build
-3. Set up necessary environment variables (PYTHONPATH, LD_LIBRARY_PATH)
-
-After running this script, you can run tests and import the package in your Python code without formal installation.
-
-### Running Tests
+<!-- ## Running Tests
 
 ```bash
 # Run all tests
@@ -201,7 +96,7 @@ python -m tests
 
 # Run a specific test
 python -m tests.test_matrix_addition
-```
+``` -->
 
 ## Example Usage
 
@@ -252,8 +147,8 @@ tensor_product = tensor_A @ tensor_A  # Matrix multiplication
 tensor_sum = onp.add(tensor_A, tensor_A)  # Element-wise addition
 
 # Decrypt results
-decrypted_product = tensor_product.decrypt(keys.secretKey, unpack_type = True)
-decrypted_sum = tensor_sum.decrypt(keys.secretKey, unpack_type = True)
+decrypted_product = tensor_product.decrypt(keys.secretKey, unpack_type="original")
+decrypted_sum = tensor_sum.decrypt(keys.secretKey, unpack_type="original")
 
 print("Result of A @ A:")
 print(decrypted_product)
@@ -276,6 +171,7 @@ OpenFHE-NumPy currently supports the following operations:
 | `cumsum`    | Cumulative sum along axis   | `onp.cumsum(a, axis)`           |
 | `power`     | Element-wise power          | `onp.power(a, exp)`             |
 | `dot`       | Dot product                 | `onp.dot(a, b)`                 |
+| `sum`       | Sum along axis              | `onp.sum(a, axis)`              |
 
 ## Documentation
 

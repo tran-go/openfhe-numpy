@@ -509,7 +509,6 @@ def vector_row_major_2_col_major(v, block_size, batch_size):
 
 # @validate_call
 def _extract_matrix(data, info):
-    print(info)
     ncols = info["shape"][1]
     nrows = info["batch_size"] // ncols
     reshaped = np.reshape(data, (nrows, ncols))
@@ -526,24 +525,22 @@ def _extract_matrix(data, info):
 
 # @validate_call
 def _extract_vector(data, info):
-    print(info)
-    print(data[:32])
-    original_row = info["original_shape"][0]
+    if info["ndim"] == 1:
+        original_row = info["original_shape"][0]
 
-    ncols = info["shape"][0]
-    nrows = info["batch_size"] // ncols
-    # reshaped = np.reshape(data, (nrows, ncols))
-    reshaped = np.reshape(data, (nrows, ncols))
+        ncols = info["shape"][0]
+        nrows = info["batch_size"] // ncols
+        reshaped = np.reshape(data, (nrows, ncols))
 
-    if info["order"] == ROW_MAJOR:
-        print("111111111111111111111111111111111111111")
-        return [reshaped[x + ncols][0] for x in range(original_row)]
-    elif info["order"] == COL_MAJOR:
-        print("22222222222222222222222222222222222")
-        return reshaped[:original_row]
+        if info["order"] == ROW_MAJOR:
+            return reshaped[:original_row, 0]
+        elif info["order"] == COL_MAJOR:
+            return reshaped[0, :original_row]
+        else:
+            ONP_ERROR("Order is not supported!!!")
+            return None
     else:
-        ONP_ERROR("Order is not supported!!!")
-        return None
+        return data[0]
 
 
 # @validate_call

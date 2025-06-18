@@ -17,18 +17,10 @@ from openfhe_numpy.operations.dispatch import register_tensor_function
 from openfhe_numpy.tensor.ctarray import CTArray
 from openfhe_numpy.tensor.ptarray import PTArray
 from openfhe_numpy.utils.log import ONP_ERROR
-from openfhe_numpy.utils.matlib import next_power_of_two
+
 
 # Import specific functions from C++ module
-from openfhe_numpy._onp_cpp import (
-    EvalMultMatVec,
-    EvalMatMulSquare,
-    EvalTranspose,
-    EvalSumCumRows,
-    EvalSumCumCols,
-    MatVecEncoding,
-    ArrayEncodingType,
-)
+from openfhe_numpy._onp_cpp import *
 
 ##############################################################################
 # BASIC ARITHMETIC OPERATIONS
@@ -394,22 +386,68 @@ def cumreduce_block_ct(a, axis=0, keepdims=False):
 # ------------------------------------------------------------------------------
 
 
-@register_tensor_function("sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
-def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
+def _ct_sum_matrix(tensor: ArrayLike, axis: Optional[int] = None):
+    """
+    This function computes a sum of a padded matrix. It is similar to np.sum
+
+    """
     crypto_context = tensor.data.GetCryptoContext()
+    rows, cols = tensor.original_shape
     nrows, ncols = tensor.shape
+    order = tensor.order
+
     if axis is None:
-        ciphertext = crypto_context.EvalSum(tensor.data, tensor.size)
-        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size, (1, 0), False)
+        rotated = tensor.data
+        ct_sum = tensor.data
+        for i in range(nrows * ncols - 1):
+            rotated = crypto_context.EvalRotate(rotated, 1)
+            ct_sum = crypto_context.EvalAdd(ct_sum, rotated)
+        shape = ()
+        padded_shape = ()
+
     elif axis == 0:  # sum over rows
-        ciphertext = crypto_context.EvalSumRows(tensor.data, ncols, tensor.extra["rowkey"])
-        return CTArray(ciphertext, (1, tensor.original_shape[1]), tensor.batch_size, tensor.shape, tensor.is_padded)
+        ct_sum = crypto_context.EvalSumRows(tensor.data, ncols, tensor.extra["rowkey"])
+        shape = (cols,)
+        padded_shape = (nrows, ncols)
+        if tensor.order == ROW_MAJOR:
+            order = COL_MAJOR
+        elif tensor.order == COL_MAJOR:
+            order = COL_MAJOR
+        else:
+            ONP_ERROR("Not supported!!!")
 
     elif axis == 1:  # sum over cols
-        ciphertext = crypto_context.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
-        return CTArray(ciphertext, (tensor.original_shape[0], 1), tensor.batch_size, tensor.shape, tensor.is_padded)
+        ct_sum = crypto_context.EvalSumCols(tensor.data, ncols, tensor.extra["colkey"])
+        shape = (rows,)
+        padded_shape = (nrows, ncols)
+
     else:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")
+    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape, order, tensor.is_padded)
+
+
+def _ct_sum_vector(tensor: ArrayLike, axis: Optional[int] = None):
+    crypto_context = tensor.data.GetCryptoContext()
+    rows, cols = tensor.original_shape
+    nrows, ncols = tensor.shape
+
+    if axis is not None:
+        ONP_ERROR(f"The dimension is invalid axis = {axis}")
+    rotated = tensor.data
+    ct_sum = tensor.data
+    for i in range(nrows * ncols):
+        rotated = crypto_context.EvalRotate(rotated, 1)
+        ct_sum = crypto_context.EvalAdd(ct_sum, rotated)
+    shape, padded_shape = (), ()
+    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape, tensor.is_padded)
+
+
+@register_tensor_function("sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])
+def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False):
+    if tensor.ndim == 2:
+        return _ct_sum_matrix(tensor, axis)
+    elif tensor.ndim == 1:
+        return _ct_sum_vector(tensor, axis)
 
 
 # ------------------------------------------------------------------------------

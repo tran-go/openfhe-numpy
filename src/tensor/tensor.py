@@ -108,12 +108,9 @@ class FHETensor(BaseTensor[T], Generic[T]):
         self._batch_size = batch_size
         self._is_padded = is_padded
 
-        if len(original_shape) == 2:
-            self._ndim = 2 if original_shape[1] else 1
-        elif len(original_shape) == 1:
-            self._ndim = 1
-        else:
-            ONP_ERROR("Don't support high dimension")
+        self._ndim = len(original_shape)
+        if self._ndim > 2 and self._ndim < 0:
+            ONP_ERROR("Dimension is invalid!!!")
 
         self._order = order
         self._dtype = self.__class__.__name__  # e.g., "CTArray", "BlockCTArray"

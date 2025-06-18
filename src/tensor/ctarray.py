@@ -68,29 +68,13 @@ class CTArray(FHETensor[openfhe.Ciphertext]):
         plaintext.SetLength(self.batch_size)
         result = plaintext.GetRealPackedValue()
 
-        print("unpack_type = ", unpack_type)
         if isinstance(unpack_type, str):
             unpack_type = UnpackType(unpack_type.lower())
 
         if unpack_type == UnpackType.RAW:
-            print("=-=>>>>>>>>>>>>>>>>>>>>>>>RAW = ")
             return result
         if unpack_type == UnpackType.ORIGINAL:
-            print("=-=>>>>>>>>>>>>>>>>>>>>>>>ORIGINAL = ")
             return process_packed_data(result, self.info)
-
-        # Consider the reshape function later. I don't think it is needed now.
-        # if unpack_type == UnpackType.RESHAPE:
-        #     return utils.process_packed_data(result, self.info, new_shape)
-
-        # return utils.format_array(
-        #     result,
-        #     unpack_type,
-        #     self.ndim,
-        #     self.original_shape,
-        #     self.shape,
-        #     **format_options,
-        # )
 
     def serialize(self) -> dict:
         """Serialize ciphertext and metadata to dictionary."""

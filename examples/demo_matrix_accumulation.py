@@ -87,7 +87,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
+    result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
@@ -116,7 +116,7 @@ def demo():
 
     # Perform decryption
     start_dec = time.time()
-    result = ctm_result.decrypt(keys.secretKey, unpack_type="reshape")
+    result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
     result = np.round(result, decimals=1)
     print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")

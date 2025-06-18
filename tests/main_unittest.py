@@ -296,27 +296,65 @@ class MainUnittest(unittest.TestCase):
         return 0 if result.wasSuccessful() else 1
 
     @classmethod
-    def generate_test_case(
-        cls, func, name, test_name, params, input_data, expected, eps=onp.EPSILON, debug=False
-    ):
-        """Generate a test case function."""
+    @classmethod
+def generate_test_case(
+    cls, func, name, test_name, params, input_data, expected,
+    compare_fn=None, tolerance=onp.EPSILON, debug=False
+):
+    """Generate a test case function.
 
-        def test(self):
-            result = None
-            try:
-                with suppress_stdout(not debug):
-                    result = func(params, input_data)
-                    flag, error_size = onp.check_equality_matrix(result, expected, eps)
-                log_test_result(
-                    name, test_name, input_data, expected, result, error_size, passed=flag
-                )
-                if not flag:
-                    raise AssertionError(f"Matrix mismatch with error {error_size}")
-            except Exception as e:
-                log_exception(test_name, params, input_data, expected, result, e)
-                raise
+    Parameters
+    ----------
+    func : callable
+        The function to test
+    name : str
+        Test class name
+    test_name : str
+        Unique test identifier
+    params : dict
+        CKKS parameters
+    input_data : list
+        Input data for the test
+    expected : array_like
+        Expected result
+    compare_fn : callable, optional
+        Comparison function to use (default: determined by result type)
+    tolerance : float, optional
+        Error tolerance for comparison
+    debug : bool, optional
+        Whether to print debug info
+    """
+    def test(self):
+        result = None
+        try:
+            with suppress_stdout(not debug):
+                result = func(params, input_data)
 
-        return test
+                # Determine appropriate comparison function if not specified
+                if compare_fn is None:
+                    # Select comparison function based on result type
+                    if np.isscalar(result) or (hasattr(result, 'size') and result.size == 1):
+                        comparison = onp.check_equality_scalar
+                    elif result.ndim == 1 or (result.ndim == 2 and (result.shape[0] == 1 or result.shape[1] == 1)):
+                        comparison = onp.check_equality_vector
+                    else:
+                        comparison = onp.check_equality_matrix
+                else:
+                    comparison = compare_fn
+
+                # Apply comparison
+                flag, error_size = comparison(result, expected, tolerance)
+
+            log_test_result(
+                name, test_name, input_data, expected, result, error_size, passed=flag
+            )
+            if not flag:
+                raise AssertionError(f"Result mismatch with error {error_size}")
+        except Exception as e:
+            log_exception(test_name, params, input_data, expected, result, e)
+            raise
+
+    return test
 
 
 # ===============================
