@@ -95,3 +95,4 @@ Testing/
 install_manifest.txt
 # Development build directory
 dev_build/
+tango_commit.sh
