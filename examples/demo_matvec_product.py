@@ -1,3 +1,5 @@
+import time
+
 # Import OpenFHE and Numpy
 import numpy as np
 from openfhe import *

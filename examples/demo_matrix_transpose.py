@@ -1,9 +1,8 @@
+import time
+
 # Import OpenFHE and matrix utilities
 import numpy as np
 from openfhe import *
-import openfhe_numpy as onp
-
-# Import OpenFHE NumPy-style interface
 import openfhe_numpy as onp
 
 

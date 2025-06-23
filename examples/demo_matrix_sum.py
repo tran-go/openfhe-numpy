@@ -1,8 +1,8 @@
 import time
 
 import numpy as np
-import openfhe_numpy as onp
 from openfhe import *
+import openfhe_numpy as onp
 
 
 def gen_crypto_context(mult_depth):

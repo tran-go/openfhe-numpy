@@ -4,17 +4,8 @@ Demo of matrix-vector product using homomorphic encryption with OpenFHE-NumPy.
 
 import time
 import numpy as np
-from openfhe import (
-    CCParamsCKKSRNS,
-    GenCryptoContext,
-    PKESchemeFeature,
-    FIXEDAUTO,
-    HYBRID,
-    UNIFORM_TERNARY,
-    HEStd_NotSet,
-)
+from openfhe import *
 import openfhe_numpy as onp
-# from openfhe_numpy.utils import utils
 
 
 def gen_crypto_context(mult_depth, ring_dim=0):
