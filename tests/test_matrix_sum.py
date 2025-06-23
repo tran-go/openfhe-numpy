@@ -34,7 +34,7 @@ def fhe_matrix_sum(original_params, input):
 
         public_key = keys.publicKey
 
-        # Use explicit ROW_MAJOR encoding for consistency
+        # Test for row_major
         ctm_matrix = onp.array(cc, matrix, total_slots, onp.ROW_MAJOR, public_key=public_key)
 
         if input[1] is None:
@@ -52,12 +52,7 @@ def fhe_matrix_sum(original_params, input):
         else:
             ctm_result = None
 
-        # Use "original" unpack_type for consistency with demos
         result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
-
-        # Round results for floating-point stability
-        result = np.round(result, decimals=1)
-
     return result
 
 
@@ -82,25 +77,20 @@ class TestMatrixSum(MainUnittest):
                         name = "TestMatrixSum"
                         expected = np.sum(A)
                         _input = [A, None]
-                        # Use check_equality_scalar for scalar comparison
-                        compare_fn = onp.check_equality_scalar
+                        compare_fn = onp.check_single_equality
                     elif sum_type == "sumcols":
                         name = "TestMatrixSumCols"
                         expected = np.sum(A, axis=1)
                         _input = [A, 1]
-                        # Use check_equality_vector for vector comparisons
                         compare_fn = onp.check_equality_vector
                     else:
                         name = "TestMatrixSumRows"
                         expected = np.sum(A, axis=0)
                         _input = [A, 0]
-                        # Use check_equality_vector for vector comparisons
                         compare_fn = onp.check_equality_vector
 
-                    # Create test name with descriptive format
                     test_name = f"test_{sum_type}_{test_counter}_ring_{param['ringDim']}_size_{size}"
 
-                    # Generate the test case with debug output and appropriate comparison function
                     test_method = MainUnittest.generate_test_case(
                         fhe_matrix_sum,
                         name,
@@ -108,8 +98,8 @@ class TestMatrixSum(MainUnittest):
                         param,
                         _input,
                         expected,
-                        compare_fn=compare_fn,  # Use the appropriate comparison function
-                        tolerance=0.1,  # Add tolerance for floating-point comparison
+                        compare_fn=compare_fn,
+                        tolerance=0.1,
                         debug=True,
                     )
 

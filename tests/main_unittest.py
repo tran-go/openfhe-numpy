@@ -247,8 +247,19 @@ def log_exception(test_name, params, input_data, expected, result, error):
         expected=expected,
         error_info=error,
     )
-    with open(DEBUG_LOG_DIR / f"{test_name}_exception.log", "w") as f:
+    debug_log_path = DEBUG_LOG_DIR / f"{test_name}_exception.log"
+    with open(debug_log_path, "w") as f:
         f.write(content)
+
+    print("\n" + "=" * 60)
+    print(f"EXCEPTION in {test_name}:")
+    print("-" * 60)
+    print(f"Error: {error}")
+    print("\nTraceback:")
+    print(traceback.format_exc())
+    print("-" * 60)
+    print(f"Full debug log saved to: {debug_log_path}")
+    print("=" * 60 + "\n")
 
 
 # ===============================
@@ -296,65 +307,62 @@ class MainUnittest(unittest.TestCase):
         return 0 if result.wasSuccessful() else 1
 
     @classmethod
-    @classmethod
-def generate_test_case(
-    cls, func, name, test_name, params, input_data, expected,
-    compare_fn=None, tolerance=onp.EPSILON, debug=False
-):
-    """Generate a test case function.
+    def generate_test_case(
+        cls, func, name, test_name, params, input_data, expected, compare_fn=None, tolerance=onp.EPSILON, debug=False
+    ):
+        def test(self):
+            result = None
+            try:
+                if debug:
+                    debug_info = []
+                    debug_info.append(f"TEST: {test_name}")
+                    debug_info.append(f"Input: {input_data}")
+                    debug_info.append(f"Result: {result}")
+                    debug_info.append(f"Expected: {expected}")
+                    # debug_info.append(f"Params: {params}")
 
-    Parameters
-    ----------
-    func : callable
-        The function to test
-    name : str
-        Test class name
-    test_name : str
-        Unique test identifier
-    params : dict
-        CKKS parameters
-    input_data : list
-        Input data for the test
-    expected : array_like
-        Expected result
-    compare_fn : callable, optional
-        Comparison function to use (default: determined by result type)
-    tolerance : float, optional
-        Error tolerance for comparison
-    debug : bool, optional
-        Whether to print debug info
-    """
-    def test(self):
-        result = None
-        try:
-            with suppress_stdout(not debug):
-                result = func(params, input_data)
+                    # Run the test function
+                    print(f"\n{'*' * 50}\nRUNNING TEST: {test_name}\n{'*' * 50}")
 
-                # Determine appropriate comparison function if not specified
-                if compare_fn is None:
-                    # Select comparison function based on result type
-                    if np.isscalar(result) or (hasattr(result, 'size') and result.size == 1):
-                        comparison = onp.check_equality_scalar
-                    elif result.ndim == 1 or (result.ndim == 2 and (result.shape[0] == 1 or result.shape[1] == 1)):
-                        comparison = onp.check_equality_vector
+                    import sys
+
+                    real_stdout = sys.__stdout__  # Use the real stdout, not the potentially redirected one
+
+                    print(debug_info, file=real_stdout, flush=True)
+
+                with suppress_stdout(not debug):
+                    result = func(params, input_data)
+
+                    # Determine appropriate comparison function if not specified
+                    if compare_fn is None:
+                        # Select comparison function based on result type
+                        if np.isscalar(result) or (hasattr(result, "size") and result.size == 1):
+                            comparison = onp.check_equality_scalar
+                        elif result.ndim == 1 or (result.ndim == 2 and (result.shape[0] == 1 or result.shape[1] == 1)):
+                            comparison = onp.check_equality_vector
+                        else:
+                            comparison = onp.check_equality_matrix
                     else:
-                        comparison = onp.check_equality_matrix
-                else:
-                    comparison = compare_fn
+                        comparison = compare_fn
 
-                # Apply comparison
-                flag, error_size = comparison(result, expected, tolerance)
+                    # Apply comparison
+                    try:
+                        flag, error_size = comparison(result, expected, tolerance)
+                    except Exception as comparison_error:
+                        print(f"\nError in comparison function for {test_name}:")
+                        print(f"Result type: {type(result)}, shape: {getattr(result, 'shape', 'N/A')}")
+                        print(f"Expected type: {type(expected)}, shape: {getattr(expected, 'shape', 'N/A')}")
+                        log_exception(test_name, params, input_data, expected, result, comparison_error)
+                        raise
 
-            log_test_result(
-                name, test_name, input_data, expected, result, error_size, passed=flag
-            )
-            if not flag:
-                raise AssertionError(f"Result mismatch with error {error_size}")
-        except Exception as e:
-            log_exception(test_name, params, input_data, expected, result, e)
-            raise
+                log_test_result(name, test_name, input_data, expected, result, error_size, passed=flag)
+                if not flag:
+                    raise AssertionError(f"Result mismatch with error {error_size}")
+            except Exception as e:
+                log_exception(test_name, params, input_data, expected, result, e)
+                raise
 
-    return test
+        return test
 
 
 # ===============================

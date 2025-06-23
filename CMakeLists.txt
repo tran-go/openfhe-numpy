@@ -19,7 +19,6 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 option(ENABLE_DEBUG_LOGGING "Enable debug logging (defines DEBUG)" OFF)
 option(BUILD_EXAMPLES "Build C++ example executables" ON)
 option(BUILD_TESTING "Enable building of tests" OFF)
-option(DEV_MODE "Development mode - installs to build directory and sets PYTHONPATH" OFF)
 
 # Dependency path configuration
 # Use CMAKE_PREFIX_PATH to specify locations of dependencies
@@ -68,14 +67,14 @@ configure_file(
     "${OpenFHE_Numpy_SRC_DIR}/version.py.in"
     "${OpenFHE_Numpy_BUILD_PYTHON}/version.py" @ONLY)
 
-# Include Paths
-include_directories(
-    ${OpenFHE_INCLUDE}
-    ${OpenFHE_INCLUDE}/third-party/include
-    ${OpenFHE_INCLUDE}/core
-    ${OpenFHE_INCLUDE}/pke
-    ${OpenFHE_INCLUDE}/binfhe
-    ${OpenFHE_Numpy_INCLUDES})
+# # Include Paths
+# include_directories(
+#     ${OpenFHE_INCLUDE}
+#     ${OpenFHE_INCLUDE}/third-party/include
+#     ${OpenFHE_INCLUDE}/core
+#     ${OpenFHE_INCLUDE}/pke
+#     ${OpenFHE_INCLUDE}/binfhe
+#     ${OpenFHE_Numpy_INCLUDES})
 
 # Source Files
 file(GLOB_RECURSE CORE_SOURCES ${OpenFHE_Numpy_SOURCES}/*.cpp)
@@ -132,16 +131,6 @@ if(DEFINED SKBUILD)
     # For pip installations
     set(PYTHON_INSTALL_PATH "${SKBUILD_PROJECT_NAME}")
     message(STATUS "Building for pip/scikit-build: ${PYTHON_INSTALL_PATH}")
-elseif(DEV_MODE)
-    # Development mode - use build directory
-    set(PYTHON_INSTALL_PATH "${OpenFHE_Numpy_BUILD_PYTHON}")
-    # Create a script to set PYTHONPATH
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/dev_env_setup.sh.in"
-        "${CMAKE_BINARY_DIR}/dev_env_setup.sh" @ONLY
-    )
-    message(STATUS "Development mode: Python package will be used from build directory: ${PYTHON_INSTALL_PATH}")
-    message(STATUS "Run 'source ${CMAKE_BINARY_DIR}/dev_env_setup.sh' to set up the environment")
 else()
     # Standard installation - use Python's site-packages
     execute_process(
@@ -181,22 +170,6 @@ if(DEFINED SKBUILD)
             "${OpenFHE_Numpy_PYTHON}/_version.py"
             "${OpenFHE_Numpy_BUILD_PYTHON}/version.py"
             DESTINATION "${PYTHON_INSTALL_PATH}")
-elseif(DEV_MODE)
-    # In development mode we don't need to install - files are already in the build directory
-    # But we'll create a convenience symlink for examples
-    # Create a script to set up links to examples
-    file(WRITE "${CMAKE_BINARY_DIR}/setup_example_links.sh"
-        "#!/bin/bash\n"
-        "# Create symlinks to examples for development mode\n"
-        "mkdir -p \"${CMAKE_BINARY_DIR}/examples\"\n"
-        "EXAMPLES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/examples\"\n"
-        "for file in \"$EXAMPLES_DIR\"/*.py; do\n"
-        "  ln -sf \"$file\" \"${CMAKE_BINARY_DIR}/examples/\"\n"
-        "done\n"
-        "echo \"Example links created in ${CMAKE_BINARY_DIR}/examples\"\n"
-    )
-    execute_process(COMMAND chmod +x "${CMAKE_BINARY_DIR}/setup_example_links.sh")
-    execute_process(COMMAND "${CMAKE_BINARY_DIR}/setup_example_links.sh")
 else()
     # For standard installations, install directly to specified path
     install(TARGETS _onp_cpp
@@ -261,20 +234,6 @@ if(BUILD_EXAMPLES)
     endforeach()
 endif()
 
-# Testing
-if(BUILD_TESTING)
-    enable_testing()
-    # Add test setup here
-endif()
-
-# Create a script template for development environment
-file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/dev_env_setup.sh.in"
-"#!/bin/bash
-# Setup the development environment for OpenFHE-NumPy
-export PYTHONPATH=\"@PYTHON_INSTALL_PATH@:\$PYTHONPATH\"
-echo \"PYTHONPATH set to include OpenFHE-NumPy at @PYTHON_INSTALL_PATH@\"
-echo \"You can now run examples from @CMAKE_BINARY_DIR@/examples\"
-")
 
 # CPack configuration for creating binary packages
 include(CPack)
