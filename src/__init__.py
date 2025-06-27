@@ -149,3 +149,5 @@ if USE_LAZY_IMPORTS:
         """Return list of public attributes for tab-completion, etc."""
         # Combine lazy and already-imported symbols for best developer UX
         return sorted(__all__ + [name for name in globals() if name.startswith("__")])
+
+    __dir__.__annotations__ = {"return": List[str]}

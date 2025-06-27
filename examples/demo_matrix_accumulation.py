@@ -1,5 +1,7 @@
 import time
+
 import numpy as np
+
 from openfhe import *
 import openfhe_numpy as onp
 
@@ -20,7 +22,7 @@ def gen_crypto_context(mult_depth):
     """
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
-    params.SetScalingModSize(59)
+    params.SetScalingModSize(59)  # add comments
     params.SetFirstModSize(60)
     params.SetScalingTechnique(FIXEDAUTO)
     params.SetKeySwitchTechnique(HYBRID)
@@ -38,6 +40,7 @@ def gen_crypto_context(mult_depth):
     return cc, params, keys
 
 
+# push the params inside the demo
 def demo():
     """
     Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
@@ -61,6 +64,7 @@ def demo():
 
     print("Matrix:\n", matrix)
     slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
+    # slots = cc.GetBatchSize()
 
     # Encrypt matrix A
     ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
@@ -68,21 +72,25 @@ def demo():
     print(f"slots = {slots}, dim = {cc.GetRingDimension()}, ncols = {ctm_matA.ncols}")
 
     print("\n********** HOMOMORPHIC ACCUMULATION BY ROWS **********")
+    # @TODO: remove time
     #  Generate rotation keys for column operations
     start_keygen = time.time()
     onp.gen_accumulate_rows_key(keys.secretKey, ctm_matA.ncols)
     end_keygen = time.time()
 
     # Perform homomorphic column accumulation
+    # @TODO: check the key generation.
+    # @TODO: give one more example with non square matrix.
+
     start_acc = time.time()
-    ctm_result = onp.cumsum(ctm_matA, 0, True)
+    ctm_result = onp.cumsum(ctm_matA, axis=0)
     end_acc = time.time()
 
     # Perform decryption
     start_dec = time.time()
     result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
     end_dec = time.time()
-    result = np.round(result, decimals=1)
+    # result = np.round(result, decimals=1)
     print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
     print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
     print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")

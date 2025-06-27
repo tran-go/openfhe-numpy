@@ -73,8 +73,7 @@ def demo():
 
     # Perform matrix tranpose on ciphertexts
     onp.gen_transpose_keys(keys.secretKey, ctm_matA)
-    ctm_result = onp.transpose(ctm_matA)
-    print(">>>>>>>>>>>>>>>>>>>>", ctm_result.shape)
+    ctm_result = onp.transpose(ctm_matA)  # ctm_matA.T
 
     # Decrypt the result
     result = ctm_result.decrypt(keys.secretKey)

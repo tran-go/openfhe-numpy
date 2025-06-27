@@ -1,6 +1,13 @@
 import time
 import numpy as np
-from openfhe import *
+from openfhe import (
+    CCParamsCKKSRNS,
+    GenCryptoContext,
+    PKESchemeFeature,
+    FIXEDAUTO,
+    HYBRID,
+    UNIFORM_TERNARY,
+)
 
 import openfhe_numpy as onp
 

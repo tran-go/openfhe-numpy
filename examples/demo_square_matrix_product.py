@@ -109,6 +109,7 @@ def demo():
     print("\n********** HOMOMORPHIC Matrix Matrix Product **********")
 
     # Perform homomorphic matrix-vector multiplication
+    # ctm_A, ctm_result
     start_matmul = time.time()
     ct_result = ctm_matA @ ctm_matB
     end_matmul = time.time()
