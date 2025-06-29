@@ -11,7 +11,7 @@ from typing import (
 
 
 # Internal C++ module Imports
-from openfhe_numpy._onp_cpp import ArrayEncodingType
+from openfhe_numpy import _onp_cpp as backend
 
 # Subpackage Imports
 from openfhe_numpy.utils.log import ONP_ERROR
@@ -99,7 +99,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
         original_shape: Tuple[int, int],
         batch_size: int,
         new_shape: Tuple[int, int],
-        order: int = ArrayEncodingType.ROW_MAJOR,
+        order: int = backend.ROW_MAJOR,
         is_padded: bool = True,
     ):
         self._data = data
@@ -109,7 +109,7 @@ class FHETensor(BaseTensor[T], Generic[T]):
         self._is_padded = is_padded
 
         self._ndim = len(original_shape)
-        if self._ndim > 2 and self._ndim < 0:
+        if self._ndim > 2 or self._ndim < 0:
             ONP_ERROR("Dimension is invalid!!!")
 
         self._order = order
@@ -125,9 +125,10 @@ class FHETensor(BaseTensor[T], Generic[T]):
         if self.ndim == 1:
             return self.shape[0]
         elif self.ndim == 2:
-            return self.shape[0] + self.shape[1]
+            return self.shape[0] * self.shape[1]
         return 0
 
+    @property
     def is_padded(self):
         return self._is_padded
 

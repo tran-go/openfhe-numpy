@@ -12,10 +12,12 @@ from openfhe import (
 import openfhe_numpy as onp
 
 
-def gen_crypto_context(mult_depth):
+def demo():
     """
-    Generate a CryptoContext and key pair for CKKS encryption.
+    Run a demonstration of homomorphic matrix addition using OpenFHE-NumPy.
     """
+
+    mult_depth = 4
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
@@ -32,15 +34,6 @@ def gen_crypto_context(mult_depth):
     keys = cc.KeyGen()
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
-
-    return cc, keys
-
-
-def demo():
-    """
-    Run a demonstration of homomorphic matrix addition using OpenFHE-NumPy.
-    """
-    cc, keys = gen_crypto_context(4)
     ring_dim = cc.GetRingDimension()
     total_slots = ring_dim // 2
 

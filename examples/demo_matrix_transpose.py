@@ -6,20 +6,12 @@ from openfhe import *
 import openfhe_numpy as onp
 
 
-def gen_crypto_context(mult_depth):
+def demo():
     """
-    Generate a CryptoContext and key pair for CKKS encryption.
-
-    Parameters
-    ----------
-    mult_depth : int
-        Maximum multiplicative depth for the ciphertext.
-
-    Returns
-    -------
-    tuple
-        (CryptoContext, KeyPair)
+    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
+
+    mult_depth = 4
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
@@ -36,17 +28,6 @@ def gen_crypto_context(mult_depth):
     keys = cc.KeyGen()
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
-
-    return cc, params, keys
-
-
-def demo():
-    """
-    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
-    """
-
-    mult_depth = 4
-    cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
     matrix = np.array(

@@ -19,7 +19,7 @@ import os
 import logging
 import threading
 import traceback
-from typing import Optional, Any, Dict
+from typing import Any, Dict
 from logging.handlers import RotatingFileHandler
 
 # === Configuration ===
@@ -37,22 +37,11 @@ DEFAULT_CONFIG = {
 def get_config() -> Dict[str, Any]:
     """Get logging configuration from environment variables with defaults."""
     return {
-        "enable_debug": os.getenv("OPENFHE_DEBUG", "OFF").upper()
-        in ("ON", "1", "TRUE"),
-        "log_format": os.getenv(
-            "OPENFHE_LOG_FORMAT", DEFAULT_CONFIG["log_format"]
-        ),
+        "enable_debug": os.getenv("OPENFHE_DEBUG", "OFF").upper() in ("ON", "1", "TRUE"),
+        "log_format": os.getenv("OPENFHE_LOG_FORMAT", DEFAULT_CONFIG["log_format"]),
         "log_file": os.getenv("OPENFHE_LOG_FILE", DEFAULT_CONFIG["log_file"]),
-        "max_file_size": int(
-            os.getenv(
-                "OPENFHE_LOG_MAX_SIZE", str(DEFAULT_CONFIG["max_file_size"])
-            )
-        ),
-        "backup_count": int(
-            os.getenv(
-                "OPENFHE_LOG_BACKUP_COUNT", str(DEFAULT_CONFIG["backup_count"])
-            )
-        ),
+        "max_file_size": int(os.getenv("OPENFHE_LOG_MAX_SIZE", str(DEFAULT_CONFIG["max_file_size"]))),
+        "backup_count": int(os.getenv("OPENFHE_LOG_BACKUP_COUNT", str(DEFAULT_CONFIG["backup_count"]))),
     }
 
 
@@ -92,18 +81,12 @@ def get_logger() -> logging.Logger:
                             file_handler.setFormatter(formatter)
                             _logger.addHandler(file_handler)
                         except Exception as e:
-                            print(
-                                f"Warning: Could not set up file logging: {e}"
-                            )
+                            print(f"Warning: Could not set up file logging: {e}")
 
                     # Console handler
                     stream_handler = logging.StreamHandler()
                     stream_handler.setFormatter(formatter)
-                    stream_handler.setLevel(
-                        logging.DEBUG
-                        if _config["enable_debug"]
-                        else logging.INFO
-                    )
+                    stream_handler.setLevel(logging.DEBUG if _config["enable_debug"] else logging.INFO)
                     _logger.addHandler(stream_handler)
 
                     _logger.setLevel(logging.DEBUG)
@@ -133,6 +116,8 @@ class InvalidAxisError(ONPError):
 
 
 class ONPValueError(ONPError):
+    """Raised when an invalid value is encountered."""
+
     def __init__(self, message: str = "Invalid value encountered."):
         super().__init__(message)
 
@@ -173,6 +158,8 @@ def _log(level: str, message: str, stack_level: int = 2) -> None:
         logger.debug(formatted_message)
     elif level == "ONP_WARNING":
         logger.warning(formatted_message)
+    else:
+        return
 
 
 # === Public API ===

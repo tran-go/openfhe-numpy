@@ -8,22 +8,14 @@ from openfhe import *
 import openfhe_numpy as onp
 
 
-def gen_crypto_context(mult_depth, ring_dim=0):
+def demo():
     """
-    Generate a CryptoContext and key pair for CKKS encryption.
-
-    Parameters
-    ----------
-    ring_dim : int
-        Ring dimension (must be power of two).
-    mult_depth : int
-        Maximum multiplicative depth for the ciphertext.
-
-    Returns
-    -------
-    tuple
-        (CryptoContext, KeyPair)
+    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
+    ring_dim = 2**15
+    mult_depth = 4
+    total_slots = ring_dim // 2
+
     params = CCParamsCKKSRNS()
     if ring_dim != 0:
         params.SetRingDim(ring_dim)
@@ -44,17 +36,6 @@ def gen_crypto_context(mult_depth, ring_dim=0):
     keys = cc.KeyGen()
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
-
-    return cc, keys
-
-
-def demo():
-    """
-    Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
-    """
-    ring_dim = 2**15
-    mult_depth = 4
-    total_slots = ring_dim // 2
 
     # Initialize crypto context
     start_setup = time.time()

@@ -6,20 +6,13 @@ from openfhe import *
 import openfhe_numpy as onp
 
 
-def gen_crypto_context(mult_depth):
+# push the params inside the demo
+def demo():
     """
-    Generate a CryptoContext and key pair for CKKS encryption.
-
-    Parameters
-    ----------
-    mult_depth : int
-        Maximum multiplicative depth for the ciphertext.
-
-    Returns
-    -------
-    tuple
-        (CryptoContext, CCParamsCKKSRNS, KeyPair)
+    Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
     """
+
+    mult_depth = 8
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)  # add comments
@@ -37,99 +30,61 @@ def gen_crypto_context(mult_depth):
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
 
-    return cc, params, keys
-
-
-# push the params inside the demo
-def demo():
-    """
-    Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
-    """
-    mult_depth = 8
-    cc, params, keys = gen_crypto_context(mult_depth)
-
-    # Sample input matrix (8x8)
+    # Sample input matrix (3x8)
     matrix = np.array(
         [
             [0, 7, 8, 10, 1, 2, 7, 6],
             [0, 1, 1, 9, 7, 5, 1, 7],
             [8, 8, 4, 5, 8, 2, 6, 1],
-            [1, 0, 0, 1, 10, 3, 1, 7],
-            [7, 8, 2, 5, 3, 2, 10, 9],
-            [0, 3, 4, 10, 10, 5, 2, 5],
-            [2, 5, 0, 2, 8, 8, 5, 9],
-            [5, 1, 10, 6, 2, 8, 6, 3],
+            # [1, 0, 0, 1, 10, 3, 1, 7],
+            # [7, 8, 2, 5, 3, 2, 10, 9],
+            # [0, 3, 4, 10, 10, 5, 2, 5],
+            # [2, 5, 0, 2, 8, 8, 5, 9],
+            # [5, 1, 10, 6, 2, 8, 6, 3],
         ]
     )
 
     print("Matrix:\n", matrix)
-    slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
-    # slots = cc.GetBatchSize()
+    # slots = params.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
+    slots = cc.GetBatchSize() if params.GetBatchSize() else cc.GetRingDimension() // 2
 
     # Encrypt matrix A
-    ctm_matA = onp.array(cc, matrix, slots, public_key=keys.publicKey)
+    ctm_A = onp.array(cc, matrix, slots, order=onp.ROW_MAJOR, public_key=keys.publicKey)
 
-    print(f"slots = {slots}, dim = {cc.GetRingDimension()}, ncols = {ctm_matA.ncols}")
+    print(f"slots = {slots}, dim = {cc.GetRingDimension()}, ncols = {ctm_A.ncols}")
 
     print("\n********** HOMOMORPHIC ACCUMULATION BY ROWS **********")
-    # @TODO: remove time
+
     #  Generate rotation keys for column operations
-    start_keygen = time.time()
-    onp.gen_accumulate_rows_key(keys.secretKey, ctm_matA.ncols)
-    end_keygen = time.time()
+    onp.gen_accumulate_rows_key(keys.secretKey, ctm_A.ncols)
 
     # Perform homomorphic column accumulation
-    # @TODO: check the key generation.
-    # @TODO: give one more example with non square matrix.
-
-    start_acc = time.time()
-    ctm_result = onp.cumsum(ctm_matA, axis=0)
-    end_acc = time.time()
-
-    # Perform decryption
-    start_dec = time.time()
+    ctm_result = onp.cumsum(ctm_A, axis=0)
     result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
-    end_dec = time.time()
-    # result = np.round(result, decimals=1)
-    print(f"Row Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Row Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
-    print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
-    expected = np.cumsum(matrix, axis=1)
+    expected = np.cumsum(matrix, axis=0)
+    is_match, error = onp.check_equality_matrix(result, expected)
+
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
-
-    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
     print("\n********** HOMOMORPHIC ACCUMULATION BY COLUMNS **********")
 
     #  Generate rotation keys for column operations
-    start_keygen = time.time()
-    onp.gen_accumulate_cols_key(keys.secretKey, ctm_matA.ncols)
-    end_keygen = time.time()
+    onp.gen_accumulate_cols_key(keys.secretKey, ctm_A.ncols)
 
     # Perform homomorphic column accumulation
-    start_acc = time.time()
-    ctm_result = onp.cumsum(ctm_matA, 1, True)
-    end_acc = time.time()
-
-    # Perform decryption
-    start_dec = time.time()
+    ctm_result = onp.cumsum(ctm_A, axis=1)
     result = ctm_result.decrypt(keys.secretKey, unpack_type="original")
-    end_dec = time.time()
-    result = np.round(result, decimals=1)
-    print(f"Col Accumulation Time (KeyGen): {(end_keygen - start_keygen) * 1000:.2f} ms")
-    print(f"Col Accumulation Time (Eval): {(end_acc - start_acc) * 1000:.2f} ms")
-    print(f"Time for decryption: {(end_dec - start_dec) * 1000:.2f} ms")
 
     # Compare with plain result
     expected = np.cumsum(matrix, axis=1)
+    is_match, error = onp.check_equality_matrix(result, expected)
+
     print(f"\nExpected:\n{expected}")
     print(f"\nDecrypted Result:\n{result}")
-
-    is_match, error = onp.check_equality_matrix(result, expected)
     print(f"\nMatch: {is_match}, Total Error: {error:.6f}")
 
 

@@ -1,4 +1,3 @@
-import openfhe_numpy._onp_cpp as backend
 from enum import Enum
 
 # Numerical constants
@@ -7,9 +6,12 @@ EPSILON_HIGH = 1e-4
 
 
 # Types of data representation
-class DataType:
+class DataType(str, Enum):
     PLAINTEXT = "P"
     CIPHERTEXT = "C"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 # Default format result

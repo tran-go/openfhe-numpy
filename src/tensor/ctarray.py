@@ -3,8 +3,8 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import openfhe
-from openfhe_numpy import _onp_cpp
-from openfhe_numpy.utils.constants import UnpackType
+from openfhe_numpy import _onp_cpp as backend
+from openfhe_numpy.utils.constants import *
 from openfhe_numpy.utils.log import ONP_ERROR
 from openfhe_numpy.utils.packing import process_packed_data
 

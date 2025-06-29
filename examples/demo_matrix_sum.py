@@ -19,6 +19,15 @@ def gen_crypto_context(mult_depth):
     tuple
         (CryptoContext, CCParamsCKKSRNS, KeyPair)
     """
+
+    return cc, params, keys
+
+
+def demo():
+    """
+    Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
+    """
+    mult_depth = 8
     params = CCParamsCKKSRNS()
     params.SetMultiplicativeDepth(mult_depth)
     params.SetScalingModSize(59)
@@ -35,16 +44,6 @@ def gen_crypto_context(mult_depth):
     keys = cc.KeyGen()
     cc.EvalMultKeyGen(keys.secretKey)
     cc.EvalSumKeyGen(keys.secretKey)
-
-    return cc, params, keys
-
-
-def demo():
-    """
-    Run a demonstration of homomorphic matrix accumulation using OpenFHE-NumPy.
-    """
-    mult_depth = 8
-    cc, params, keys = gen_crypto_context(mult_depth)
 
     # Sample input matrix (8x8)
     # matrix = np.array(

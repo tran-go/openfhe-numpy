@@ -1,6 +1,5 @@
 import math
 import numpy as np
-from numbers import Number
 from .constants import EPSILON
 
 
@@ -126,58 +125,6 @@ def check_equality_matrix(a, b, eps=EPSILON):
             if not f:
                 is_equal = False
     return is_equal, error
-
-
-def _gen_comm_mat(m, n, opt=1):
-    """
-    Generate a commutation matrix https://en.wikipedia.org/wiki/Commutation_matrix
-    """
-    d = m * n
-    vec_commutation = [0] * (d**2)
-    matrix = np.zeros((m * n, m * n), dtype=int)
-    # matrix = [[0] * d for _ in range(d)]
-    for i in range(m):
-        for j in range(n):
-            vec_commutation[(i * n + j) * d + (j * m + i)] = 1
-            matrix[i * n + j, j * m + i] = 1
-    if opt == 0:
-        return matrix
-    return vec_commutation
-
-
-# Function to generate a random square matrix of size n x n
-def _generate_random_matrix(n):
-    import random
-
-    return [[random.randint(0, 9) for _ in range(n)] for _ in range(n)]
-
-
-# # Function to multiply two matrices A and B in Plain
-# def _matrix_multiply(A, B, precision=2):
-#     """
-#     Multiply two square matrices A and B.
-
-#     Parameters
-#     ----------
-#     A : list of list of float
-#         The left-hand matrix.
-#     B : list of list of float
-#         The right-hand matrix.
-#     precision : int, optional
-#         Number of decimal places to round the result to. Default is 2.
-
-#     Returns
-#     -------
-#     result : list of list of float
-#         The resulting matrix after multiplication.
-#     """
-#     n = len(A)
-#     result = [[0.0] * n for _ in range(n)]
-#     for i in range(n):
-#         for j in range(n):
-#             for k in range(n):
-#                 result[i][j] += A[i][k] * B[k][j]
-#     return [[round(result[i][j], precision) for j in range(n)] for i in range(n)]
 
 
 def _rotate_vector(vec, k):
