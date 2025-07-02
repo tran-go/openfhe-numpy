@@ -19,3 +19,6 @@ class UnpackType(Enum):
     RAW = "raw"
     ORIGINAL = "original"
     RESHAPE = "reshape"
+
+    def __str__(self) -> str:
+        return self.value

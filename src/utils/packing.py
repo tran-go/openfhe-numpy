@@ -255,7 +255,7 @@ def _pack_vector_col_wise(
     return output, shape
 
 
-# === Matrix Packing Functions ===
+# === Matrix Packing Functions ==
 
 
 # # @validate_call
