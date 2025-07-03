@@ -1,6 +1,7 @@
 # Third-party imports
-from typing import Dict, Optional, Union, Tuple, Any
-from pydantic import validate_call
+from typing import Optional, Literal
+
+# from pydantic import validate_call
 import numpy as np
 import openfhe
 
@@ -8,7 +9,7 @@ import openfhe
 from openfhe_numpy._onp_cpp import ArrayEncodingType
 
 # Utils imports
-from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.errors import ONP_ERROR
 from openfhe_numpy.utils.matlib import is_power_of_two
 from openfhe_numpy.utils.packing import (
     _pack_matrix_col_wise,
@@ -33,7 +34,20 @@ def _get_block_dimensions(data, slots) -> tuple[int, int]:
     pass
 
 
-@validate_call
+def block_array(
+    cc: openfhe.CryptoContext,
+    data: np.ndarray | Number | list,
+    batch_size: Optional[int] = None,
+    order: int = ArrayEncodingType.ROW_MAJOR,
+    type: str = "C",
+    mode: str = "repeat",
+    package: Optional[dict] = None,
+    public_key: openfhe.PublicKey = None,
+    **kwargs,
+):
+    pass
+
+
 def _pack_array(
     data: np.ndarray | Number | list,
     batch_size: int,
@@ -72,8 +86,8 @@ def _pack_array(
     if not is_power_of_two(batch_size):
         ONP_ERROR(f"Batch size [{batch_size}] must be a power of two")
 
-    # should follow numpy standards to avoid confusion
-    # org_rows, org_cols, ndim = _get_shape(data)
+    # We convert the data to numpy array
+    data = np.array(data)
 
     if is_numeric_scalar(data):
         if mode == "zero":
@@ -90,7 +104,7 @@ def _pack_array(
         elif data.ndim == 1:
             packed_data, shape = _ravel_vector(data, batch_size, order, True, mode, **kwargs)
         else:
-            ONP_ERROR("Not support dimension [{ndim}]")
+            ONP_ERROR(f"Not support dimension [{data.ndim}]")
     else:
         ONP_ERROR("Input is not numeric")
 
@@ -109,7 +123,7 @@ def array(
     data: np.ndarray | Number | list,
     batch_size: Optional[int] = None,
     order: int = ArrayEncodingType.ROW_MAJOR,
-    type: str = "C",
+    type: Literal["C", "P"] = "C",
     mode: str = "repeat",
     package: dict = {},
     public_key: openfhe.PublicKey = None,
@@ -143,8 +157,8 @@ def array(
     if cc is None:
         ONP_ERROR("CryptoContext cannot be None")
 
-    if batch_size is None or batch_size <= 0:
-        batch_size = cc.GetRingDimension() // 2
+    if batch_size is not None and not isinstance(batch_size, int):
+        ONP_ERROR(f"batch_size must be int or None, got {type(batch_size).__name__}")
 
     if package == {}:
         package = _pack_array(data, batch_size, order, mode, **kwargs)
@@ -157,13 +171,13 @@ def array(
     plaintext = cc.MakeCKKSPackedPlaintext(packed_data)
 
     if type == "P":
-        result = PTArray(plaintext, package["original_shape"], ndim, batch_size, shape, order)
+        result = PTArray(plaintext, package["original_shape"], batch_size, shape, order)
     else:
         if public_key is None:
             ONP_ERROR("Public key must be provided for ciphertext encoding.")
 
         ciphertext = cc.Encrypt(public_key, plaintext)
-        result = CTArray(ciphertext, package["original_shape"], batch_size, shape, order, True)
+        result = CTArray(ciphertext, package["original_shape"], batch_size, shape, order)
 
     result.set_shape(shape)
     result.set_batch_size(batch_size)
@@ -204,11 +218,11 @@ def _ravel_vector(data, batch_size, order=ArrayEncodingType.ROW_MAJOR, pad_to_po
     -------
     Plaintext
     """
-    target_cols = 0
 
-    if "target_cols" in kwargs:
-        if isinstance(kwargs["target_cols"], int) and kwargs["target_cols"] > 0:
-            target_cols = kwargs.get("target_cols")
+    target_cols = kwargs.get("target_cols")
+    if target_cols is not None:
+        if not (isinstance(target_cols, int) and target_cols > 0):
+            ONP_ERROR(f"target_cols must be positive int or None, got {target_cols!r}")
 
     pad_value = kwargs.get("pad_value", "repeat")
     expand = kwargs.get("expand", "repeat")

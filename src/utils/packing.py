@@ -17,7 +17,7 @@ from typing import Union, List, Tuple, Dict, Any
 
 import numpy as np
 
-from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.errors import ONP_ERROR
 from openfhe_numpy.utils.matlib import is_power_of_two, next_power_of_two
 from openfhe_numpy.utils.typecheck import *
 from openfhe_numpy._onp_cpp import *
@@ -122,7 +122,10 @@ def _pack_vector_row_wise(
 
     n = len(vector)
     nrows = next_power_of_two(n) if pad_to_power_of_2 else n
-    ncols = next_power_of_two(target_cols) if pad_to_power_of_2 else target_cols
+    if target_cols is None:
+        ncols = 1
+    else:
+        ncols = next_power_of_two(target_cols) if pad_to_power_of_2 else target_cols
 
     shape = (nrows, ncols)
     expanded_size = nrows * ncols
@@ -220,7 +223,10 @@ def _pack_vector_col_wise(
 
     n = len(vector)
     nrows = next_power_of_two(n) if pad_to_power_of_2 else n
-    ncols = next_power_of_two(target_cols) if pad_to_power_of_2 else target_cols
+    if target_cols is None:
+        ncols = 1
+    else:
+        ncols = next_power_of_two(target_cols) if pad_to_power_of_2 else target_cols
     shape = (nrows, ncols)
     expanded_size = nrows * ncols
 

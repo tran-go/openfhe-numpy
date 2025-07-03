@@ -109,7 +109,13 @@ class ONPError(Exception):
         super().__init__(full_message)
 
 
-class InvalidAxisError(ONPError):
+class ONPTypeError(ONPError):
+    """Raised when incorrect types are provided."""
+
+    pass
+
+
+class ONPDimensionError(ONPError):
     """Raised when an invalid axis is provided."""
 
     pass
@@ -122,12 +128,12 @@ class ONPValueError(ONPError):
         super().__init__(message)
 
 
-class ONPShapeError(ONPValueError):
+class ONPImcompatibleShape(ONPValueError):
     """Raised when tensor shapes are incompatible."""
 
     def __init__(self, shape_a, shape_b, message: str = None):
         if message is None:
-            message = f"Incompatible tensor shapes: {shape_a} vs {shape_b}"
+            message = f"Incompatible shapes: {shape_a} vs {shape_b}"
         super().__init__(message)
 
 

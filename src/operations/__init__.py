@@ -1,9 +1,11 @@
 """Operations for homomorphic encryption tensors."""
 
+from . import matrix_arithmetic
+
 # Import arithmetic operations
-from .matrix_arithmetic import *
 from .matrix_api import (
     add,
+    subtract,
     multiply,
     dot,
     matmul,
@@ -30,6 +32,7 @@ from .crypto_context import (
 __all__ = [
     # Arithmetic and matrix operations
     "add",
+    "subtract",
     "multiply",
     "dot",
     "matmul",
@@ -37,6 +40,7 @@ __all__ = [
     "power",
     "cumsum",
     "cumreduce",
+    "sum",
     # Key generation utilities
     "sum_row_keys",
     "sum_col_keys",

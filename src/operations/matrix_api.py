@@ -52,7 +52,6 @@ def _add_dispatch(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     pass
 
 
-@tensor_function_api("subtract", binary=True)
 def subtract(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     """
     Subtract two tensors or a tensor and a scalar.
@@ -78,6 +77,11 @@ def subtract(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     >>> subtract([5, 7], [2, 4])
     array([3, 3])
     """
+    return _subtract_dispatch(a, b)
+
+
+@tensor_function_api("subtract", binary=True)
+def _subtract_dispatch(a: ArrayLike, b: ArrayLike) -> ArrayLike:
     pass
 
 

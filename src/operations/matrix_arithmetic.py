@@ -16,11 +16,18 @@ from numpy.typing import ArrayLike
 from openfhe_numpy.operations.dispatch import register_tensor_function
 from openfhe_numpy.tensor.ctarray import CTArray
 from openfhe_numpy.tensor.ptarray import PTArray
-from openfhe_numpy.utils.log import ONP_ERROR
-
-
-# Import specific functions from C++ module
-from openfhe_numpy._onp_cpp import *
+from openfhe_numpy.utils.errors import ONP_ERROR, ONPImcompatibleShape
+from openfhe_numpy._onp_cpp import (
+    ArrayEncodingType,
+    MatVecEncoding,
+    EvalMultMatVec,
+    EvalMatMulSquare,
+    EvalTranspose,
+    EvalSumCumRows,
+    EvalSumCumCols,
+    EvalReduceCumRows,
+    EvalReduceCumCols,
+)
 
 ##############################################################################
 # BASIC ARITHMETIC OPERATIONS
@@ -45,7 +52,7 @@ def _eval_add(lhs, rhs):
 def add_ct(a, b):
     """Add two tensors."""
     if a.shape != b.shape:
-        raise ValueError(f"Shape mismatch: {a.shape} vs {b.shape}")
+        raise InvalidAxisError(f"Shape mismatch: {a.shape} vs {b.shape}")
     return _eval_add(a, b.data)
 
 
@@ -72,7 +79,7 @@ def add_block_ct_scalar(a, scalar):
 # ------------------------------------------------------------------------------
 def _eval_sub(lhs, rhs):
     """Internal function to evaluate subtraction between encrypted tensors."""
-    crypto_context = rhs.data.GetCryptoContext() if rhs.is_ciphertext else lhs.data.GetCryptoContext()
+    crypto_context = rhs.data.GetCryptoContext() if rhs.dtype == "CTArray" else lhs.data.GetCryptoContext()
 
     if isinstance(rhs, (int, float)):
         rhs = crypto_context.MakeCKKSPackedPlaintext([rhs] * lhs.batch_size)
@@ -409,10 +416,10 @@ def _ct_sum_matrix(tensor: ArrayLike, axis: Optional[int] = None):
         ct_sum = crypto_context.EvalSumRows(tensor.data, ncols, tensor.extra["rowkey"])
         shape = (cols,)
         padded_shape = (nrows, ncols)
-        if tensor.order == ROW_MAJOR:
-            order = COL_MAJOR
-        elif tensor.order == COL_MAJOR:
-            order = COL_MAJOR
+        if tensor.order == ArrayEncodingType.ROW_MAJOR:
+            order = ArrayEncodingType.COL_MAJOR
+        elif tensor.order == ArrayEncodingType.COL_MAJOR:
+            order = ArrayEncodingType.COL_MAJOR
         else:
             ONP_ERROR("Not supported!!!")
 
@@ -423,7 +430,7 @@ def _ct_sum_matrix(tensor: ArrayLike, axis: Optional[int] = None):
 
     else:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")
-    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape, order, tensor.is_padded)
+    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape, order)
 
 
 def _ct_sum_vector(tensor: ArrayLike, axis: Optional[int] = None):
@@ -439,7 +446,7 @@ def _ct_sum_vector(tensor: ArrayLike, axis: Optional[int] = None):
         rotated = crypto_context.EvalRotate(rotated, 1)
         ct_sum = crypto_context.EvalAdd(ct_sum, rotated)
     shape, padded_shape = (), ()
-    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape, tensor.is_padded)
+    return CTArray(ct_sum, shape, tensor.batch_size, padded_shape)
 
 
 @register_tensor_function("sum", [("CTArray",), ("CTArray", "int"), ("CTArray", "int", "bool")])

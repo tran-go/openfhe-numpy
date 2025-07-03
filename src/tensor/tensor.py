@@ -14,7 +14,7 @@ from typing import (
 from openfhe_numpy import _onp_cpp as backend
 
 # Subpackage Imports
-from openfhe_numpy.utils.log import ONP_ERROR
+from openfhe_numpy.utils.errors import ONP_ERROR
 from openfhe_numpy.utils.constants import *
 
 
@@ -87,10 +87,12 @@ class FHETensor(BaseTensor[T], Generic[T]):
     __slots__ = (
         "_data",
         "_original_shape",
+        "_shape",
         "_batch_size",
-        "_ncols",
         "_ndim",
         "_order",
+        "_dtype",
+        "extra",
     )
 
     def __init__(
@@ -100,13 +102,11 @@ class FHETensor(BaseTensor[T], Generic[T]):
         batch_size: int,
         new_shape: Tuple[int, int],
         order: int = backend.ROW_MAJOR,
-        is_padded: bool = True,
     ):
         self._data = data
         self._original_shape = original_shape
         self._shape = new_shape
         self._batch_size = batch_size
-        self._is_padded = is_padded
 
         self._ndim = len(original_shape)
         if self._ndim > 2 or self._ndim < 0:
@@ -127,10 +127,6 @@ class FHETensor(BaseTensor[T], Generic[T]):
         elif self.ndim == 2:
             return self.shape[0] * self.shape[1]
         return 0
-
-    @property
-    def is_padded(self):
-        return self._is_padded
 
     @property
     def dtype(self):
@@ -199,7 +195,6 @@ class FHETensor(BaseTensor[T], Generic[T]):
             "original_shape": self.original_shape,
             "batch_size": self.batch_size,
             "order": self.order,
-            "is_padded": self.is_padded,
             "extra": self.extra,
         }
 
