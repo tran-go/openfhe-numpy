@@ -297,8 +297,10 @@ class FHETensor(BaseTensor[T], Generic[T]):
     def transpose(self):
         return self.__tensor_function__("transpose", (self,))
 
-    def __tensor_function__(self, func_name, args, kwargs=None):
+    def __tensor_function__(self, func_name, args, kwargs=None, verbose: bool = False):
         """Dispatch tensor operations via the registry."""
+        if verbose:
+            print(f"DEBUG: tensor.__tensor_function__ called for '{func_name}' with {len(args)} args")
         from openfhe_numpy.operations.dispatch import dispatch_tensor_function
 
         return dispatch_tensor_function(func_name, args, kwargs or {})

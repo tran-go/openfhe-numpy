@@ -11,23 +11,13 @@ def demo():
     Run a demonstration of homomorphic matrix multiplication using OpenFHE-NumPy.
     """
 
-    mult_depth = 4
     params = CCParamsCKKSRNS()
-    params.SetMultiplicativeDepth(mult_depth)
-    params.SetScalingModSize(59)
-    params.SetFirstModSize(60)
-    params.SetScalingTechnique(FIXEDAUTO)
-    params.SetKeySwitchTechnique(HYBRID)
-    params.SetSecretKeyDist(UNIFORM_TERNARY)
-
     cc = GenCryptoContext(params)
     cc.Enable(PKESchemeFeature.PKE)
     cc.Enable(PKESchemeFeature.LEVELEDSHE)
     cc.Enable(PKESchemeFeature.ADVANCEDSHE)
 
     keys = cc.KeyGen()
-    cc.EvalMultKeyGen(keys.secretKey)
-    cc.EvalSumKeyGen(keys.secretKey)
 
     # Sample input matrix (8x8)
     matrix = np.array(

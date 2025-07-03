@@ -534,7 +534,7 @@ def _extract_vector(data, info):
     if info["ndim"] == 1:
         original_row = info["original_shape"][0]
 
-        ncols = info["shape"][0]
+        ncols = info["shape"][1]
         nrows = info["batch_size"] // ncols
         reshaped = np.reshape(data, (nrows, ncols))
 

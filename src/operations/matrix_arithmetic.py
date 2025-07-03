@@ -7,17 +7,17 @@ matrix multiplication, and other mathematical operations.
 """
 
 # Standard library imports
-from typing import Optional, Union, List, Tuple
+from typing import Optional
 
 # Third-party imports
 from numpy.typing import ArrayLike
 
 # Project imports
-from openfhe_numpy.operations.dispatch import register_tensor_function
-from openfhe_numpy.tensor.ctarray import CTArray
-from openfhe_numpy.tensor.ptarray import PTArray
-from openfhe_numpy.utils.errors import ONP_ERROR, ONPImcompatibleShape
-from openfhe_numpy._onp_cpp import (
+from ..operations.dispatch import register_tensor_function
+from ..tensor.ctarray import CTArray
+from ..utils.errors import ONP_ERROR, ONPImcompatibleShape
+from ..utils.typecheck import is_numeric_scalar
+from .._onp_cpp import (
     ArrayEncodingType,
     MatVecEncoding,
     EvalMultMatVec,
@@ -52,7 +52,7 @@ def _eval_add(lhs, rhs):
 def add_ct(a, b):
     """Add two tensors."""
     if a.shape != b.shape:
-        raise InvalidAxisError(f"Shape mismatch: {a.shape} vs {b.shape}")
+        raise ONPImcompatibleShape(a.shape, b.shape)
     return _eval_add(a, b.data)
 
 
@@ -97,7 +97,7 @@ def _eval_sub(lhs, rhs):
 def subtract_ct(a, b):
     """Subtract two tensors."""
     if a.shape != b.shape:
-        ONP_ERROR("Shape does not match for element-wise subtraction")
+        raise ONPImcompatibleShape(a.shape, b.shape)
     return _eval_sub(a, b)
 
 
@@ -113,21 +113,24 @@ def subtract_ct_scalar(a, b):
 def _eval_multiply(lhs, rhs):
     """Internal function to evaluate element-wise multiplication."""
     crypto_context = lhs.data.GetCryptoContext()
-    if isinstance(rhs, (int, float)):
-        rhs = crypto_context.MakeCKKSPackedPlaintext([rhs] * lhs.batch_size)
+    if is_numeric_scalar(rhs):
+        rhs_data = crypto_context.MakeCKKSPackedPlaintext([rhs] * lhs.batch_size)
     else:
-        rhs = rhs.data
+        rhs_data = rhs.data
 
-    result = crypto_context.EvalMul(lhs.data, rhs)
+    result = crypto_context.EvalMult(lhs.data, rhs_data)
     return lhs.clone(result)
 
 
-@register_tensor_function("multiply", [("CTArray", "CTArray"), ("CTArray", "PTArray")])
+@register_tensor_function("multiply", [("CTArray", "CTArray"), ("CTArray", "int"), ("CTArray", "PTArray")])
 def multiply_ct(a, b):
     """Multiply two tensors element-wise."""
-    if a.shape != b.shape:
-        raise ValueError(f"Shape mismatch: {a.shape} vs {b.shape}")
-    return _eval_multiply(a, b.data)
+    if is_numeric_scalar(a) or is_numeric_scalar(b):
+        return _eval_multiply(a, b)
+    elif a.shape != b.shape:
+        raise ONPImcompatibleShape(a.shape, b.shape)
+    else:
+        return _eval_multiply(a, b)
 
 
 @register_tensor_function("multiply", ("CTArray", "scalar"))
@@ -165,7 +168,9 @@ def _eval_matvec_ct(lhs, rhs):
     """Internal function to evaluate matrix-vector multiplication."""
     if lhs.ndim == 2 and rhs.ndim == 1:
         if lhs.original_shape[1] != rhs.original_shape[0]:
-            ONP_ERROR(f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]")
+            ONPImcompatibleShape(
+                f"Matrix dimension [{lhs.original_shape}] mismatch with vector dimension [{rhs.shape}]"
+            )
         if lhs.order == ArrayEncodingType.ROW_MAJOR and rhs.order == ArrayEncodingType.COL_MAJOR:
             # print("MM_CRC")
             sumkey = lhs.extra["colkey"]
@@ -197,8 +202,10 @@ def _eval_matvec_ct(lhs, rhs):
             ONP_ERROR(
                 f"Encoding styles of matrix ({lhs.order}) and vector ({rhs.order}) must be complementary (ROW_MAJOR/COL_MAJOR or vice versa)."
             )
+    elif lhs.ndim == 1 and rhs.ndim == 1:
+        return _dot(lhs, rhs)
     else:
-        ONP_ERROR(f"Matrix dimension mismatch for multiplication: {lhs.original_shape} and {rhs.original_shape}")
+        ONPImcompatibleShape(lhs.original_shape, rhs.original_shape, "Matrix Product")
 
 
 def _matmul_ct(lhs, rhs):
@@ -210,7 +217,7 @@ def _matmul_ct(lhs, rhs):
             return lhs.clone(EvalMatMulSquare(lhs.data, rhs.data, lhs.ncols))
 
         else:
-            ONP_ERROR(f"Matrix dimension mismatch for multiplication: {lhs.shape} and {rhs.shape}")
+            ONPImcompatibleShape(f"Matrix dimension mismatch for multiplication: {lhs.shape} and {rhs.shape}")
 
 
 @register_tensor_function("matmul", [("CTArray", "CTArray")])
@@ -227,7 +234,7 @@ def _dot(lhs, rhs):
     if lhs.ndim == 1 and rhs.ndim == 1:
         crypto_context = lhs.data.GetCryptoContext()
         ciphertext = crypto_context.EvalInnerProduct(lhs.data, rhs.data, lhs.original_shape[0])
-        return lhs.clone(ciphertext)
+        return CTArray(ciphertext, (), lhs.batch_size, (), ArrayEncodingType.ROW_MAJOR)
     else:
         return lhs._matmul(rhs)
 
@@ -235,7 +242,12 @@ def _dot(lhs, rhs):
 @register_tensor_function("dot", [("CTArray", "CTArray")])
 def dot_ct(a, b):
     """Compute dot product between two tensors."""
-    return _dot(a, b)
+    print("DEBUG: dot_ct function called!")
+    print(f"DEBUG: a type = {type(a)}, b type = {type(b)}")
+    print(f"DEBUG: a.shape = {a.shape}, b.shape = {b.shape}")
+    result = _dot(a, b)
+    print(f"DEBUG: dot_ct returning, result type = {type(result)}")
+    return result
 
 
 # ------------------------------------------------------------------------------
@@ -243,9 +255,16 @@ def dot_ct(a, b):
 # ------------------------------------------------------------------------------
 def _transpose_ct(ctarray: CTArray) -> "CTArray":
     """Internal function to evaluate transpose of a tensor."""
-    ciphertext = EvalTranspose(ctarray.data, ctarray.ncols)
-    pre_padded_shape = (ctarray.original_shape[1], ctarray.original_shape[0])
-    padded_shape = (ctarray.shape[1], ctarray.shape[0])
+
+    if ctarray.ndim == 2:
+        ciphertext = EvalTranspose(ctarray.data, ctarray.ncols)
+        pre_padded_shape = (ctarray.original_shape[1], ctarray.original_shape[0])
+        padded_shape = (ctarray.shape[1], ctarray.shape[0])
+    elif ctarray.ndim == 1:
+        # a vector is just a 1D array, so tranposing does nothing,
+        return ctarray
+    else:
+        raise NotImplementedError("This function is not implemented with dimension > 2")
 
     return CTArray(ciphertext, pre_padded_shape, ctarray.batch_size, padded_shape, ctarray.order)
 
@@ -435,14 +454,12 @@ def _ct_sum_matrix(tensor: ArrayLike, axis: Optional[int] = None):
 
 def _ct_sum_vector(tensor: ArrayLike, axis: Optional[int] = None):
     crypto_context = tensor.data.GetCryptoContext()
-    rows, cols = tensor.original_shape
-    nrows, ncols = tensor.shape
-
+    nrows = tensor.shape[0]
     if axis is not None:
         ONP_ERROR(f"The dimension is invalid axis = {axis}")
     rotated = tensor.data
     ct_sum = tensor.data
-    for i in range(nrows * ncols):
+    for i in range(nrows):
         rotated = crypto_context.EvalRotate(rotated, 1)
         ct_sum = crypto_context.EvalAdd(ct_sum, rotated)
     shape, padded_shape = (), ()
@@ -455,6 +472,8 @@ def sum_ct(tensor: ArrayLike, axis: Optional[int] = None, keepdims: bool = False
         return _ct_sum_matrix(tensor, axis)
     elif tensor.ndim == 1:
         return _ct_sum_vector(tensor, axis)
+    else:
+        ONP_ERROR(f"The dimension is invalid = {tensor.ndims}")
 
 
 # ------------------------------------------------------------------------------
