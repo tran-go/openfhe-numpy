@@ -1,0 +1,94 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# C++ object files and libraries
+*.o
+*.a
+*.la
+*.lo
+*.obj
+*.dll
+*.dylib
+*.lib
+
+
+# Virtual environment
+.env/
+.venv/
+env/
+venv/
+ENV/
+
+# VS Code settings
+.vscode/
+
+# PyCharm settings
+.idea/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Test coverage reports
+htmlcov/
+.coverage
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Logs and local dev stuff
+*.log
+
+# MyPy
+.mypy_cache/
+
+# Pytest
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Local test and temp files
+*.tmp
+*.bak
+*.swp
+
+# Notebook output
+*.out
+
+# Generated configuration files
+*_config.h
+
+
+# Binary files in examples folder
+examples/bin/
+examples/build/
+
+# Generated files from your build
+openfhe_numpy/version.py
+
+
+# CMake specific
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+Testing/
+install_manifest.txt
