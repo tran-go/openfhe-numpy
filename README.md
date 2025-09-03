@@ -92,15 +92,7 @@ Note that Ubuntu LTS 20.04, 22.04, and 24.04 are currently supported. `pip unins
 
 
 ## Running Tests
-Run tests with [unittest](https://docs.python.org/3/library/unittest.html). See the [testing readme](tests/README.md) for more information.
-
-```bash
-# Run all tests
-python3 -m tests
-
-# Run a specific test
-python3 -m tests/test_matrix_addition
-```
+Run tests with [unittest](https://docs.python.org/3/library/unittest.html). See the [testing readme](tests/README.md) for detailed instuctions.
 
 ## Code Examples
 
