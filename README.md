@@ -1,7 +1,7 @@
 # OpenFHE-NumPy
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Python Versions](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Python Versions](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![OpenFHE Version](https://img.shields.io/badge/OpenFHE-1.4.0%2B-green)](https://github.com/openfheorg/openfhe-development)
 
 OpenFHE-NumPy is a NumPy-like API for homomorphic encryption operations, built on top of OpenFHE. This library enables data scientists and machine learning practitioners to perform computations on encrypted data using familiar NumPy syntax.
@@ -47,7 +47,7 @@ openfhe-numpy/
 
 - **C++ compiler**: Supporting C++17 standard
 - **CMake**: Version 3.16 or newer
-- **Python**: Version 3.8 or newer
+- **Python**: Version 3.10 or newer
 - **NumPy**: Any version
 - **OpenFHE**: Any version
 - **OpenFHE Python**: Any version
@@ -88,7 +88,7 @@ pip install openfhe_numpy==<openfhe_package_version>
 
 Once installed, any python example at https://github.com/openfheorg/openfhe-numpy/tree/main/examples/python can be executed.
 
-Note that Ubuntu LTS 20.04, 22.04, and 24.04 are currently supported. `pip uninstall` can be used to uninstall the openfhe package.
+Note that Ubuntu LTS 22.04 and 24.04 are currently supported. `pip uninstall` can be used to uninstall the openfhe package.
 
 
 ## Running Tests
